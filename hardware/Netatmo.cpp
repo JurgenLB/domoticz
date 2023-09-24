@@ -81,7 +81,8 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	m_isLogged = false;
 	m_energyType = NETYPE_WEATHER_STATION;
 	m_weatherType = NETYPE_WEATHER_STATION;
-
+	m_Homecoach = NETYPE_WEATHER_STATION;
+	
 	m_HwdID = ID;
 
 	m_ActHome = 0;
@@ -113,7 +114,8 @@ void CNetatmo::Init()
 	m_bForceSetpointUpdate = false;
 	m_weatherType = NETYPE_WEATHER_STATION;
 	m_energyType = NETYPE_WEATHER_STATION;
-
+	m_Homecoach = NETYPE_WEATHER_STATION;
+	
 	m_bForceLogin = false;
 }
 
@@ -780,65 +782,67 @@ void CNetatmo::GetMeterDetails()
 		}
 	}
 
-	//Check if user has a weather or homecoach device
-	httpUrl = MakeRequestURL(m_weatherType);
-	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
+	//Check if user has a weather device (only once)
 	{
-		Log(LOG_ERROR, "Error connecting to Server...");
-		return;
-	}
-
-	//Check for error
-	bRet = ParseJSon(sResult, root);
-	if ((!bRet) || (!root.isObject()))
-	{
-		Log(LOG_ERROR, "Invalid data received...");
-		return;
-	}
-	if (!root["error"].empty())
-	{
-		//We received an error
-		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-		m_isLogged = false;
-		return;
-	}
-
-	//Parse API response
-	if (!ParseStationData(sResult, false))
-	{
-		// User doesn't have a weather station, so we check if it has
-		// a homecoach device (only once)
-		if (m_bFirstTimeWeatherData)
+		// URI for weather device
+		httpUrl = MakeRequestURL(m_weatherType);
+		if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 		{
-			// URI for homecoach device
-			httpUrl = MakeRequestURL(NETYPE_HOMECOACH);
-			if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-			{
-				Log(LOG_ERROR, "Error connecting to Server...");
-				return;
-			}
+			Log(LOG_ERROR, "Error connecting to Server...");
+			return;
+		}
 
-			// Check for error
-			bool bRet = ParseJSon(sResult, root);
-			if ((!bRet) || (!root.isObject()))
-			{
-				Log(LOG_ERROR, "Invalid data received...");
-				return;
-			}
-			if (!root["error"].empty())
-			{
-				// We received an error
-				Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-				m_isLogged = false;
-				return;
-			}
+		//Check for error
+		bRet = ParseJSon(sResult, root);
+		if ((!bRet) || (!root.isObject()))
+		{
+			Log(LOG_ERROR, "Invalid data received...");
+			return;
+		}
+		if (!root["error"].empty())
+		{
+			//We received an error
+			Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
+			m_isLogged = false;
+			return;
+		}
 
-			// Parse API Response
-			bRet = ParseStationData(sResult, false);
-			if (bRet)
-				m_weatherType = NETYPE_HOMECOACH;
-			else
-				m_bPollWeatherData = false;
+		//Parse API response
+		bRet = ParseStationData(sResult, false);
+		if (bRet)
+		{
+			m_weatherType = NETYPE_WEATHER_STATION
+		}
+	}
+	//Check if user has a  homecoach device
+	{
+		httpUrl = MakeRequestURL(m_Homecoach);
+		if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
+		{
+			Log(LOG_ERROR, "Error connecting to Server...");
+			return;
+		}
+
+		//Check for error
+		bool bRet = ParseJSon(sResult, root);
+		if ((!bRet) || (!root.isObject()))
+		{
+			Log(LOG_ERROR, "Invalid data received...");
+			return;
+		}
+		if (!root["error"].empty())
+		{
+			//We received an error
+			Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
+			m_isLogged = false;
+			return;
+		}
+
+		// Parse API Response
+		bRet = ParseStationData(sResult, false);
+		if (bRet)
+		{
+			m_Homecoach = NETYPE_HOMECOACH;		
 		}
 	}
 
@@ -864,15 +868,14 @@ void CNetatmo::GetThermostatDetails()
 
 	if (m_energyType != NETYPE_ENERGY)
 	{
+		sstr2 << "https://api.netatmo.net/api/homestatus";
+		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID;
+		ret = HTTPClient::POST(sstr2.str(), sPostData, ExtraHeaders, sResult);	}
+	else
+	{
 		sstr2 << "https://api.netatmo.net/api/getthermostatsdata";
 		sstr2 << "?access_token=" << m_accessToken;
 		ret = HTTPClient::GET(sstr2.str(), ExtraHeaders, sResult);
-	}
-	else
-	{
-		sstr2 << "https://api.netatmo.net/api/homestatus";
-		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID;
-		ret = HTTPClient::POST(sstr2.str(), sPostData, ExtraHeaders, sResult);
 	}
 
 	if (!ret)
