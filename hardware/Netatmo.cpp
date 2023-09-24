@@ -842,7 +842,7 @@ void CNetatmo::GetMeterDetails()
 		bRet = ParseStationData(sResult, false);
 		if (bRet)
 		{
-			m_Homecoach = NETYPE_HOMECOACH;		
+			NETYPE_HOMECOACH;		
 		}
 	}
 
