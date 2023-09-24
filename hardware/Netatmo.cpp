@@ -785,7 +785,7 @@ void CNetatmo::GetMeterDetails()
 	//Check if user has a weather device (only once)
 	{
 		// URI for weather device
-		httpUrl = MakeRequestURL(m_weatherType);
+		httpUrl = MakeRequestURL(NETYPE_WEATHER_STATION);
 		if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 		{
 			Log(LOG_ERROR, "Error connecting to Server...");
@@ -816,7 +816,7 @@ void CNetatmo::GetMeterDetails()
 	}
 	//Check if user has a  homecoach device
 	{
-		httpUrl = MakeRequestURL(m_Homecoach);
+		httpUrl = MakeRequestURL(NETYPE_HOMECOACH);
 		if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 		{
 			Log(LOG_ERROR, "Error connecting to Server...");
