@@ -81,7 +81,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	m_isLogged = false;
 	m_energyType = NETYPE_WEATHER_STATION;
 	m_weatherType = NETYPE_WEATHER_STATION;
-	m_Homecoach = NETYPE_WEATHER_STATION;
+	//m_Homecoach = NETYPE_WEATHER_STATION;
 	
 	m_HwdID = ID;
 
@@ -114,7 +114,7 @@ void CNetatmo::Init()
 	m_bForceSetpointUpdate = false;
 	m_weatherType = NETYPE_WEATHER_STATION;
 	m_energyType = NETYPE_WEATHER_STATION;
-	m_Homecoach = NETYPE_WEATHER_STATION;
+	//m_Homecoach = NETYPE_WEATHER_STATION;
 	
 	m_bForceLogin = false;
 }
@@ -811,7 +811,7 @@ void CNetatmo::GetMeterDetails()
 		bRet = ParseStationData(sResult, false);
 		if (bRet)
 		{
-			m_weatherType = NETYPE_WEATHER_STATION
+			m_weatherType = NETYPE_WEATHER_STATION;
 		}
 	}
 	//Check if user has a  homecoach device
