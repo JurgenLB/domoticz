@@ -89,6 +89,9 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 
 	m_bPollThermostat = true;
 	m_bPollWeatherData = true;
+	m_bPollHomecoachData = true;
+	m_bPollSmokeData = true;
+	m_bPollco2Data = true;
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_tSetpointUpdateTime = time(nullptr);
@@ -109,6 +112,9 @@ void CNetatmo::Init()
 	m_ScheduleIDs.clear();
 	m_bPollThermostat = true;
 	m_bPollWeatherData = true;
+	m_bPollHomecoachData = true;
+	m_bPollSmokeData = true;
+	m_bPollco2Data = true;
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_bForceSetpointUpdate = false;
@@ -147,6 +153,9 @@ void CNetatmo::Do_Work()
 {
 	int sec_counter = 600 - 5;
 	bool bFirstTimeWS = true;
+	bool bFirstTimeHS = true;
+	bool bFirstTimeSS = true;
+	bool bFirstTimeCS = true;
 	bool bFirstTimeTH = true;
 	Log(LOG_STATUS, "Worker started...");
 	while (!IsStopRequested(1000))
@@ -174,7 +183,28 @@ void CNetatmo::Do_Work()
 				{
 					bFirstTimeWS = false;
 					if ((m_bPollWeatherData) || (sec_counter % 1200 == 0))
-						GetMeterDetails();
+						GetWeatherDetails();
+				}
+
+				if ((sec_counter % 900 == 0) || (bFirstTimeHS))
+				{
+					bFirstTimeHS = false;
+					if ((m_bPollHomecoachData) || (sec_counter % 1200 == 0))
+						GetHomecoachDetails();
+				}
+
+				if ((sec_counter % 900 == 0) || (bFirstTimeSS))
+				{
+					bFirstTimeSS = false;
+					if ((m_bPollSmokeData) || (sec_counter % 1200 == 0))
+						GetSmokeDetails();
+				}
+
+				if ((sec_counter % 900 == 0) || (bFirstTimeCS))
+				{
+					bFirstTimeCS = false;
+					if ((m_bPollco2Data) || (sec_counter % 1200 == 0))
+						GetCO2Details();
 				}
 
 				//Thermostat data is updated every 10 minutes
@@ -730,10 +760,10 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 }
 
 /// <summary>
-/// Get details for wweather station then check and identify
+/// Get details for weather station then check and identify
 /// thermostat device
 /// </summary>
-void CNetatmo::GetMeterDetails()
+void CNetatmo::GetWeatherDetails()
 {
 	//Check if connected to the API
 	if (!m_isLogged)
@@ -779,10 +809,29 @@ void CNetatmo::GetMeterDetails()
 			// Data was parsed with success so we have our device
 			m_energyType = NETYPE_ENERGY;
 		}
+		m_bPollWeatherData = false;
 	}
+	m_bFirstTimeWeatherData = false;
+}
 
+/// <summary>
+/// Get details for homecoach
+/// </summary>
+void CNetatmo::GetHomecoachDetails()
+{
+	//Check if connected to the API
+	if (!m_isLogged)
+		return;
+
+	//Locals
+	std::string httpUrl; //URI to be tested
+	std::string sResult; // text returned by API
+	Json::Value root; // root JSON object
+	bool bRet; //Parsing status
+	std::vector<std::string> ExtraHeaders; // HTTP Headers
+	
 	//Check if user has a weather or homecoach device
-	httpUrl = MakeRequestURL(m_weatherType);
+	httpUrl = MakeRequestURL(NETYPE_HOMECOACH);
 	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 	{
 		Log(LOG_ERROR, "Error connecting to Server...");
@@ -805,45 +854,8 @@ void CNetatmo::GetMeterDetails()
 	}
 
 	//Parse API response
-	if (!ParseStationData(sResult, false))
-	{
-		// User doesn't have a weather station, so we check if it has
-		// a homecoach device (only once)
-		if (m_bFirstTimeWeatherData)
-		{
-			// URI for homecoach device
-			httpUrl = MakeRequestURL(NETYPE_HOMECOACH);
-			if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-			{
-				Log(LOG_ERROR, "Error connecting to Server...");
-				return;
-			}
-
-			// Check for error
-			bool bRet = ParseJSon(sResult, root);
-			if ((!bRet) || (!root.isObject()))
-			{
-				Log(LOG_ERROR, "Invalid data received...");
-				return;
-			}
-			if (!root["error"].empty())
-			{
-				// We received an error
-				Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-				m_isLogged = false;
-				return;
-			}
-
-			// Parse API Response
-			bRet = ParseStationData(sResult, false);
-			if (bRet)
-				m_weatherType = NETYPE_HOMECOACH;
-			else
-				m_bPollWeatherData = false;
-		}
-	}
-
-	m_bFirstTimeWeatherData = false;
+	bRet = ParseStationData(sResult, false);
+	m_bPollHomecoachData = false;
 }
 
 /// <summary>
@@ -921,7 +933,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 	//Return error if no devices are found
 	if (!bHaveDevices)
 	{
-		if ((!bIsThermostat) && (!m_bFirstTimeWeatherData) && (m_bPollWeatherData))
+		if ((!bIsThermostat) && (!m_bFirstTimeWeatherData) && (m_bPollWeatherData) && (m_bPollHomecoachData) && (m_bPollSmokeData) && (m_bPollco2Data))
 		{
 			// Do not warn if we check if we have a Thermostat device
 			Log(LOG_STATUS, "No Weather Station devices found...");
@@ -1390,7 +1402,7 @@ bool CNetatmo::ParseHomeData(const std::string& sResult)
 			return true;
 		}
 	}
-	if ((!m_bFirstTimeWeatherData) && (m_bPollWeatherData))
+	if ((!m_bFirstTimeWeatherData) && (m_bPollWeatherData)  && (m_bPollHomecoachData) && (m_bPollSmokeData) && (m_bPollco2Data))
 	{
 		//Do not warn if we check if we have a Thermostat device
 		Log(LOG_STATUS, "No Weather Station devices found...");
