@@ -38,6 +38,9 @@ class CNetatmo : public CDomoticzHardwareBase
 	std::map<int, std::string> m_thermostatModuleID;
 	bool m_bPollThermostat;
 	bool m_bPollWeatherData;
+	bool m_bPollHomecoachData;
+	bool m_bPollSmokeData;
+	bool m_bPollco2Data;
 	bool m_bFirstTimeThermostat;
 	bool m_bFirstTimeWeatherData;
 	bool m_bForceSetpointUpdate;
