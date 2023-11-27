@@ -740,14 +740,32 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 
 	switch (NType)
 	{
+	case NETYPE_MEASURE:
+		sstr << "https://api.netatmo.net/api/getmeasure";
+		break;
 	case NETYPE_WEATHER_STATION:
 		sstr << "https://api.netatmo.net/api/getstationsdata";
 		break;
 	case NETYPE_HOMECOACH:
 		sstr << "https://api.netatmo.net/api/gethomecoachsdata";
 		break;
-	case NETYPE_ENERGY:
+	case NETYPE_THERMOSTAT:
+		sstr << "https://api.netatmo.net/api/getthermostatsdata";
+		break;
+	case NETYPE_HOME:
+		sstr << "https://api.netatmo.net/api/homedata";
+		break;
+	case NETYPE_ENERGY:         // Not only Energy with new API so better to change to NETYPE_DATA
 		sstr << "https://api.netatmo.net/api/homesdata";
+		break;
+	case NETYPE_STATUS:
+		sstr << "https://api.netatmo.net/api/homestatus";
+		break;
+	case NETYPE_CAMERAS:
+		sstr << "https://api.netatmo.net/api/getcamerapicture";
+		break;
+	case NETYPE_EVENTS:
+		sstr << "https://api.netatmo.net/api/geteventsuntil";
 		break;
 	default:
 		return "";
