@@ -57,7 +57,10 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool StopHardware() override;
 	void Do_Work();
 	std::string MakeRequestURL(_eNetatmoType NetatmoType);
-	void GetMeterDetails();
+	void GetWeatherDetails();
+	void GetHomecoachDetails();
+	void GetSmokeDetails();
+	void GetCO2Details();
 	void GetThermostatDetails();
 	bool ParseStationData(const std::string &sResult, bool bIsThermostat);
 	bool ParseHomeData(const std::string &sResult);
