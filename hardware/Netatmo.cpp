@@ -90,8 +90,8 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	m_bPollThermostat = true;
 	m_bPollWeatherData = true;
 	m_bPollHomecoachData = true;
-	m_bPollSmokeData = true;
-	m_bPollco2Data = true;
+	//m_bPollSmokeData = true;
+	//m_bPollco2Data = true;
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_tSetpointUpdateTime = time(nullptr);
@@ -113,8 +113,8 @@ void CNetatmo::Init()
 	m_bPollThermostat = true;
 	m_bPollWeatherData = true;
 	m_bPollHomecoachData = true;
-	m_bPollSmokeData = true;
-	m_bPollco2Data = true;
+	//m_bPollSmokeData = true;
+	//m_bPollco2Data = true;
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_bForceSetpointUpdate = false;
@@ -192,21 +192,21 @@ void CNetatmo::Do_Work()
 					if ((m_bPollHomecoachData) || (sec_counter % 1200 == 0))
 						GetHomecoachDetails();
 				}
+				
+				//if ((sec_counter % 900 == 0) || (bFirstTimeSS))
+				//{
+				//	bFirstTimeSS = false;
+				//	if ((m_bPollSmokeData) || (sec_counter % 1200 == 0))
+				//		GetSmokeDetails();
+				//}
 
-				if ((sec_counter % 900 == 0) || (bFirstTimeSS))
-				{
-					bFirstTimeSS = false;
-					if ((m_bPollSmokeData) || (sec_counter % 1200 == 0))
-						GetSmokeDetails();
-				}
-
-				if ((sec_counter % 900 == 0) || (bFirstTimeCS))
-				{
-					bFirstTimeCS = false;
-					if ((m_bPollco2Data) || (sec_counter % 1200 == 0))
-						GetCO2Details();
-				}
-
+				//if ((sec_counter % 900 == 0) || (bFirstTimeCS))
+				//{
+				//	bFirstTimeCS = false;
+				//	if ((m_bPollco2Data) || (sec_counter % 1200 == 0))
+				//		GetCO2Details();
+				//}
+				
 				//Thermostat data is updated every 10 minutes
 				if ((sec_counter % 900 == 0) || (bFirstTimeTH))
 				{
