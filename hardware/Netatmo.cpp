@@ -933,7 +933,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 	//Return error if no devices are found
 	if (!bHaveDevices)
 	{
-		if ((!bIsThermostat) && (!m_bFirstTimeWeatherData) && (m_bPollWeatherData) && (m_bPollHomecoachData) && (m_bPollSmokeData) && (m_bPollco2Data))
+		if ((!bIsThermostat) && (!m_bFirstTimeWeatherData) && (m_bPollWeatherData) && (m_bPollHomecoachData) ) //&& (m_bPollSmokeData) && (m_bPollco2Data))
 		{
 			// Do not warn if we check if we have a Thermostat device
 			Log(LOG_STATUS, "No Weather Station devices found...");
@@ -1402,7 +1402,7 @@ bool CNetatmo::ParseHomeData(const std::string& sResult)
 			return true;
 		}
 	}
-	if ((!m_bFirstTimeWeatherData) && (m_bPollWeatherData)  && (m_bPollHomecoachData) && (m_bPollSmokeData) && (m_bPollco2Data))
+	if ((!m_bFirstTimeWeatherData) && (m_bPollWeatherData)  && (m_bPollHomecoachData) ) //&& (m_bPollSmokeData) && (m_bPollco2Data))
 	{
 		//Do not warn if we check if we have a Thermostat device
 		Log(LOG_STATUS, "No Weather Station devices found...");
