@@ -85,14 +85,15 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bForceLogin;
 	_eNetatmoType m_weatherType;
 	_eNetatmoType m_energyType;
-	_eNetatmoType NETYPE_MEASURE;
-	_eNetatmoType NETYPE_HOMECOACH;
-	_eNetatmoType NETYPE_THERMOSTAT;
-	_eNetatmoType NETYPE_HOME;
-	_eNetatmoType NETYPE_ENERGY;
-	_eNetatmoType NETYPE_STATUS;
-	_eNetatmoType NETYPE_CAMERAS;
-	_eNetatmoType NETYPE_EVENTS
+	//_eNetatmoType m_MEASURE;
+	//_eNetatmoType m_WEATHER_STATION;
+	//_eNetatmoType m_HOMECOACH;
+	//_eNetatmoType m_THERMOSTAT;
+	//_eNetatmoType m_HOME;
+	//_eNetatmoType m_ENERGY;
+	//_eNetatmoType m_STATUS;
+	//_eNetatmoType m_CAMERAS;
+	//_eNetatmoType m_EVENTS
 
 	int m_ActHome;
 	std::string m_Home_ID;
