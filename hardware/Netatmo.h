@@ -22,8 +22,14 @@ class CNetatmo : public CDomoticzHardwareBase
 	enum _eNetatmoType
 	{
 		NETYPE_WEATHER_STATION = 0,
+		NETYPE_MEASURE,
 		NETYPE_HOMECOACH,
-		NETYPE_ENERGY
+		NETYPE_THERMOSTAT,
+		NETYPE_HOME,
+		NETYPE_ENERGY,
+		NETYPE_STATUS,
+		NETYPE_CAMERAS,
+		NETYPE_EVENTS
 	};
 	std::string m_clientId;
 	std::string m_clientSecret;
@@ -79,6 +85,14 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bForceLogin;
 	_eNetatmoType m_weatherType;
 	_eNetatmoType m_energyType;
+	_eNetatmoType NETYPE_MEASURE;
+	_eNetatmoType NETYPE_HOMECOACH;
+	_eNetatmoType NETYPE_THERMOSTAT;
+	_eNetatmoType NETYPE_HOME;
+	_eNetatmoType NETYPE_ENERGY;
+	_eNetatmoType NETYPE_STATUS;
+	_eNetatmoType NETYPE_CAMERAS;
+	_eNetatmoType NETYPE_EVENTS
 
 	int m_ActHome;
 	std::string m_Home_ID;
