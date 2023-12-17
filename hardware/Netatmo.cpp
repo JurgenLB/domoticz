@@ -11,7 +11,9 @@
 #define round(a) ( int ) ( a + .5 )
 
 #define NETATMO_OAUTH2_TOKEN_URI "https://api.netatmo.net/oauth2/token"
-#define NETATMO_SCOPES "read_station read_smarther write_smarther read_thermostat write_thermostat read_camera write_camera access_camera read_doorbell access_doorbell read_presence write_precense access_precense read_homecoach read_carbonmonoxidedetector read_smokedetector"
+#define NETATMO_SCOPES "read_station read_thermostat write_thermostat read_homecoach read_smokedetector read_presence read_camera"
+#
+#define ALL_NETATMO_SCOPES "read_station read_smarther write_smarther read_thermostat write_thermostat read_camera write_camera access_camera read_doorbell access_doorbell read_presence write_precense access_precense read_homecoach read_carbonmonoxidedetector read_smokedetector"
 #define OTHER_SCOPES "read_magellen write_magellan read_bubendorff write_bubendorff read_mx write_mx read_mhs1 write_mhs1"
 #define NETATMO_REDIRECT_URI "http://localhost/netatmo"
 
