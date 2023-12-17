@@ -291,8 +291,8 @@ bool CNetatmo::Login()
 	//Check if access was granted
 	if (root["access_token"].empty() || root["expires_in"].empty() || root["refresh_token"].empty())
 	{
-		Log(LOG_ERROR, "No access granted, check credentials...");
-		Debug(DEBUG_HARDWARE, "No access granted, check credentials...(%s)(%s)", httpData.c_str(), root.toStyledString().c_str());
+		//Log(LOG_ERROR, "No access granted, check credentials...");
+		Log(LOG_ERROR, "No access granted, check credentials...(%s)(%s)", httpData.c_str(), root.toStyledString().c_str());
 		return false;
 	}
 
