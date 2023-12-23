@@ -270,7 +270,6 @@ bool CNetatmo::Login()
 	}
 
 	//Loggin on the API
-	std::string httpUrl; //URI to be tested
 	std::stringstream sstr;
 	sstr << "grant_type=authorization_code&";
 	sstr << "client_id=" << m_clientId << "&";
@@ -956,35 +955,76 @@ void CNetatmo::GetThermostatDetails()
 	std::vector<std::string> ExtraHeaders;
 	bool ret;
 
-	if (m_energyType != NETYPE_DATA)
-	{
-		//sstr2 << "https://api.netatmo.net/api/getthermostatsdata";
-		sstr2 << NETYPE_THERMOSTAT;
-		sstr2 << "?access_token=" << m_accessToken;
-		ret = HTTPClient::GET(sstr2.str(), ExtraHeaders, sResult);
-	}
-	else
-	{
-		sstr2 << "https://api.netatmo.net/api/homestatus";
-		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID;
-		ret = HTTPClient::POST(sstr2.str(), sPostData, ExtraHeaders, sResult);
-	}
-
-	if (!ret)
+        //
+	httpUrl = MakeRequestURL(NETYPE_STATUS);
+	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 	{
 		Log(LOG_ERROR, "Error connecting to Server...");
 		return;
 	}
-	if (m_energyType != NETYPE_DATA)
+
+	//Check for error
+	bRet = ParseJSon(sResult, root);
+	if ((!bRet) || (!root.isObject()))
 	{
-		if (!ParseStationData(sResult, true))
-			m_bPollThermostat = false;
+		Log(LOG_ERROR, "Invalid data received...");
+		return;
 	}
-	else
+	if (!root["error"].empty())
 	{
-		if (!ParseHomeStatus(sResult))
-			m_bPollThermostat = false;
+		//We received an error
+		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
+		m_isLogged = false;
+		return;
 	}
+	
+	//Parse API response
+	bRet = ParseStationData(sResult, false);
+	m_bPollThermostat = false;
+}
+
+/// <summary>
+/// Get details for homeStatus
+/// </summary>
+void CNetatmo::GetHomeStatusDetails()
+{
+	//Check if connected to the API
+	if (!m_isLogged)
+		return;
+
+	//Locals
+	std::string httpUrl; //URI to be tested
+	std::string sResult; // text returned by API
+	Json::Value root; // root JSON object
+	bool bRet; //Parsing status
+	std::vector<std::string> ExtraHeaders; // HTTP Headers
+	
+	//
+	httpUrl = MakeRequestURL(NETYPE_STATUS);
+	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
+	{
+		Log(LOG_ERROR, "Error connecting to Server...");
+		return;
+	}
+
+	//Check for error
+	bRet = ParseJSon(sResult, root);
+	if ((!bRet) || (!root.isObject()))
+	{
+		Log(LOG_ERROR, "Invalid data received...");
+		return;
+	}
+	if (!root["error"].empty())
+	{
+		//We received an error
+		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
+		m_isLogged = false;
+		return;
+	}
+
+	//Parse API response
+	bRet = ParseStationData(sResult, false);
+	m_bPollHomeStatus = false;
 }
 
 /// <summary>
@@ -1015,7 +1055,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 	//Return error if no devices are found
 	if (!bHaveDevices)
 	{
-		if ((!bIsThermostat) && (!m_bFirstTimeWeatherData) && (m_bPollWeatherData) && (m_bPollHomecoachData) ) //&& (m_bPollSmokeData) && (m_bPollco2Data))
+		if ((!bIsThermostat) && (!m_bFirstTimeWeatherData) && (m_bPollWeatherData) && (m_bPollHomecoachData) ) //&& (m_bPollHomeStatus) && (m_bPollco2Data))
 		{
 			// Do not warn if we check if we have a Thermostat device
 			Log(LOG_STATUS, "No Weather Station devices found...");
@@ -1484,7 +1524,7 @@ bool CNetatmo::ParseHomeData(const std::string& sResult)
 			return true;
 		}
 	}
-	if ((!m_bFirstTimeWeatherData) && (m_bPollWeatherData)  && (m_bPollHomecoachData) ) //&& (m_bPollSmokeData) && (m_bPollco2Data))
+	if ((!m_bFirstTimeWeatherData) && (m_bPollWeatherData)  && (m_bPollHomecoachData) ) //&& (m_bPollHomeStatus) && (m_bPollco2Data))
 	{
 		//Do not warn if we check if we have a Thermostat device
 		Log(LOG_STATUS, "No Weather Station devices found...");
