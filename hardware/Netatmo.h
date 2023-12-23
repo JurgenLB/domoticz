@@ -83,17 +83,16 @@ class CNetatmo : public CDomoticzHardwareBase
 	void StoreRefreshToken();
 	bool m_isLogged;
 	bool m_bForceLogin;
-	_eNetatmoType m_weatherType;
+	
+	_eNetatmoType m_measureType;
 	_eNetatmoType m_energyType;
-	_eNetatmoType m_MEASURE;
-	_eNetatmoType m_WEATHER_STATION;
-	_eNetatmoType m_HOMECOACH;
-	_eNetatmoType m_THERMOSTAT;
-	_eNetatmoType m_HOME;
-	_eNetatmoType m_ENERGY;
-	_eNetatmoType m_STATUS;
-	_eNetatmoType m_CAMERAS;
-	_eNetatmoType m_EVENTS;
+	_eNetatmoType m_weatherType;
+	_eNetatmoType m_homecoachType;
+	_eNetatmoType m_homeType;
+	_eNetatmoType m_dataType;
+	_eNetatmoType m_statusType;
+	_eNetatmoType m_camerasType;
+	_eNetatmoType m_eventsType;
 
 	int m_ActHome;
 	std::string m_Home_ID;
