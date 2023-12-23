@@ -93,7 +93,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	_eNetatmoType m_ENERGY;
 	_eNetatmoType m_STATUS;
 	_eNetatmoType m_CAMERAS;
-	_eNetatmoType m_EVENTS
+	_eNetatmoType m_EVENTS;
 
 	int m_ActHome;
 	std::string m_Home_ID;
