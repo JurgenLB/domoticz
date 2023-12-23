@@ -11,11 +11,10 @@
 #define round(a) ( int ) ( a + .5 )
 
 #define NETATMO_OAUTH2_TOKEN_URI "https://api.netatmo.net/oauth2/token"
-#define NETATMO_SCOPES "read_station read_thermostat write_thermostat read_homecoach read_smokedetector read_presence read_camera"
-#
-#define ALL_NETATMO_SCOPES "read_station read_smarther write_smarther read_thermostat write_thermostat read_camera write_camera access_camera read_doorbell access_doorbell read_presence write_precense access_precense read_homecoach read_carbonmonoxidedetector read_smokedetector"
-#define OTHER_SCOPES "read_magellen write_magellan read_bubendorff write_bubendorff read_mx write_mx read_mhs1 write_mhs1"
+#define NETATMO_API_URI "https://api.netatmo.com/api/"
+#define NETATMO_SCOPES "read_station read_smarther write_smarther read_thermostat write_thermostat read_camera write_camera read_doorbell read_presence write_presence read_homecoach read_carbonmonoxidedetector read_smokedetector"
 #define NETATMO_REDIRECT_URI "http://localhost/netatmo"
+// https://api.netatmo.com/oauth2/authorize?client_id=<CLIENT_ID>&redirect_uri=http://localhost/netatmo&state=teststate&scope=read_station%20read_smarther%20write_smarther%20read_thermostat%20write_thermostat%20read_camera%20write_camera%20read_doorbell%20read_presence%20write_presence%20read_homecoach%20read_carbonmonoxidedetector%20read_smokedetector
 
 #ifdef _DEBUG
 //#define DEBUG_NetatmoWeatherStationR
@@ -92,7 +91,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	m_bPollThermostat = true;
 	m_bPollWeatherData = true;
 	m_bPollHomecoachData = true;
-	//m_bPollSmokeData = true;
+	m_bPollHomeStatus = true;
 	//m_bPollco2Data = true;
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
@@ -115,11 +114,12 @@ void CNetatmo::Init()
 	m_bPollThermostat = true;
 	m_bPollWeatherData = true;
 	m_bPollHomecoachData = true;
-	//m_bPollSmokeData = true;
+	m_bPollHomeStatus = true;
 	//m_bPollco2Data = true;
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_bForceSetpointUpdate = false;
+	m_energyType = NETYPE_WEATHER_STATION;
 	m_weatherType = NETYPE_WEATHER_STATION;
 	m_energyType = NETYPE_WEATHER_STATION;
 
@@ -195,12 +195,12 @@ void CNetatmo::Do_Work()
 						GetHomecoachDetails();
 				}
 				
-				//if ((sec_counter % 900 == 0) || (bFirstTimeSS))
-				//{
-				//	bFirstTimeSS = false;
-				//	if ((m_bPollSmokeData) || (sec_counter % 1200 == 0))
-				//		GetSmokeDetails();
-				//}
+				if ((sec_counter % 900 == 0) || (bFirstTimeSS))
+				{
+					bFirstTimeSS = false;
+					if ((m_bPollHomeStatus) || (sec_counter % 1200 == 0))
+						GetHomeStatusDetails();
+				}
 
 				//if ((sec_counter % 900 == 0) || (bFirstTimeCS))
 				//{
@@ -293,8 +293,8 @@ bool CNetatmo::Login()
 	//Check if access was granted
 	if (root["access_token"].empty() || root["expires_in"].empty() || root["refresh_token"].empty())
 	{
-		//Log(LOG_ERROR, "No access granted, check credentials...");
-		Log(LOG_ERROR, "No access granted, check credentials...(%s)(%s)", httpData.c_str(), root.toStyledString().c_str());
+		Log(LOG_ERROR, "No access granted, check credentials...");
+		Debug(DEBUG_HARDWARE, "No access granted, check credentials...(%s)(%s)", httpData.c_str(), root.toStyledString().c_str());
 		return false;
 	}
 
@@ -757,7 +757,7 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 	case NETYPE_HOME:
 		sstr << "https://api.netatmo.net/api/homedata";
 		break;
-	case NETYPE_ENERGY:         // Not only Energy with new API so better to change to NETYPE_DATA
+	case NETYPE_DATA:         // was NETYPE_ENERGY
 		sstr << "https://api.netatmo.net/api/homesdata";
 		break;
 	case NETYPE_STATUS:
@@ -793,7 +793,7 @@ void CNetatmo::GetWeatherDetails()
 	std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
 	Json::Value root; // root JSON object
-	bool bRet; //Parsing status
+	bool bRet; //Parsing
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 
 	//check if user has an energy device (only once)
