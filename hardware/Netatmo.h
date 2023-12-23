@@ -45,8 +45,8 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bPollThermostat;
 	bool m_bPollWeatherData;
 	bool m_bPollHomecoachData;
-	//bool m_bPollSmokeData;
-	//bool m_bPollco2Data;
+	bool m_bPollHomeStatus;
+	//bool m_bPollMeasureData;
 	bool m_bFirstTimeThermostat;
 	bool m_bFirstTimeWeatherData;
 	bool m_bForceSetpointUpdate;
@@ -85,15 +85,15 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bForceLogin;
 	_eNetatmoType m_weatherType;
 	_eNetatmoType m_energyType;
-	//_eNetatmoType m_MEASURE;
-	//_eNetatmoType m_WEATHER_STATION;
-	//_eNetatmoType m_HOMECOACH;
-	//_eNetatmoType m_THERMOSTAT;
-	//_eNetatmoType m_HOME;
-	//_eNetatmoType m_ENERGY;
-	//_eNetatmoType m_STATUS;
-	//_eNetatmoType m_CAMERAS;
-	//_eNetatmoType m_EVENTS
+	_eNetatmoType m_MEASURE;
+	_eNetatmoType m_WEATHER_STATION;
+	_eNetatmoType m_HOMECOACH;
+	_eNetatmoType m_THERMOSTAT;
+	_eNetatmoType m_HOME;
+	_eNetatmoType m_ENERGY;
+	_eNetatmoType m_STATUS;
+	_eNetatmoType m_CAMERAS;
+	_eNetatmoType m_EVENTS
 
 	int m_ActHome;
 	std::string m_Home_ID;
