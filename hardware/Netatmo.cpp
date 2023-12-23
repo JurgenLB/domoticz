@@ -567,6 +567,7 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 
 		std::string httpData = sstr.str();
 
+		std::stringstream bstr;
 		bstr << NETATMO_API_URI;
                 bstr << "setthermpoint";
 
@@ -598,6 +599,7 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 		}
 		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID + "&mode=" + thermState;
 
+		std::stringstream bstr;
 		bstr << NETATMO_API_URI;
                 bstr << "setroomthermpoint";
 
