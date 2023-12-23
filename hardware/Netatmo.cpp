@@ -81,8 +81,15 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 
 	m_nextRefreshTs = mytime(nullptr);
 	m_isLogged = false;
-	m_energyType = NETYPE_WEATHER_STATION;
-	m_weatherType = NETYPE_WEATHER_STATION;
+        m_measureType = NETYPE_MEASURE;
+        m_energyType = NETYPE_THERMOSTAT;
+        m_weatherType = NETYPE_WEATHER_STATION;
+        m_homecoachType = NETYPE_HOMECOACH;
+        m_homeType = NETYPE_HOME;
+        m_dataType = NETYPE_DATA;
+        m_statusType = NETYPE_STATUS;
+        m_camerasType = NETYPE_CAMERAS;
+        m_eventsType = NETYPE_EVENTS;
 
 	m_HwdID = ID;
 
@@ -119,9 +126,15 @@ void CNetatmo::Init()
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_bForceSetpointUpdate = false;
-	m_energyType = NETYPE_WEATHER_STATION;
-	m_weatherType = NETYPE_WEATHER_STATION;
-	m_energyType = NETYPE_WEATHER_STATION;
+        m_measureType = NETYPE_MEASURE;
+        m_energyType = NETYPE_THERMOSTAT;
+        m_weatherType = NETYPE_WEATHER_STATION;
+        m_homecoachType = NETYPE_HOMECOACH;
+        m_homeType = NETYPE_HOME;
+        m_dataType = NETYPE_DATA;
+        m_statusType = NETYPE_STATUS;
+        m_camerasType = NETYPE_CAMERAS;
+        m_eventsType = NETYPE_EVENTS;
 
 	m_bForceLogin = false;
 }
@@ -257,6 +270,7 @@ bool CNetatmo::Login()
 	}
 
 	//Loggin on the API
+	std::string httpUrl; //URI to be tested
 	std::stringstream sstr;
 	sstr << "grant_type=authorization_code&";
 	sstr << "client_id=" << m_clientId << "&";
@@ -513,7 +527,7 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 	std::vector<std::string> ExtraHeaders;
 	std::string sResult;
 
-	if (m_energyType != NETYPE_ENERGY)
+	if (m_energyType != NETYPE_DATA)
 	{
 		// Check if thermostat device is available, reversing byte order to get our ID
 		int reverseIdx = ((idx >> 24) & 0x000000FF) | ((idx >> 8) & 0x0000FF00) | ((idx << 8) & 0x00FF0000) | ((idx << 24) & 0xFF000000);
@@ -553,7 +567,10 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 
 		std::string httpData = sstr.str();
 
-		std::string httpUrl("https://api.netatmo.net/api/setthermpoint");
+		bstr << NETATMO_API_URI;
+                bstr << "setthermpoint";
+
+		std::string httpUrl = bstr.str();
 
 		if (!HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult))
 		{
@@ -581,7 +598,12 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 		}
 		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID + "&mode=" + thermState;
 
-		if (!HTTPClient::POST("https://api.netatmo.com/api/setthermmode", sPostData, ExtraHeaders, sResult))
+		bstr << NETATMO_API_URI;
+                bstr << "setroomthermpoint";
+
+                std::string httpUrl = bstr.str();
+		
+		if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult))
 		{
 			Log(LOG_ERROR, "NetatmoThermostat: Error setting setpoint state!");
 			return false;
@@ -635,9 +657,10 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 	std::vector<std::string> ExtraHeaders;
 	std::string sResult;
 	std::stringstream sstr;
+	std::stringstream bstr;
 
 	bool ret = false;
-	if (m_energyType != NETYPE_ENERGY)
+	if (m_energyType != NETYPE_DATA)
 	{
 		// Check if thermostat device is available
 		if ((m_thermostatDeviceID[idx].empty()) || (m_thermostatModuleID[idx].empty()))
@@ -656,7 +679,13 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 		sstr << "&setpoint_endtime=" << end_time;
 
 		std::string httpData = sstr.str();
-		ret = HTTPClient::POST("https://api.netatmo.net/api/setthermpoint", httpData, ExtraHeaders, sResult);
+
+		bstr << NETATMO_API_URI;
+                bstr << "setthermpoint";
+
+                std::string httpUrl = bstr.str();
+		
+		ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult);
 	}
 	else
 	{
@@ -675,7 +704,13 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 		sstr << "&endtime=" << end_time;
 
 		std::string sPostData = sstr.str();
-		ret = HTTPClient::POST("https://api.netatmo.com/api/setroomthermpoint", sPostData, ExtraHeaders, sResult);
+
+		bstr << NETATMO_API_URI;
+                bstr << "setthermmode";
+
+                std::string httpUrl = bstr.str();
+		
+		ret = HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult);
 	}
 
 	if (!ret)
@@ -707,7 +742,8 @@ bool CNetatmo::SetSchedule(int scheduleId)
 
 	//Setting the schedule only if we have
 	//the right thermostat type
-	if (m_energyType == NETYPE_ENERGY)
+	std::stringstream bstr;
+	if (m_energyType == NETYPE_DATA)
 	{
 		std::string sResult;
 		std::string thermState = "schedule";
@@ -717,7 +753,12 @@ bool CNetatmo::SetSchedule(int scheduleId)
 
 		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID + "&mode=" + thermState + "&schedule_id=" + m_ScheduleIDs[scheduleId];
 
-		if (!HTTPClient::POST("https://api.netatmo.com/api/setthermmode", sPostData, ExtraHeaders, sResult))
+		bstr << NETATMO_API_URI;
+                bstr << "setthermmode";
+
+                std::string httpUrl = bstr.str();
+		
+		if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult))
 		{
 			Log(LOG_ERROR, "NetatmoThermostat: Error setting setpoint state!");
 			return false;
@@ -743,31 +784,49 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 	switch (NType)
 	{
 	case NETYPE_MEASURE:
-		sstr << "https://api.netatmo.net/api/getmeasure";
+		sstr << NETATMO_API_URI;
+                sstr << "getmeasure";
+                //"https://api.netatmo.com/api/getmeasure";
 		break;
 	case NETYPE_WEATHER_STATION:
-		sstr << "https://api.netatmo.net/api/getstationsdata";
+		sstr << NETATMO_API_URI
+                sstr << "getstationsdata";
+                //"https://api.netatmo.com/api/getstationsdata";
 		break;
 	case NETYPE_HOMECOACH:
-		sstr << "https://api.netatmo.net/api/gethomecoachsdata";
+		sstr << NETATMO_API_URI;
+                sstr << "gethomecoachsdata";
+                //"https://api.netatmo.com/api/gethomecoachsdata";
 		break;
 	case NETYPE_THERMOSTAT:
-		sstr << "https://api.netatmo.net/api/getthermostatsdata";
+		sstr << NETATMO_API_URI;
+                sstr << "getthermostatsdata";
+                //"https://api.netatmo.com/api/getthermostatsdata";
 		break;
 	case NETYPE_HOME:
-		sstr << "https://api.netatmo.net/api/homedata";
+		sstr << NETATMO_API_URI;
+                sstr << "homedata";
+                //"https://api.netatmo.com/api/homedata";
 		break;
 	case NETYPE_DATA:         // was NETYPE_ENERGY
-		sstr << "https://api.netatmo.net/api/homesdata";
+		sstr << NETATMO_API_URI;
+                sstr << "homesdata";
+                //"https://api.netatmo.com/api/homesdata";
 		break;
 	case NETYPE_STATUS:
-		sstr << "https://api.netatmo.net/api/homestatus";
+		sstr << NETATMO_API_URI;
+                sstr << "homestatus";
+                //"https://api.netatmo.com/api/homestatus";
 		break;
 	case NETYPE_CAMERAS:
-		sstr << "https://api.netatmo.net/api/getcamerapicture";
+		sstr << NETATMO_API_URI;
+                sstr << "getcamerapicture";
+                //"https://api.netatmo.com/api/getcamerapicture";
 		break;
 	case NETYPE_EVENTS:
-		sstr << "https://api.netatmo.net/api/geteventsuntil";
+		sstr << NETATMO_API_URI;
+                sstr << "geteventsuntil";
+                //"https://api.netatmo.com/api/geteventsuntil";
 		break;
 	default:
 		return "";
@@ -800,7 +859,7 @@ void CNetatmo::GetWeatherDetails()
 	if (m_bFirstTimeWeatherData)
 	{
 		//URI for energy device
-		httpUrl = MakeRequestURL(NETYPE_ENERGY);
+		httpUrl = MakeRequestURL(NETYPE_DATA);
 		if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 		{
 			Log(LOG_ERROR, "Error connecting to Server...");
@@ -827,7 +886,7 @@ void CNetatmo::GetWeatherDetails()
 		if (bRet)
 		{
 			// Data was parsed with success so we have our device
-			m_energyType = NETYPE_ENERGY;
+			m_energyType = NETYPE_DATA;
 		}
 		m_bPollWeatherData = false;
 	}
@@ -895,9 +954,10 @@ void CNetatmo::GetThermostatDetails()
 	std::vector<std::string> ExtraHeaders;
 	bool ret;
 
-	if (m_energyType != NETYPE_ENERGY)
+	if (m_energyType != NETYPE_DATA)
 	{
-		sstr2 << "https://api.netatmo.net/api/getthermostatsdata";
+		//sstr2 << "https://api.netatmo.net/api/getthermostatsdata";
+		sstr2 << NETYPE_THERMOSTAT;
 		sstr2 << "?access_token=" << m_accessToken;
 		ret = HTTPClient::GET(sstr2.str(), ExtraHeaders, sResult);
 	}
@@ -913,7 +973,7 @@ void CNetatmo::GetThermostatDetails()
 		Log(LOG_ERROR, "Error connecting to Server...");
 		return;
 	}
-	if (m_energyType != NETYPE_ENERGY)
+	if (m_energyType != NETYPE_DATA)
 	{
 		if (!ParseStationData(sResult, true))
 			m_bPollThermostat = false;
@@ -1021,7 +1081,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 							int crcId = Crc32(0, (const unsigned char*)mid.c_str(), mid.length());
 							if (!module["dashboard_data"].empty())
 								ParseDashboard(module["dashboard_data"], iDevIndex, crcId, mname, mtype, mbattery_percent, mrf_status);
-							else if (m_energyType != NETYPE_ENERGY && !module["measured"].empty())
+							else if (m_energyType != NETYPE_DATA && !module["measured"].empty())
 							{
 								//We have a thermostat module : creating domoticz devices for the thermostat
 								ParseDashboard(module["measured"], iDevIndex, crcId, mname, mtype, mbattery_percent, mrf_status);
