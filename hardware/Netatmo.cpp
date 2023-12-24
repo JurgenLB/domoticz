@@ -883,13 +883,13 @@ void CNetatmo::GetHomeDetails()
 	}
         if (!root["body"]["homes"].empty())
 	{
-		if ((int)root["body"]["homes"].sizes() <= mActHome)
+		if ((int)root["body"]["homes"].size() <= m_ActHome)
 			return false;
-		if (!root["body"]["homes"][mActHome]["id"].empty())
+		if (!root["body"]["homes"][m_ActHome]["id"].empty())
                 {
-			m_Home_ID = root["body"]["homes"][mActHome]["id"].asString();
+			m_Home_ID = root["body"]["homes"][m_ActHome]["id"].asString();
                         //
-                        if (root["body"]["homes"][mActHome]["persons"].empty())
+                        if (root["body"]["homes"][m_ActHome]["persons"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["persons"];
 			for (auto module : mRoot)
@@ -905,7 +905,7 @@ void CNetatmo::GetHomeDetails()
 				}
 			}
 			//
-			if (root["body"]["homes"][mActHome]["cameras"].empty())
+			if (root["body"]["homes"][m_ActHome]["cameras"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["cameras"];
 			for (auto module : mRoot)
@@ -922,7 +922,7 @@ void CNetatmo::GetHomeDetails()
 				}
 			}
 			//
-			if (root["body"]["homes"][mActHome]["smokedetectors"].empty())
+			if (root["body"]["homes"][m_ActHome]["smokedetectors"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["smokedetectors"];
 			for (auto module : mRoot)
@@ -939,7 +939,7 @@ void CNetatmo::GetHomeDetails()
 				}
 			}
                         //
-			if (root["body"]["homes"][mActHome]["events"].empty())
+			if (root["body"]["homes"][m_ActHome]["events"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["events"];
 			for (auto module : mRoot)
@@ -1002,13 +1002,13 @@ void CNetatmo::GetHomesDataDetails()
 	}
         if (!root["body"]["homes"].empty())
 	{
-		if ((int)root["body"]["homes"].sizes() <= mActHome)
+		if ((int)root["body"]["homes"].sizes() <= m_ActHome)
 			return false;
-		if (!root["body"]["homes"][mActHome]["id"].empty())
+		if (!root["body"]["homes"][m_ActHome]["id"].empty())
                 {
-			m_Home_ID = root["body"]["homes"][mActHome]["id"].asString();
+			m_Home_ID = root["body"]["homes"][m_ActHome]["id"].asString();
                         //
-                        if (root["body"]["homes"][mActHome]["persons"].empty())
+                        if (root["body"]["homes"][m_ActHome]["persons"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["persons"];
 			for (auto module : mRoot)
@@ -1024,7 +1024,7 @@ void CNetatmo::GetHomesDataDetails()
 				}
 			}
 			//
-			if (root["body"]["homes"][mActHome]["modules"].empty())
+			if (root["body"]["homes"][m_ActHome]["modules"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
 			for (auto module : mRoot)
@@ -1040,7 +1040,7 @@ void CNetatmo::GetHomesDataDetails()
 				}
 			}
 			//
-			if (root["body"]["homes"][mActHome]["rooms"].empty())
+			if (root["body"]["homes"][m_ActHome]["rooms"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["rooms"];
 			for (auto module : mRoot)
@@ -1056,7 +1056,7 @@ void CNetatmo::GetHomesDataDetails()
 				}
 			}
                         //
-			if (root["body"]["homes"][mActHome]["modules"].empty())
+			if (root["body"]["homes"][m_ActHome]["modules"].empty())
 				return false;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
 			for (auto module : mRoot)
@@ -1711,7 +1711,7 @@ bool CNetatmo::ParseHomeData(const std::string& sResult)
 	if (!root["body"]["homes"].empty())
 	{
 		//We support only one home for now
-		if ((int)root["body"]["homes"].size() <= m_ActHome)
+		if ((int)root["body"]["homes"].sizes() <= m_ActHome)
 			return false;
 		if (!root["body"]["homes"][m_ActHome]["id"].empty())
 		{
