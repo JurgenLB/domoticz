@@ -529,7 +529,7 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 	std::vector<std::string> ExtraHeaders;
 	std::string sResult;
 
-	if (m_energyType != NETYPE_DATA)
+	if (m_energyType != NETYPE_THERMOSTAT)
 	{
 		// Check if thermostat device is available, reversing byte order to get our ID
 		int reverseIdx = ((idx >> 24) & 0x000000FF) | ((idx >> 8) & 0x0000FF00) | ((idx << 8) & 0x00FF0000) | ((idx << 24) & 0xFF000000);
@@ -664,7 +664,7 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 	std::stringstream bstr;
 
 	bool ret = false;
-	if (m_energyType != NETYPE_DATA)
+	if (m_energyType != NETYPE_THERMOSTAT)
 	{
 		// Check if thermostat device is available
 		if ((m_thermostatDeviceID[idx].empty()) || (m_thermostatModuleID[idx].empty()))
@@ -747,7 +747,7 @@ bool CNetatmo::SetSchedule(int scheduleId)
 	//Setting the schedule only if we have
 	//the right thermostat type
 	std::stringstream bstr;
-	if (m_energyType == NETYPE_DATA)
+	if (m_energyType == NETYPE_THERMOSTAT)
 	{
 		std::string sResult;
 		std::string thermState = "schedule";
@@ -857,9 +857,9 @@ void CNetatmo::GetHomeDetails()
 	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
         std::string aName = m_Camera_Name
-        std::string cName = m_Camera_ID
+        std::string c_ID = m_Camera_ID
         std::string dName = m_Smoke_Name
-        std::string eName = m_Smoke_ID 
+        std::string e_ID = m_Smoke_ID 
 	bool bRet; //Parsing status
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 	
@@ -1078,6 +1078,7 @@ void CNetatmo::GetHomesDataDetails()
 			
 		}
 	}
+}
 
 /// <summary>
 /// Get details for weather station
@@ -1197,6 +1198,7 @@ void CNetatmo::GetThermostatDetails()
 	std::string sResult;
 	std::stringstream sstr2;
 	std::vector<std::string> ExtraHeaders;
+	bool bRet;
 	bool ret;
 
         //
@@ -1378,7 +1380,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 							int crcId = Crc32(0, (const unsigned char*)mid.c_str(), mid.length());
 							if (!module["dashboard_data"].empty())
 								ParseDashboard(module["dashboard_data"], iDevIndex, crcId, mname, mtype, mbattery_percent, mrf_status);
-							else if (m_energyType != NETYPE_DATA && !module["measured"].empty())
+							else if (m_energyType != NETYPE_THERMOSTAT && !module["measured"].empty())
 							{
 								//We have a thermostat module : creating domoticz devices for the thermostat
 								ParseDashboard(module["measured"], iDevIndex, crcId, mname, mtype, mbattery_percent, mrf_status);
@@ -1971,6 +1973,5 @@ int CNetatmo::GetBatteryLevel(const std::string& ModuleType, int battery_percent
 		batValue = 4100 - battery_percent;
 		batValue = 100 - int((100.0F / 1100.0F) * float(batValue));
 	}
-
 	return batValue;
 }
