@@ -856,6 +856,10 @@ void CNetatmo::GetHomeDetails()
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
+        std::string aName = m_Camera_Name
+        std::string cName = m_Camera_ID
+        std::string dName = m_Smoke_Name
+        std::string eName = m_Smoke_ID 
 	bool bRet; //Parsing status
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 	
@@ -891,8 +895,8 @@ void CNetatmo::GetHomeDetails()
                         //
                         if (root["body"]["homes"][m_ActHome]["persons"].empty())
 				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["persons"];
-			for (auto module : mRoot)
+			Json::Value mPersons = root["body"]["homes"][m_ActHome]["persons"];
+			for (auto module : mPersons)
 			{
 				if (!module["id"].empty())
 				{
@@ -907,8 +911,8 @@ void CNetatmo::GetHomeDetails()
 			//
 			if (root["body"]["homes"][m_ActHome]["cameras"].empty())
 				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["cameras"];
-			for (auto module : mRoot)
+			Json::Value mCameras = root["body"]["homes"][m_ActHome]["cameras"];
+			for (auto module : mCameras)
 			{
 				if (!module["id"].empty())
 				{
@@ -924,8 +928,8 @@ void CNetatmo::GetHomeDetails()
 			//
 			if (root["body"]["homes"][m_ActHome]["smokedetectors"].empty())
 				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["smokedetectors"];
-			for (auto module : mRoot)
+			Json::Value mSmoke = root["body"]["homes"][m_ActHome]["smokedetectors"];
+			for (auto module : mSmoke)
 			{
 				if (!module["id"].empty())
 				{
@@ -941,8 +945,8 @@ void CNetatmo::GetHomeDetails()
                         //
 			if (root["body"]["homes"][m_ActHome]["events"].empty())
 				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["events"];
-			for (auto module : mRoot)
+			Json::Value mEvents = root["body"]["homes"][m_ActHome]["events"];
+			for (auto module : mEvents)
 			{
 				if (!module["id"].empty())
 				{
