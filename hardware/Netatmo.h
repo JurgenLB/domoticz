@@ -47,7 +47,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bPollHomeData;
         bool m_bPollHomesData;
 	bool m_bPollHomeStatus;
-	bool m_bPollThermostat;
+
 	//bool m_bPollMeasureData;
 	bool m_bPollThermostat;
         bool m_bFirstTimeThermostat;
@@ -72,8 +72,8 @@ class CNetatmo : public CDomoticzHardwareBase
 	void GetWeatherDetails();
 	void GetHomecoachDetails();
         void GetHomeDetails();
-	void GetHomesDataDetails()();
-	void GetHomeStatusDetails()();
+	void GetHomesDataDetails();
+	void GetHomeStatusDetails();
 	void GetThermostatDetails();
 	bool ParseStationData(const std::string &sResult, bool bIsThermostat);
 	bool ParseHomeData(const std::string &sResult);
