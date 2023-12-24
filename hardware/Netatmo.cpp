@@ -192,7 +192,8 @@ void CNetatmo::Do_Work()
 			if (RefreshToken())
 			{
 				//
-				GetHomeDetails();
+				if ((m_bPollHomeData) || (sec_counter % 1200 == 0))
+                                        GetHomeDetails();
 				//Weather / HomeCoach data is updated every 10 minutes
 				// 03/03/2022 - PP Changing the Weather polling from 600 to 900s. This has reduce the number of server errors, 
 				// but do not prevennt to have one time to time
@@ -213,7 +214,7 @@ void CNetatmo::Do_Work()
 				if ((sec_counter % 900 == 0) || (bFirstTimeCS))
 				{
 					bFirstTimeCS = false;
-					if ((m_bPollHomeData) || (sec_counter % 1200 == 0))
+					if ((m_bPollHomesData) || (sec_counter % 1200 == 0))
 						GetHomesDataDetails();
 				}
 
