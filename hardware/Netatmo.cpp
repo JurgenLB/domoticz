@@ -964,6 +964,7 @@ void CNetatmo::GetHomeDetails()
 	//Parse API response
 	
         //return m_Home_ID;
+}
 
 /// <summary>
 /// Get details for home
