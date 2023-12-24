@@ -191,6 +191,8 @@ void CNetatmo::Do_Work()
 		{
 			if (RefreshToken())
 			{
+				//
+				GetHomeDetails();
 				//Weather / HomeCoach data is updated every 10 minutes
 				// 03/03/2022 - PP Changing the Weather polling from 600 to 900s. This has reduce the number of server errors, 
 				// but do not prevennt to have one time to time
@@ -208,19 +210,19 @@ void CNetatmo::Do_Work()
 						GetHomecoachDetails();
 				}
 				
+				if ((sec_counter % 900 == 0) || (bFirstTimeCS))
+				{
+					bFirstTimeCS = false;
+					if ((m_bPollHomeData) || (sec_counter % 1200 == 0))
+						GetHomesDataDetails();
+				}
+
 				if ((sec_counter % 900 == 0) || (bFirstTimeSS))
 				{
 					bFirstTimeSS = false;
 					if ((m_bPollHomeStatus) || (sec_counter % 1200 == 0))
 						GetHomeStatusDetails();
 				}
-
-				//if ((sec_counter % 900 == 0) || (bFirstTimeCS))
-				//{
-				//	bFirstTimeCS = false;
-				//	if ((m_bPollco2Data) || (sec_counter % 1200 == 0))
-				//		GetCO2Details();
-				//}
 				
 				//Thermostat data is updated every 10 minutes
 				if ((sec_counter % 900 == 0) || (bFirstTimeTH))
@@ -790,7 +792,7 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
                 //"https://api.netatmo.com/api/getmeasure";
 		break;
 	case NETYPE_WEATHER_STATION:
-		sstr << NETATMO_API_URI
+		sstr << NETATMO_API_URI;
                 sstr << "getstationsdata";
                 //"https://api.netatmo.com/api/getstationsdata";
 		break;
@@ -957,6 +959,120 @@ void CNetatmo::GetHomeDetails()
 	//Parse API response
 	
         //return m_Home_ID;
+
+/// <summary>
+/// Get details for home
+/// </summary>
+void CNetatmo::GetHomesDataDetails()
+{
+	//Check if connected to the API
+	if (!m_isLogged)
+		return;
+
+	//Locals
+	std::string httpUrl; //URI to be tested
+	std::string sResult; // text returned by API
+	std::string m_Home_ID; //Home ID
+	Json::Value root; // root JSON object
+	bool bRet; //Parsing status
+	std::vector<std::string> ExtraHeaders; // HTTP Headers
+	
+	//
+	httpUrl = MakeRequestURL(NETYPE_HOME);
+	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
+	{
+		Log(LOG_ERROR, "Error connecting to Server...");
+		return;
+	}
+
+	//Check for error
+	bRet = ParseJSon(sResult, root);
+	if ((!bRet) || (!root.isObject()))
+	{
+		Log(LOG_ERROR, "Invalid data received...");
+		return;
+	}
+	if (!root["error"].empty())
+	{
+		//We received an error
+		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
+		m_isLogged = false;
+		return;
+	}
+        if (!root["body"]["homes"].empty())
+	{
+		if ((int)root["body"]["homes"].sizes() <= mActHome)
+			return false;
+		if (!root["body"]["homes"][mActHome]["id"].empty())
+                {
+			m_Home_ID = root["body"]["homes"][mActHome]["id"].asString();
+                        //
+                        if (root["body"]["homes"][mActHome]["persons"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["persons"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["pseudo"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//Persons in Homedata
+					
+				}
+			}
+			//
+			if (root["body"]["homes"][mActHome]["modules"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["name"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//
+					
+				}
+			}
+			//
+			if (root["body"]["homes"][mActHome]["rooms"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["rooms"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["name"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//Rooms in Homesdata
+					
+				}
+			}
+                        //
+			if (root["body"]["homes"][mActHome]["modules"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["name"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//Modules in Homesdata
+					
+				}
+			}
+			
+		}
+	}
 
 /// <summary>
 /// Get details for weather station
