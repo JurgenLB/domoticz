@@ -86,7 +86,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
         m_weatherType = NETYPE_WEATHER_STATION;
         m_homecoachType = NETYPE_HOMECOACH;
         m_homeType = NETYPE_HOME;
-        m_dataType = NETYPE_DATA;
+        m_dataType = NETYPE_HOMESDATA;
         m_statusType = NETYPE_STATUS;
         m_camerasType = NETYPE_CAMERAS;
         m_eventsType = NETYPE_EVENTS;
@@ -131,7 +131,7 @@ void CNetatmo::Init()
         m_weatherType = NETYPE_WEATHER_STATION;
         m_homecoachType = NETYPE_HOMECOACH;
         m_homeType = NETYPE_HOME;
-        m_dataType = NETYPE_DATA;
+        m_dataType = NETYPE_HOMESDATA;
         m_statusType = NETYPE_STATUS;
         m_camerasType = NETYPE_CAMERAS;
         m_eventsType = NETYPE_EVENTS;
@@ -809,7 +809,7 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
                 sstr << "homedata";
                 //"https://api.netatmo.com/api/homedata";
 		break;
-	case NETYPE_DATA:         // was NETYPE_ENERGY
+	case NETYPE_HOMESDATA:         // was NETYPE_ENERGY
 		sstr << NETATMO_API_URI;
                 sstr << "homesdata";
                 //"https://api.netatmo.com/api/homesdata";
@@ -840,8 +840,126 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 }
 
 /// <summary>
-/// Get details for weather station then check and identify
-/// thermostat device
+/// Get details for home
+/// </summary>
+void CNetatmo::GetHomeDetails()
+{
+	//Check if connected to the API
+	if (!m_isLogged)
+		return;
+
+	//Locals
+	std::string httpUrl; //URI to be tested
+	std::string sResult; // text returned by API
+	std::string m_Home_ID; //Home ID
+	Json::Value root; // root JSON object
+	bool bRet; //Parsing status
+	std::vector<std::string> ExtraHeaders; // HTTP Headers
+	
+	//
+	httpUrl = MakeRequestURL(NETYPE_HOME);
+	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
+	{
+		Log(LOG_ERROR, "Error connecting to Server...");
+		return;
+	}
+
+	//Check for error
+	bRet = ParseJSon(sResult, root);
+	if ((!bRet) || (!root.isObject()))
+	{
+		Log(LOG_ERROR, "Invalid data received...");
+		return;
+	}
+	if (!root["error"].empty())
+	{
+		//We received an error
+		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
+		m_isLogged = false;
+		return;
+	}
+        if (!root["body"]["homes"].empty())
+	{
+		if ((int)root["body"]["homes"].sizes() <= mActHome)
+			return false;
+		if (!root["body"]["homes"][mActHome]["id"].empty())
+                {
+			m_Home_ID = root["body"]["homes"][mActHome]["id"].asString();
+                        //
+                        if (root["body"]["homes"][mActHome]["persons"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["persons"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["pseudo"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//Persons in Homedata
+					
+				}
+			}
+			//
+			if (root["body"]["homes"][mActHome]["cameras"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["cameras"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["name"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//Store Camera's name and id for later naming switch / sensor
+					m_Camera_Name = module["name"].asString();
+					m_Camera_ID = module["id"].asString();
+				}
+			}
+			//
+			if (root["body"]["homes"][mActHome]["smokedetectors"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["smokedetectors"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["name"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//Smokedetectors in Homedata
+					m_Smoke_Name = module["name"].asString();
+					m_Smoke_ID = module["id"].asString();
+				}
+			}
+                        //
+			if (root["body"]["homes"][mActHome]["events"].empty())
+				return false;
+			Json::Value mRoot = root["body"]["homes"][m_ActHome]["events"];
+			for (auto module : mRoot)
+			{
+				if (!module["id"].empty())
+				{
+					std::string mID = module["id"].asString();
+					m_ModuleNames[mID] = module["name"].asString();
+					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+					m_ModuleIDs[mID] = crcId;
+					//Events in Homedata
+					
+				}
+			}
+			return m_Home_ID;
+		}
+	}                
+	//Parse API response
+	
+        //return m_Home_ID;
+
+/// <summary>
+/// Get details for weather station
 /// </summary>
 void CNetatmo::GetWeatherDetails()
 {
@@ -856,11 +974,11 @@ void CNetatmo::GetWeatherDetails()
 	bool bRet; //Parsing
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 
-	//check if user has an energy device (only once)
+	//
 	if (m_bFirstTimeWeatherData)
 	{
 		//URI for energy device
-		httpUrl = MakeRequestURL(NETYPE_DATA);
+		httpUrl = MakeRequestURL(NETYPE_WEATHER_STATION);
 		if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 		{
 			Log(LOG_ERROR, "Error connecting to Server...");
@@ -887,7 +1005,7 @@ void CNetatmo::GetWeatherDetails()
 		if (bRet)
 		{
 			// Data was parsed with success so we have our device
-			m_energyType = NETYPE_DATA;
+			m_weatherType = NETYPE_WEATHER_STATION;
 		}
 		m_bPollWeatherData = false;
 	}
@@ -935,6 +1053,11 @@ void CNetatmo::GetHomecoachDetails()
 
 	//Parse API response
 	bRet = ParseStationData(sResult, false);
+	if (bRet)
+		{
+			// Data was parsed with success so we have our device
+			m_weatherType = NETYPE_HOMECOACH;
+		}
 	m_bPollHomecoachData = false;
 }
 
@@ -956,7 +1079,7 @@ void CNetatmo::GetThermostatDetails()
 	bool ret;
 
         //
-	httpUrl = MakeRequestURL(NETYPE_STATUS);
+	httpUrl = MakeRequestURL(NETYPE_THERMOSTAT);
 	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 	{
 		Log(LOG_ERROR, "Error connecting to Server...");
@@ -980,6 +1103,11 @@ void CNetatmo::GetThermostatDetails()
 	
 	//Parse API response
 	bRet = ParseStationData(sResult, false);
+	if (bRet)
+		{
+			// Data was parsed with success so we have our device
+			m_weatherType = NETYPE_THERMOSTAT;
+		}
 	m_bPollThermostat = false;
 }
 
@@ -995,6 +1123,7 @@ void CNetatmo::GetHomeStatusDetails()
 	//Locals
 	std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
+	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
 	bool bRet; //Parsing status
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
@@ -1024,6 +1153,11 @@ void CNetatmo::GetHomeStatusDetails()
 
 	//Parse API response
 	bRet = ParseStationData(sResult, false);
+	if (bRet)
+		{
+			// Data was parsed with success so we have our device
+			m_weatherType = NETYPE_STATUS;
+		}
 	m_bPollHomeStatus = false;
 }
 
