@@ -994,12 +994,12 @@ void CNetatmo::GetHomesDataDetails()
 	httpUrl = MakeRequestURL(NETYPE_HOME);
 	//Check if connected to the API
 	if (!m_isLogged)
-		return false;
+		return;
 	
 	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 	{
 		Log(LOG_ERROR, "Error connecting to Server...");
-		return false;
+		return;
 	}
 
 	//Check for error
@@ -1007,25 +1007,25 @@ void CNetatmo::GetHomesDataDetails()
 	if ((!bRet) || (!root.isObject()))
 	{
 		Log(LOG_ERROR, "Invalid data received...");
-		return false;
+		return;
 	}
 	if (!root["error"].empty())
 	{
 		//We received an error
 		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
 		m_isLogged = false;
-		return false;
+		return;
 	}
         if (!root["body"]["homes"].empty())
 	{
 		if ((int)root["body"]["homes"].size() <= m_ActHome)
-			return false;
+			return;
 		if (!root["body"]["homes"][m_ActHome]["id"].empty())
                 {
 			m_Home_ID = root["body"]["homes"][m_ActHome]["id"].asString();
                         //
                         if (root["body"]["homes"][m_ActHome]["persons"].empty())
-				return false;
+				return;
 			Json::Value m_Persons = root["body"]["homes"][m_ActHome]["persons"];
 			for (auto module : m_Persons)
 			{
@@ -1041,7 +1041,7 @@ void CNetatmo::GetHomesDataDetails()
 			}
 			//
 			if (root["body"]["homes"][m_ActHome]["modules"].empty())
-				return false;
+				return;
 			Json::Value m_Modules = root["body"]["homes"][m_ActHome]["modules"];
 			for (auto module : m_Modules)
 			{
@@ -1057,7 +1057,7 @@ void CNetatmo::GetHomesDataDetails()
 			}
 			//
 			if (root["body"]["homes"][m_ActHome]["rooms"].empty())
-				return false;
+				return;
 			Json::Value m_Rooms = root["body"]["homes"][m_ActHome]["rooms"];
 			for (auto module : m_Rooms)
 			{
@@ -1073,7 +1073,7 @@ void CNetatmo::GetHomesDataDetails()
 			}
                         //
 			if (root["body"]["homes"][m_ActHome]["modules"].empty())
-				return false;
+				return;
 			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
 			for (auto module : mRoot)
 			{
@@ -1089,7 +1089,6 @@ void CNetatmo::GetHomesDataDetails()
 			}
 			
 		}
-	return true;
 	}
 }
 
