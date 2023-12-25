@@ -856,10 +856,10 @@ void CNetatmo::GetHomeDetails()
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
-        std::string aName = m_Camera_Name
-        std::string c_ID = m_Camera_ID
-        std::string dName = m_Smoke_Name
-        std::string e_ID = m_Smoke_ID 
+        std::string m_Camera_Name
+        std::string m_Camera_ID
+        std::string m_Smoke_Name
+        std::string m_Smoke_ID 
 	bool bRet; //Parsing status
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 	
@@ -980,6 +980,15 @@ void CNetatmo::GetHomesDataDetails()
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
+        Json::Value m_Home_Name
+	Json::Value m_Rooms
+	Json::Value m_Modules
+	Json::Value m_Temperature_Control_Mode
+	Json::Value m_Therm_Mode
+	Json::Value m_Therm_Setpoint_default_Duration
+	Json::Value m_Persons
+	Json::Value m_Schedules
+	Json::Value m_Zones
 	bool bRet; //Parsing status
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 	
@@ -1007,7 +1016,7 @@ void CNetatmo::GetHomesDataDetails()
 	}
         if (!root["body"]["homes"].empty())
 	{
-		if ((int)root["body"]["homes"].sizes() <= m_ActHome)
+		if ((int)root["body"]["homes"].size() <= m_ActHome)
 			return false;
 		if (!root["body"]["homes"][m_ActHome]["id"].empty())
                 {
@@ -1015,7 +1024,7 @@ void CNetatmo::GetHomesDataDetails()
                         //
                         if (root["body"]["homes"][m_ActHome]["persons"].empty())
 				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["persons"];
+			Json::Value m_Persons = root["body"]["homes"][m_ActHome]["persons"];
 			for (auto module : mRoot)
 			{
 				if (!module["id"].empty())
@@ -1031,7 +1040,7 @@ void CNetatmo::GetHomesDataDetails()
 			//
 			if (root["body"]["homes"][m_ActHome]["modules"].empty())
 				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
+			Json::Value m_Modules = root["body"]["homes"][m_ActHome]["modules"];
 			for (auto module : mRoot)
 			{
 				if (!module["id"].empty())
@@ -1047,7 +1056,7 @@ void CNetatmo::GetHomesDataDetails()
 			//
 			if (root["body"]["homes"][m_ActHome]["rooms"].empty())
 				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["rooms"];
+			Json::Value m_Rooms = root["body"]["homes"][m_ActHome]["rooms"];
 			for (auto module : mRoot)
 			{
 				if (!module["id"].empty())
@@ -1199,6 +1208,8 @@ void CNetatmo::GetThermostatDetails()
 	std::string sResult;
 	std::stringstream sstr2;
 	std::vector<std::string> ExtraHeaders;
+	std::string httpUrl; //URI to be tested
+	Json::Value root; // root JSON object
 	bool bRet;
 	bool ret;
 
@@ -1718,7 +1729,7 @@ bool CNetatmo::ParseHomeData(const std::string& sResult)
 	if (!root["body"]["homes"].empty())
 	{
 		//We support only one home for now
-		if ((int)root["body"]["homes"].sizes() <= m_ActHome)
+		if ((int)root["body"]["homes"].size() <= m_ActHome)
 			return false;
 		if (!root["body"]["homes"][m_ActHome]["id"].empty())
 		{
