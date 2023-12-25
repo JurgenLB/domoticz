@@ -845,7 +845,7 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 /// <summary>
 /// Get details for home
 /// </summary>
-void CNetatmo::GetHomeDetails()
+bool CNetatmo::GetHomeDetails()
 {
 	//Check if connected to the API
 	if (!m_isLogged)
@@ -969,7 +969,7 @@ void CNetatmo::GetHomeDetails()
 /// <summary>
 /// Get details for home
 /// </summary>
-void CNetatmo::GetHomesDataDetails()
+bool CNetatmo::GetHomesDataDetails()
 {
 	//Check if connected to the API
 	if (!m_isLogged)
