@@ -853,7 +853,6 @@ bool CNetatmo::GetHomeDetails()
 		return false;
 	}
 	//Locals
-	std::make_tuple;
 	std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
@@ -960,7 +959,7 @@ bool CNetatmo::GetHomeDetails()
 					
 				}
 			}
-			return::make_tuple(m_Home_ID);
+			return std::make_tuple(m_Home_ID);
 		}
 	}                
 	//Parse API response
@@ -1090,6 +1089,7 @@ bool CNetatmo::GetHomesDataDetails()
 			}
 			
 		}
+	return EXIT_SUCCESS;
 	}
 }
 
