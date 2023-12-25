@@ -959,8 +959,7 @@ bool CNetatmo::GetHomeDetails()
 					
 				}
 			}
-			std::string res = m_Home_ID
-			return res;
+
 		}
 	}                
 	//Parse API response
@@ -971,7 +970,7 @@ bool CNetatmo::GetHomeDetails()
 /// <summary>
 /// Get details for home
 /// </summary>
-bool CNetatmo::GetHomesDataDetails()
+void CNetatmo::GetHomesDataDetails()
 {
 	//Locals
 	std::string httpUrl;  //URI to be tested
