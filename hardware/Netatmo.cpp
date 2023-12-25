@@ -959,11 +959,12 @@ bool CNetatmo::GetHomeDetails()
 					
 				}
 			}
-			return std::make_tuple(m_Home_ID);
+			std::string res = m_Home_ID
+			return res;
 		}
 	}                
 	//Parse API response
-	
+	return true;
         //return m_Home_ID;
 }
 
@@ -1089,7 +1090,7 @@ bool CNetatmo::GetHomesDataDetails()
 			}
 			
 		}
-	return EXIT_SUCCESS;
+	return true;
 	}
 }
 
