@@ -853,6 +853,7 @@ bool CNetatmo::GetHomeDetails()
 		return false;
 	}
 	//Locals
+	std::make_tuple;
 	std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
@@ -972,11 +973,6 @@ bool CNetatmo::GetHomeDetails()
 /// </summary>
 bool CNetatmo::GetHomesDataDetails()
 {
-	//Check if connected to the API
-	if (!m_isLogged)
-	{
-		return false;
-	}
 	//Locals
 	std::string httpUrl;  //URI to be tested
 	std::string sResult; // text returned by API
@@ -997,6 +993,10 @@ bool CNetatmo::GetHomesDataDetails()
 	
 	//
 	httpUrl = MakeRequestURL(NETYPE_HOME);
+	//Check if connected to the API
+	if (!m_isLogged)
+		return false;
+	
 	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 	{
 		Log(LOG_ERROR, "Error connecting to Server...");
