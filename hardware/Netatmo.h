@@ -71,8 +71,8 @@ class CNetatmo : public CDomoticzHardwareBase
 	std::string MakeRequestURL(_eNetatmoType NetatmoType);
 	void GetWeatherDetails();
 	void GetHomecoachDetails();
-        void GetHomeDetails();
-	void GetHomesDataDetails();
+        bool GetHomeDetails();
+	bool GetHomesDataDetails();
 	void GetHomeStatusDetails();
 	void GetThermostatDetails();
 	bool ParseStationData(const std::string &sResult, bool bIsThermostat);
