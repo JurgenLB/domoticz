@@ -72,7 +72,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	void GetWeatherDetails();
 	void GetHomecoachDetails();
         bool GetHomeDetails();
-	bool GetHomesDataDetails();
+	void GetHomesDataDetails();
 	void GetHomeStatusDetails();
 	void GetThermostatDetails();
 	bool ParseStationData(const std::string &sResult, bool bIsThermostat);
