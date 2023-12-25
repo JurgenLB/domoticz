@@ -849,8 +849,9 @@ bool CNetatmo::GetHomeDetails()
 {
 	//Check if connected to the API
 	if (!m_isLogged)
-		return;
-
+	{
+		return false;
+	}
 	//Locals
 	std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
@@ -868,7 +869,7 @@ bool CNetatmo::GetHomeDetails()
 	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 	{
 		Log(LOG_ERROR, "Error connecting to Server...");
-		return;
+		return false;
 	}
 
 	//Check for error
@@ -876,14 +877,14 @@ bool CNetatmo::GetHomeDetails()
 	if ((!bRet) || (!root.isObject()))
 	{
 		Log(LOG_ERROR, "Invalid data received...");
-		return;
+		return false;
 	}
 	if (!root["error"].empty())
 	{
 		//We received an error
 		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
 		m_isLogged = false;
-		return;
+		return false;
 	}
         if (!root["body"]["homes"].empty())
 	{
@@ -958,7 +959,7 @@ bool CNetatmo::GetHomeDetails()
 					
 				}
 			}
-			return m_Home_ID;
+			return::make_tuple(m_Home_ID);
 		}
 	}                
 	//Parse API response
@@ -973,10 +974,11 @@ bool CNetatmo::GetHomesDataDetails()
 {
 	//Check if connected to the API
 	if (!m_isLogged)
-		return;
-
+	{
+		return false;
+	}
 	//Locals
-	std::string httpUrl; //URI to be tested
+	std::string httpUrl;  //URI to be tested
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
@@ -998,7 +1000,7 @@ bool CNetatmo::GetHomesDataDetails()
 	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
 	{
 		Log(LOG_ERROR, "Error connecting to Server...");
-		return;
+		return false;
 	}
 
 	//Check for error
@@ -1006,14 +1008,14 @@ bool CNetatmo::GetHomesDataDetails()
 	if ((!bRet) || (!root.isObject()))
 	{
 		Log(LOG_ERROR, "Invalid data received...");
-		return;
+		return false;
 	}
 	if (!root["error"].empty())
 	{
 		//We received an error
 		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
 		m_isLogged = false;
-		return;
+		return false;
 	}
         if (!root["body"]["homes"].empty())
 	{
