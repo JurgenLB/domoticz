@@ -856,10 +856,10 @@ void CNetatmo::GetHomeDetails()
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
-        std::string m_Camera_Name
-        std::string m_Camera_ID
-        std::string m_Smoke_Name
-        std::string m_Smoke_ID 
+        std::string m_Camera_Name;
+        std::string m_Camera_ID;
+        std::string m_Smoke_Name;
+        std::string m_Smoke_ID;
 	bool bRet; //Parsing status
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 	
@@ -980,15 +980,16 @@ void CNetatmo::GetHomesDataDetails()
 	std::string sResult; // text returned by API
 	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
-        Json::Value m_Home_Name
-	Json::Value m_Rooms
-	Json::Value m_Modules
-	Json::Value m_Temperature_Control_Mode
-	Json::Value m_Therm_Mode
-	Json::Value m_Therm_Setpoint_default_Duration
-	Json::Value m_Persons
-	Json::Value m_Schedules
-	Json::Value m_Zones
+	Json::Value mRoot;
+        Json::Value m_Home_Name;
+	Json::Value m_Rooms;
+	Json::Value m_Modules;
+	Json::Value m_Temperature_Control_Mode;
+	Json::Value m_Therm_Mode;
+	Json::Value m_Therm_Setpoint_default_Duration;
+	Json::Value m_Persons;
+	Json::Value m_Schedules;
+	Json::Value m_Zones;
 	bool bRet; //Parsing status
 	std::vector<std::string> ExtraHeaders; // HTTP Headers
 	
@@ -1025,7 +1026,7 @@ void CNetatmo::GetHomesDataDetails()
                         if (root["body"]["homes"][m_ActHome]["persons"].empty())
 				return false;
 			Json::Value m_Persons = root["body"]["homes"][m_ActHome]["persons"];
-			for (auto module : mRoot)
+			for (auto module : m_Persons)
 			{
 				if (!module["id"].empty())
 				{
@@ -1041,7 +1042,7 @@ void CNetatmo::GetHomesDataDetails()
 			if (root["body"]["homes"][m_ActHome]["modules"].empty())
 				return false;
 			Json::Value m_Modules = root["body"]["homes"][m_ActHome]["modules"];
-			for (auto module : mRoot)
+			for (auto module : m_Modules)
 			{
 				if (!module["id"].empty())
 				{
@@ -1057,7 +1058,7 @@ void CNetatmo::GetHomesDataDetails()
 			if (root["body"]["homes"][m_ActHome]["rooms"].empty())
 				return false;
 			Json::Value m_Rooms = root["body"]["homes"][m_ActHome]["rooms"];
-			for (auto module : mRoot)
+			for (auto module : m_Rooms)
 			{
 				if (!module["id"].empty())
 				{
