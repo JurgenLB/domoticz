@@ -31,6 +31,7 @@ void SaveString2Disk(std::string str, std::string filename)
 	}
 }
 #endif
+
 #ifdef DEBUG_NetatmoWeatherStationR
 std::string ReadFile(std::string filename)
 {
