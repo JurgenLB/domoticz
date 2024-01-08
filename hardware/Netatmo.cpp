@@ -11,7 +11,7 @@
 #define round(a) ( int ) ( a + .5 )
 
 #define NETATMO_OAUTH2_TOKEN_URI "https://api.netatmo.net/oauth2/token"
-#define NETATMO_API_URI "https://api.netatmo.com/api/"
+#define NETATMO_API_URI "https://api.netatmo.com/"
 #define NETATMO_SCOPES "read_station read_smarther write_smarther read_thermostat write_thermostat read_camera write_camera read_doorbell read_presence write_presence read_homecoach read_carbonmonoxidedetector read_smokedetector"
 #define NETATMO_REDIRECT_URI "http://localhost/netatmo"
 // https://api.netatmo.com/oauth2/authorize?client_id=<CLIENT_ID>&redirect_uri=http://localhost/netatmo&state=teststate&scope=read_station%20read_smarther%20write_smarther%20read_thermostat%20write_thermostat%20read_camera%20write_camera%20read_doorbell%20read_presence%20write_presence%20read_homecoach%20read_carbonmonoxidedetector%20read_smokedetector
@@ -55,7 +55,7 @@ struct _tNetatmoDevice
 {
 	std::string ID;
 	std::string ModuleName;
-	std::string StationName;
+	std::string StationName;               // This is not used
 	std::vector<std::string> ModulesIDs;
 	//Json::Value Modules;
 };
@@ -93,6 +93,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
         m_eventsType = NETYPE_EVENTS;
 
 	m_HwdID = ID;
+	m_Home_ID = "";
 
 	m_ActHome = 0;
 
@@ -109,7 +110,6 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 
 void CNetatmo::Init()
 {
-	m_RainOffset.clear();
 	m_OldRainCounter.clear();
 	m_RoomNames.clear();
 	m_RoomIDs.clear();
@@ -117,8 +117,17 @@ void CNetatmo::Init()
 	m_ModuleIDs.clear();
 	m_thermostatDeviceID.clear();
 	m_thermostatModuleID.clear();
-	m_ScheduleNames.clear();
-	m_ScheduleIDs.clear();
+        m_Camera_Name.clear();
+        m_Camera_ID.clear();
+        m_Smoke_Name.clear();
+        m_Smoke_ID.clear();;
+        m_Persons.clear();
+        m_PersonsNames.clear();
+        m_PersonsIDs.clear();
+        m_ScheduleNames.clear();
+        m_ScheduleIDs.clear();
+        m_ZoneNames.clear();
+        m_ZoneIDs.clear();
 	m_bPollThermostat = true;
 	m_bPollWeatherData = true;
 	m_bPollHomecoachData = true;
@@ -192,9 +201,21 @@ void CNetatmo::Do_Work()
 		{
 			if (RefreshToken())
 			{
+                                //Thermostat data is updated every 10 minutes
+                                // https://api.netatmo.com/api/getthermostatsdata
+                                if ((sec_counter % 900 == 0) || (bFirstTimeTH))
+                                {
+                                        bFirstTimeTH = false;
+                                        if ((m_bPollThermostat) || (sec_counter % 1200 == 0))
+                                                //
+                                                GetThermostatDetails();
+                                                Log(LOG_STATUS, "Thermostat. %d",  m_isLogged);
+                                                Debug(DEBUG_HARDWARE, "Home TH %s", m_Home_ID.c_str());
+                                                //
+                                }
 				//
-				if ((m_bPollHomeData) || (sec_counter % 1200 == 0))
-                                        GetHomeDetails();
+				//if ((m_bPollHomeData) || (sec_counter % 1200 == 0))
+                                //        GetHomeDetails();
 				//Weather / HomeCoach data is updated every 10 minutes
 				// 03/03/2022 - PP Changing the Weather polling from 600 to 900s. This has reduce the number of server errors, 
 				// but do not prevennt to have one time to time
@@ -203,6 +224,8 @@ void CNetatmo::Do_Work()
 					bFirstTimeWS = false;
 					if ((m_bPollWeatherData) || (sec_counter % 1200 == 0))
 						GetWeatherDetails();
+					        Log(LOG_STATUS,"LOGGED W %d",  m_isLogged);
+                                                Debug(DEBUG_HARDWARE, "Home Weather %s", m_Home_ID.c_str());
 				}
 
 				if ((sec_counter % 900 == 0) || (bFirstTimeHS))
@@ -210,29 +233,27 @@ void CNetatmo::Do_Work()
 					bFirstTimeHS = false;
 					if ((m_bPollHomecoachData) || (sec_counter % 1200 == 0))
 						GetHomecoachDetails();
+                                                Log(LOG_STATUS,"logged HC %d",  m_isLogged);
+                                                Debug(DEBUG_HARDWARE, "Home HC %s", m_Home_ID.c_str());
 				}
 				
-				if ((sec_counter % 900 == 0) || (bFirstTimeCS))
-				{
-					bFirstTimeCS = false;
-					if ((m_bPollHomesData) || (sec_counter % 1200 == 0))
-						GetHomesDataDetails();
-				}
+				//if ((sec_counter % 900 == 0) || (bFirstTimeCS))
+				//{
+				//	bFirstTimeCS = false;
+				//	if ((m_bPollHomesData) || (sec_counter % 1200 == 0))
+				//		GetHomesDataDetails();
+				//}
 
 				if ((sec_counter % 900 == 0) || (bFirstTimeSS))
 				{
 					bFirstTimeSS = false;
 					if ((m_bPollHomeStatus) || (sec_counter % 1200 == 0))
 						GetHomeStatusDetails();
+                                                Log(LOG_STATUS,"logged HS %d",  m_isLogged);
+                                                Debug(DEBUG_HARDWARE, "Home HS %s", m_Home_ID.c_str());
 				}
 				
-				//Thermostat data is updated every 10 minutes
-				if ((sec_counter % 900 == 0) || (bFirstTimeTH))
-				{
-					bFirstTimeTH = false;
-					if (m_bPollThermostat)
-						GetThermostatDetails();
-				}
+				//
 				//Update Thermostat data when the
 				//manual set point reach its end
 				if (m_bForceSetpointUpdate)
@@ -285,8 +306,8 @@ bool CNetatmo::Login()
 	std::string httpData = sstr.str();
 	std::vector<std::string> ExtraHeaders;
 
-	ExtraHeaders.push_back("Host: api.netatmo.net");
-	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+//	ExtraHeaders.push_back("Host: api.netatmo.net");
+//	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
 	std::string httpUrl(NETATMO_OAUTH2_TOKEN_URI);
 	std::string sResult;
@@ -362,11 +383,13 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	std::string httpData = sstr.str();
 	std::vector<std::string> ExtraHeaders;
 
-	ExtraHeaders.push_back("Host: api.netatmo.net");
-	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+//	ExtraHeaders.push_back("Host: api.netatmo.net");
+//	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
 	std::string httpUrl(NETATMO_OAUTH2_TOKEN_URI);
 	std::string sResult;
+        Debug(DEBUG_HARDWARE, "Refresh %s", httpUrl.c_str());
+	
 	bool ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult);
 
 	//Check for returned data
@@ -559,8 +582,8 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 			Log(LOG_ERROR, "NetatmoThermostat: Invalid thermostat state!");
 			return false;
 		}
-		ExtraHeaders.push_back("Host: api.netatmo.net");
-		ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+//		ExtraHeaders.push_back("Host: api.netatmo.net");
+//		ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
 		std::stringstream sstr;
 		sstr << "access_token=" << m_accessToken;
@@ -572,7 +595,7 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 
 		std::stringstream bstr;
 		bstr << NETATMO_API_URI;
-                bstr << "setthermpoint";
+                bstr << "api/setthermpoint";
 
 		std::string httpUrl = bstr.str();
 
@@ -600,11 +623,12 @@ bool CNetatmo::SetProgramState(const int idx, const int newState)
 			Log(LOG_ERROR, "NetatmoThermostat: Invalid thermostat state!");
 			return false;
 		}
-		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID + "&mode=" + thermState;
+		std::string sPostData = "access_token=" + m_accessToken + m_Home_ID + "&mode=" + thermState;
 
 		std::stringstream bstr;
 		bstr << NETATMO_API_URI;
-                bstr << "setroomthermpoint";
+                bstr << "api/setthermpoint";
+//                bstr << "setroomthermpoint";
 
                 std::string httpUrl = bstr.str();
 		
@@ -674,8 +698,8 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 			return;
 		}
 
-		ExtraHeaders.push_back("Host: api.netatmo.net");
-		ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+//		ExtraHeaders.push_back("Host: api.netatmo.net");
+//		ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
 		sstr << "access_token=" << m_accessToken;
 		sstr << "&device_id=" << m_thermostatDeviceID[idx];
@@ -686,9 +710,10 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 		std::string httpData = sstr.str();
 
 		bstr << NETATMO_API_URI;
-                bstr << "setthermpoint";
+                bstr << "api/setthermpoint";
 
                 std::string httpUrl = bstr.str();
+		Debug(DEBUG_HARDWARE, "SetSetpoint %s", httpUrl.c_str());
 		
 		ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult);
 	}
@@ -703,7 +728,7 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 		}
 
 		sstr << "access_token=" << m_accessToken;
-		sstr << "&home_id=" << m_Home_ID;
+		sstr << m_Home_ID;
 		sstr << "&room_id=" << roomID;
 		sstr << "&mode=manual&temp=" << tempDest;
 		sstr << "&endtime=" << end_time;
@@ -711,9 +736,10 @@ void CNetatmo::SetSetpoint(int idx, const float temp)
 		std::string sPostData = sstr.str();
 
 		bstr << NETATMO_API_URI;
-                bstr << "setthermmode";
+                bstr << "api/setthermmode";
 
                 std::string httpUrl = bstr.str();
+		Debug(DEBUG_HARDWARE, "SetSetpoint %s", httpUrl.c_str());
 		
 		ret = HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult);
 	}
@@ -753,13 +779,13 @@ bool CNetatmo::SetSchedule(int scheduleId)
 		std::string sResult;
 		std::string thermState = "schedule";
 		std::vector<std::string> ExtraHeaders;
-		ExtraHeaders.push_back("Host: api.netatmo.net");
-		ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+//		ExtraHeaders.push_back("Host: api.netatmo.net");
+//		ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
-		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID + "&mode=" + thermState + "&schedule_id=" + m_ScheduleIDs[scheduleId];
+		std::string sPostData = "access_token=" + m_accessToken + m_Home_ID + "&mode=" + thermState + "&schedule_id=" + m_ScheduleIDs[scheduleId];
 
 		bstr << NETATMO_API_URI;
-                bstr << "setthermmode";
+                bstr << "api/setthermmode";
 
                 std::string httpUrl = bstr.str();
 		
@@ -790,47 +816,47 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 	{
 	case NETYPE_MEASURE:
 		sstr << NETATMO_API_URI;
-                sstr << "getmeasure";
+                sstr << "api/getmeasure";
                 //"https://api.netatmo.com/api/getmeasure";
 		break;
 	case NETYPE_WEATHER_STATION:
 		sstr << NETATMO_API_URI;
-                sstr << "getstationsdata";
+                sstr << "api/getstationsdata";
                 //"https://api.netatmo.com/api/getstationsdata";
 		break;
 	case NETYPE_HOMECOACH:
 		sstr << NETATMO_API_URI;
-                sstr << "gethomecoachsdata";
+                sstr << "api/gethomecoachsdata";
                 //"https://api.netatmo.com/api/gethomecoachsdata";
 		break;
 	case NETYPE_THERMOSTAT:
 		sstr << NETATMO_API_URI;
-                sstr << "getthermostatsdata";
+                sstr << "api/getthermostatsdata";
                 //"https://api.netatmo.com/api/getthermostatsdata";
 		break;
 	case NETYPE_HOME:
 		sstr << NETATMO_API_URI;
-                sstr << "homedata";
+                sstr << "api/homedata";
                 //"https://api.netatmo.com/api/homedata";
 		break;
 	case NETYPE_HOMESDATA:         // was NETYPE_ENERGY
 		sstr << NETATMO_API_URI;
-                sstr << "homesdata";
+                sstr << "api/homesdata";
                 //"https://api.netatmo.com/api/homesdata";
 		break;
 	case NETYPE_STATUS:
 		sstr << NETATMO_API_URI;
-                sstr << "homestatus";
+                sstr << "api/homestatus";
                 //"https://api.netatmo.com/api/homestatus";
 		break;
 	case NETYPE_CAMERAS:
 		sstr << NETATMO_API_URI;
-                sstr << "getcamerapicture";
+                sstr << "api/getcamerapicture";
                 //"https://api.netatmo.com/api/getcamerapicture";
 		break;
 	case NETYPE_EVENTS:
 		sstr << NETATMO_API_URI;
-                sstr << "geteventsuntil";
+                sstr << "api/geteventsuntil";
                 //"https://api.netatmo.com/api/geteventsuntil";
 		break;
 	default:
@@ -838,10 +864,65 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType)
 	}
 
 	sstr << "?";
-	sstr << "access_token=" << m_accessToken;
+	sstr << "access_token=";
+//      sstr << -H "accept: application/json" -H "Authorization: Bearer ";
+        sstr << m_accessToken;
 	sstr << "&" << "get_favorites=" << "true";
 	return sstr.str();
 }
+
+
+/// <summary>
+/// Get API
+/// </summary>
+void CNetatmo::Get_Respons_API(const _eNetatmoType& NType, std::string& sResult, std::string& home_id , bool& bRet, Json::Value& root )
+{
+        //
+        //Check if connected to the API
+        if (!m_isLogged)
+                return;
+
+        //Locals
+        std::string httpUrl;                             //URI to be tested
+        std::string data;
+        //std::string sResult = &sResult;                   // text returned by API
+        //Json::Value get_root = root;                      // root JSON object
+        //bool get_bRet = bRet;                             //Parsing status
+        if (!m_Home_ID.empty())
+                data = m_Home_ID ;
+        else
+                data = "";
+        std::string sPostData = m_Home_ID + "access_token=" + m_accessToken ;
+        std::vector<std::string> ExtraHeaders;           // HTTP Headers
+        //
+        Debug(DEBUG_HARDWARE, "data  %s", data.c_str());
+//        httpUrl = MakeRequestURL(NType, m_Home_ID);           //construct URI
+        httpUrl = MakeRequestURL(NType, home_id);
+        //
+        Debug(DEBUG_HARDWARE, "Respons URL  %s", httpUrl.c_str());
+
+        if (!HTTPClient::POST(httpUrl, sPostData,  ExtraHeaders, sResult))
+        {
+                Log(LOG_ERROR, "Error connecting to Server...");
+                return ;
+        }
+        //Check for error
+        bRet = ParseJSon(sResult, root);
+        if ((!bRet) || (!root.isObject()))
+        {
+                Log(LOG_ERROR, "Invalid data received...");
+                return ;
+        }
+        if (!root["error"].empty())
+        {
+                //We received an error
+                Log(LOG_ERROR, "Error %s", root["error"]["message"].asString().c_str());
+                m_isLogged = false;
+                return ;
+        }
+        //
+}
+
 
 /// <summary>
 /// Get details for home
@@ -854,119 +935,30 @@ bool CNetatmo::GetHomeDetails()
 		return false;
 	}
 	//Locals
-	std::string httpUrl; //URI to be tested
+	//std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
-	std::string m_Home_ID; //Home ID
 	Json::Value root; // root JSON object
-        std::string m_Camera_Name;
-        std::string m_Camera_ID;
-        std::string m_Smoke_Name;
-        std::string m_Smoke_ID;
+	std::string home_id = "";
+        //std::string m_Camera_Name;
+        //std::string m_Camera_ID;
+        //std::string m_Smoke_Name;
+        //std::string m_Smoke_ID;
 	bool bRet; //Parsing status
-	std::vector<std::string> ExtraHeaders; // HTTP Headers
-	
 	//
-	httpUrl = MakeRequestURL(NETYPE_HOME);
-	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-	{
-		Log(LOG_ERROR, "Error connecting to Server...");
-		return false;
-	}
-
-	//Check for error
-	bRet = ParseJSon(sResult, root);
-	if ((!bRet) || (!root.isObject()))
-	{
-		Log(LOG_ERROR, "Invalid data received...");
-		return false;
-	}
-	if (!root["error"].empty())
-	{
-		//We received an error
-		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-		m_isLogged = false;
-		return false;
-	}
+        Get_Respons_API(NETYPE_HOME, sResult, home_id, bRet, root);
+	
         if (!root["body"]["homes"].empty())
 	{
-		if ((int)root["body"]["homes"].size() <= m_ActHome)
-			return false;
-		if (!root["body"]["homes"][m_ActHome]["id"].empty())
+                //
+                bRet = ParseHomeData(sResult);
+                if (bRet)
                 {
-			m_Home_ID = root["body"]["homes"][m_ActHome]["id"].asString();
-                        //
-                        if (root["body"]["homes"][m_ActHome]["persons"].empty())
-				return false;
-			Json::Value mPersons = root["body"]["homes"][m_ActHome]["persons"];
-			for (auto module : mPersons)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["pseudo"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Persons in Homedata
-					
-				}
-			}
-			//
-			if (root["body"]["homes"][m_ActHome]["cameras"].empty())
-				return false;
-			Json::Value mCameras = root["body"]["homes"][m_ActHome]["cameras"];
-			for (auto module : mCameras)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Store Camera's name and id for later naming switch / sensor
-					m_Camera_Name = module["name"].asString();
-					m_Camera_ID = module["id"].asString();
-				}
-			}
-			//
-			if (root["body"]["homes"][m_ActHome]["smokedetectors"].empty())
-				return false;
-			Json::Value mSmoke = root["body"]["homes"][m_ActHome]["smokedetectors"];
-			for (auto module : mSmoke)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Smokedetectors in Homedata
-					m_Smoke_Name = module["name"].asString();
-					m_Smoke_ID = module["id"].asString();
-				}
-			}
-                        //
-			if (root["body"]["homes"][m_ActHome]["events"].empty())
-				return false;
-			Json::Value mEvents = root["body"]["homes"][m_ActHome]["events"];
-			for (auto module : mEvents)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Events in Homedata
-					
-				}
-			}
-
-		}
-	}                
-	//Parse API response
-	return true;
-        //return m_Home_ID;
+                        // Data was parsed with success
+                        Log(LOG_STATUS, "Home Data parsed");
+                }
+         }
 }
+
 
 /// <summary>
 /// Get details for home
@@ -974,122 +966,36 @@ bool CNetatmo::GetHomeDetails()
 void CNetatmo::GetHomesDataDetails()
 {
 	//Locals
-	std::string httpUrl;  //URI to be tested
+	//std::string httpUrl;  //URI to be tested
 	std::string sResult; // text returned by API
-	std::string m_Home_ID; //Home ID
+	std::string home_id = ""; //m_Home_ID; //Home ID
+        bool bRet; //Parsing status
 	Json::Value root; // root JSON object
-	Json::Value mRoot;
-        Json::Value m_Home_Name;
-	Json::Value m_Rooms;
-	Json::Value m_Modules;
-	Json::Value m_Temperature_Control_Mode;
-	Json::Value m_Therm_Mode;
-	Json::Value m_Therm_Setpoint_default_Duration;
-	Json::Value m_Persons;
-	Json::Value m_Schedules;
-	Json::Value m_Zones;
-	bool bRet; //Parsing status
-	std::vector<std::string> ExtraHeaders; // HTTP Headers
-	
+	//Json::Value mRoot;
+        //Json::Value m_Home_Name;
+	//Json::Value m_Rooms;
+	//Json::Value m_Modules;
+	//Json::Value m_Temperature_Control_Mode;
+	//Json::Value m_Therm_Mode;
+	//Json::Value m_Therm_Setpoint_default_Duration;
+	//Json::Value m_Persons;
+	//Json::Value m_Schedules;
+	//Json::Value m_Zones;
+        //Json::Value data;
+        //std::string m_root;
+	//bool m_root;
+	//std::vector<std::string> ExtraHeaders; // HTTP Headers
+        Get_Respons_API(NETYPE_HOMESDATA, sResult, home_id, bRet, root);
 	//
-	httpUrl = MakeRequestURL(NETYPE_HOME);
-	//Check if connected to the API
-	if (!m_isLogged)
-		return;
-	
-	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-	{
-		Log(LOG_ERROR, "Error connecting to Server...");
-		return;
-	}
-
-	//Check for error
-	bRet = ParseJSon(sResult, root);
-	if ((!bRet) || (!root.isObject()))
-	{
-		Log(LOG_ERROR, "Invalid data received...");
-		return;
-	}
-	if (!root["error"].empty())
-	{
-		//We received an error
-		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-		m_isLogged = false;
-		return;
-	}
         if (!root["body"]["homes"].empty())
 	{
-		if ((int)root["body"]["homes"].size() <= m_ActHome)
-			return;
-		if (!root["body"]["homes"][m_ActHome]["id"].empty())
+                //
+                bRet = ParseHomeData(sResult);
+                if (bRet)
                 {
-			m_Home_ID = root["body"]["homes"][m_ActHome]["id"].asString();
-                        //
-                        if (root["body"]["homes"][m_ActHome]["persons"].empty())
-				return;
-			Json::Value m_Persons = root["body"]["homes"][m_ActHome]["persons"];
-			for (auto module : m_Persons)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["pseudo"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Persons in Homedata
-					
-				}
-			}
-			//
-			if (root["body"]["homes"][m_ActHome]["modules"].empty())
-				return;
-			Json::Value m_Modules = root["body"]["homes"][m_ActHome]["modules"];
-			for (auto module : m_Modules)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//
-					
-				}
-			}
-			//
-			if (root["body"]["homes"][m_ActHome]["rooms"].empty())
-				return;
-			Json::Value m_Rooms = root["body"]["homes"][m_ActHome]["rooms"];
-			for (auto module : m_Rooms)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Rooms in Homesdata
-					
-				}
-			}
-                        //
-			if (root["body"]["homes"][m_ActHome]["modules"].empty())
-				return;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
-			for (auto module : mRoot)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Modules in Homesdata
-					
-				}
-			}
-			
-		}
+                        // Data was parsed with success
+                        Log(LOG_STATUS, "Homes Data parsed");
+                }
 	}
 }
 
@@ -1103,40 +1009,21 @@ void CNetatmo::GetWeatherDetails()
 		return;
 
 	//Locals
-	std::string httpUrl; //URI to be tested
+	//std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
+	std::string home_id = "";
 	Json::Value root; // root JSON object
 	bool bRet; //Parsing
-	std::vector<std::string> ExtraHeaders; // HTTP Headers
+	//std::vector<std::string> ExtraHeaders; // HTTP Headers
 
 	//
 	if (m_bFirstTimeWeatherData)
 	{
-		//URI for energy device
-		httpUrl = MakeRequestURL(NETYPE_WEATHER_STATION);
-		if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-		{
-			Log(LOG_ERROR, "Error connecting to Server...");
-			return;
-		}
-
-		// Check for error
-		bRet = ParseJSon(sResult, root);
-		if ((!bRet) || (!root.isObject()))
-		{
-			Log(LOG_ERROR, "Invalid data received...");
-			return;
-		}
-		if (!root["error"].empty())
-		{
-			// We received an error
-			Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-			m_isLogged = false;
-			return;
-		}
-
+                Get_Respons_API(NETYPE_WEATHER_STATION, sResult, home_id, bRet, root);
+		//
 		//Parse API response
-		bRet = ParseHomeData(sResult);
+		//bRet = ParseHomeData(sResult);
+		bRet = ParseStationData(sResult, false);
 		if (bRet)
 		{
 			// Data was parsed with success so we have our device
@@ -1157,34 +1044,14 @@ void CNetatmo::GetHomecoachDetails()
 		return;
 
 	//Locals
-	std::string httpUrl; //URI to be tested
+	//std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
-	Json::Value root; // root JSON object
+	std::string home_id = "";
 	bool bRet; //Parsing status
-	std::vector<std::string> ExtraHeaders; // HTTP Headers
+	Json::Value root; // root JSON object
+	//std::vector<std::string> ExtraHeaders; // HTTP Headers
 	
-	//Check if user has a weather or homecoach device
-	httpUrl = MakeRequestURL(NETYPE_HOMECOACH);
-	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-	{
-		Log(LOG_ERROR, "Error connecting to Server...");
-		return;
-	}
-
-	//Check for error
-	bRet = ParseJSon(sResult, root);
-	if ((!bRet) || (!root.isObject()))
-	{
-		Log(LOG_ERROR, "Invalid data received...");
-		return;
-	}
-	if (!root["error"].empty())
-	{
-		//We received an error
-		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-		m_isLogged = false;
-		return;
-	}
+        Get_Respons_API(NETYPE_HOMECOACH, sResult, home_id, bRet, root);
 
 	//Parse API response
 	bRet = ParseStationData(sResult, false);
@@ -1205,39 +1072,19 @@ void CNetatmo::GetThermostatDetails()
 	if (!m_isLogged)
 		return;
 
-	if (m_bFirstTimeThermostat)
-		m_bFirstTimeThermostat = false;
-
+	//if (m_bFirstTimeThermostat)
+	//	m_bFirstTimeThermostat = false;
+	
+	//std::string httpUrl; //URI to be tested
 	std::string sResult;
-	std::stringstream sstr2;
-	std::vector<std::string> ExtraHeaders;
-	std::string httpUrl; //URI to be tested
-	Json::Value root; // root JSON object
+        std::string home_id = m_Home_ID + "&";
 	bool bRet;
+	Json::Value root; // root JSON object
+	//std::stringstream sstr2;
+	//std::vector<std::string> ExtraHeaders;
 	bool ret;
-
         //
-	httpUrl = MakeRequestURL(NETYPE_THERMOSTAT);
-	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-	{
-		Log(LOG_ERROR, "Error connecting to Server...");
-		return;
-	}
-
-	//Check for error
-	bRet = ParseJSon(sResult, root);
-	if ((!bRet) || (!root.isObject()))
-	{
-		Log(LOG_ERROR, "Invalid data received...");
-		return;
-	}
-	if (!root["error"].empty())
-	{
-		//We received an error
-		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-		m_isLogged = false;
-		return;
-	}
+        Get_Respons_API(NETYPE_THERMOSTAT, sResult, home_id, bRet, root);
 	
 	//Parse API response
 	bRet = ParseStationData(sResult, false);
@@ -1259,35 +1106,17 @@ void CNetatmo::GetHomeStatusDetails()
 		return;
 
 	//Locals
-	std::string httpUrl; //URI to be tested
+	//std::string httpUrl; //URI to be tested
 	std::string sResult; // text returned by API
-	std::string m_Home_ID; //Home ID
-	Json::Value root; // root JSON object
+	std::string home_id = m_Home_ID + "&"; //Home ID
 	bool bRet; //Parsing status
-	std::vector<std::string> ExtraHeaders; // HTTP Headers
-	
+	Json::Value root; // root JSON object
+	//std::vector<std::string> ExtraHeaders; // HTTP Headers
 	//
-	httpUrl = MakeRequestURL(NETYPE_STATUS);
-	if (!HTTPClient::GET(httpUrl, ExtraHeaders, sResult))
-	{
-		Log(LOG_ERROR, "Error connecting to Server...");
-		return;
-	}
-
-	//Check for error
-	bRet = ParseJSon(sResult, root);
-	if ((!bRet) || (!root.isObject()))
-	{
-		Log(LOG_ERROR, "Invalid data received...");
-		return;
-	}
-	if (!root["error"].empty())
-	{
-		//We received an error
-		Log(LOG_ERROR, "%s", root["error"]["message"].asString().c_str());
-		m_isLogged = false;
-		return;
-	}
+        //GetHomeDetails();
+        GetHomesDataDetails();
+        //
+        Get_Respons_API(NETYPE_STATUS, sResult, home_id, bRet, root);
 
 	//Parse API response
 	bRet = ParseStationData(sResult, false);
@@ -1298,6 +1127,106 @@ void CNetatmo::GetHomeStatusDetails()
 		}
 	m_bPollHomeStatus = false;
 }
+
+
+/// <summary>
+/// Get Historical data from Netatmo Device
+/// </summary>
+void CNetatmo::Get_Measure()
+{
+        //Check if connected to the API
+        if (!m_isLogged)
+                return ;
+
+        //Locals
+        std::string sResult; // text returned by API
+        Json::Value root;    // root JSON object
+        std::string home_id = "";
+        bool bRet;           //Parsing status
+        std::string gateway = " ";
+        std::string module_id = " ";
+        std::string scale = "30min";  //{30min, 1hour, 3hours, 1day, 1week, 1month}
+        std::string measure = NETYPE_MEASURE + "device_id=" + gateway + "&module_id=" + module_id + "&scale=" + scale + "&type=sum_boiler_off&type=sum_boiler_on&type=boileroff&type=boileron&optimize=false&real_time=false";
+        //
+        //Respons::Get_Respons_API(const CNetatmo& NETYPE_MEASURE, sResult, home_id, bRet, root, m_accessToken);
+        Get_Respons_API(NETYPE_MEASURE, sResult, home_id, bRet, root);
+
+        if (!root["body"].empty())
+        {
+                //https://api.netatmo.com/api/getmeasure?device_id=< >&module_id=< >&scale=30min&type=sum_boiler_off&type=sum_boiler_on&type=boileroff&type=boileron&optimize=false&real_time=false
+                //bRet = ParseData(sResult);     //
+                //if (bRet)
+                //{
+                        // Data was parsed with success
+                Log(LOG_STATUS, "Measure Data parsed");
+                //}
+         }
+}
+
+
+/// <summary>
+/// Get camera picture
+/// </summary>
+void CNetatmo::Get_Picture()
+{
+        //Check if connected to the API
+        if (!m_isLogged)
+                return ;
+
+        //Locals
+        std::string sResult; // text returned by API
+        Json::Value root;    // root JSON object
+        std::string home_id = "";
+        bool bRet;           //Parsing status
+        //
+        //
+        //Respons::Get_Respons_API(const CNetatmo& NETYPE_CAMERAS, sResult, home_id, bRet, root, m_accessToken);
+        Get_Respons_API(NETYPE_CAMERAS, sResult, home_id, bRet, root);
+
+        if (!root["body"]["homes"].empty())
+        {
+                //ParseHomeData(sResult)
+                bRet = ParseHomeData(sResult);
+                if (bRet)
+                {
+                        // Data was parsed with success
+                        Log(LOG_STATUS, "Picture Data parsed");
+                }
+         }
+}
+
+
+/// <summary>
+/// Get events
+/// </summary>
+void CNetatmo::Get_Events()
+{
+        //Check if connected to the API
+        if (!m_isLogged)
+                return ;
+
+        //Locals
+        std::string sResult; // text returned by API
+        Json::Value root;    // root JSON object
+        std::string home_id = "";
+        bool bRet;           //Parsing status
+        //
+        //
+        //Respons::Get_Respons_API(const CNetatmo& NETYPE_EVENTS, sResult, home_id, bRet, root, m_accessToken);
+        Get_Respons_API(NETYPE_EVENTS, sResult, home_id, bRet, root);
+
+        if (!root["body"]["homes"].empty())
+        {
+                //ParseHomeData(sResult)
+                bRet = ParseHomeData(sResult);
+                if (bRet)
+                {
+                        // Data was parsed with success
+                        Log(LOG_STATUS, "Events Data parsed");
+                }
+         }
+}
+
 
 /// <summary>
 /// Parse data for weather station and thermostat (with old API)
@@ -1318,15 +1247,24 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 	}
 	bool bHaveDevices = true;
 	if (root["body"].empty())
+	{
+                Debug(DEBUG_HARDWARE, "Body empty");
 		bHaveDevices = false;
+	}
 	else if (root["body"]["devices"].empty())
+	{
+                Debug(DEBUG_HARDWARE, "Devices empty");
 		bHaveDevices = false;
+	}
 	else if (!root["body"]["devices"].isArray())
+	{
+                Debug(DEBUG_HARDWARE, "Devices no Array");
 		bHaveDevices = false;
-
+	}
 	//Return error if no devices are found
 	if (!bHaveDevices)
 	{
+		Log(LOG_STATUS, "No devices found...");
 		if ((!bIsThermostat) && (!m_bFirstTimeWeatherData) && (m_bPollWeatherData) && (m_bPollHomecoachData) ) //&& (m_bPollHomeStatus) && (m_bPollco2Data))
 		{
 			// Do not warn if we check if we have a Thermostat device
@@ -1345,12 +1283,26 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 			//Main Weather Station
 			std::string id = device["_id"].asString();
 			std::string type = device["type"].asString();
-			std::string name = device["module_name"].asString();
-			std::string station_name;
-			if (!device["station_name"].empty())
-				station_name = device["station_name"].asString();
-			else if (!device["name"].empty())
-				station_name = device["name"].asString();
+			Debug(DEBUG_HARDWARE, "type %s", type.c_str());   //type NHC, ...
+			std::string name;
+			if (!device["module_name"].empty())
+                                name = device["module_name"].asString();
+                        else if (!device["station_name"].empty())
+                                name = device["station_name"].asString();
+                        else if (!device["name"].empty())
+                                name = device["name"].asString();
+                        else if (!device["modules"].empty())
+				name = device["modules"]["module_name"].asString();
+                        else
+                                name = "UNKNOWN";
+			
+			//get Home ID from Weatherstation
+                        if (type == "NAMain")
+                                m_Home_ID = "home_id=" + device["home_id"].asString();
+                                Debug(DEBUG_HARDWARE, "m_Home_ID = %s", m_Home_ID.c_str());
+
+			// Station_name NOT USED ?
+                        std::string station_name;
 
 			stdreplace(name, "'", "");
 			stdreplace(station_name, "'", "");
@@ -1437,7 +1389,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 
 			int battery_percent = 0;
 			if (!device["battery_percent"].empty())
-				battery_percent = device["battery_percent"].asInt();
+				battery_percent = device["battery_percent"].asInt() / 100;
 			int wifi_status = 0;
 			if (!device["wifi_status"].empty())
 			{
@@ -1452,8 +1404,10 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 		}
 		iDevIndex++;
 	}
-
-	//Modules in old API
+	return true;
+//}
+//{
+	//Modules in old API            This  can be Deleted ?
 	Json::Value mRoot;
 	if (root["body"]["modules"].empty())
 	{
@@ -1530,7 +1484,8 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 		if (!module["dashboard_data"].empty())
 			ParseDashboard(module["dashboard_data"], iDevIndex, crcId, name, type, battery_percent, rf_status);
 	}
-	return (!_netatmo_devices.empty());
+	//return (!_netatmo_devices.empty());
+	return true;
 }
 
 /// <summary>
@@ -1566,8 +1521,8 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	int wind_angle = 0;
 	float wind_strength = 0;
 	float wind_gust = 0;
-
-	int batValue = GetBatteryLevel(ModuleType, battery_percent);
+        int batValue = battery_percent;
+//      batValue = GetBatteryLevel(ModuleType, battery_percent);
 
 	// check for Netatmo cloud data timeout, except if we deal with a thermostat
 	if (ModuleType != "NATherm1")
@@ -1728,79 +1683,132 @@ bool CNetatmo::ParseHomeData(const std::string& sResult)
 		Log(LOG_STATUS, "Invalid data received...");
 		return false;
 	}
-	//Check if we have a home id
-	if (!root["body"]["homes"].empty())
-	{
-		//We support only one home for now
-		if ((int)root["body"]["homes"].size() <= m_ActHome)
-			return false;
-		if (!root["body"]["homes"][m_ActHome]["id"].empty())
-		{
-			m_Home_ID = root["body"]["homes"][m_ActHome]["id"].asString();
+        bool bHaveHomes = true;
+        if (root["body"].empty())
+                bHaveHomes = false;
+        else if (root["body"]["homes"].empty())
+                bHaveHomes = false;
 
-			//Get the module names
-			if (root["body"]["homes"][m_ActHome]["modules"].empty())
-				return false;
-			Json::Value mRoot = root["body"]["homes"][m_ActHome]["modules"];
-			for (auto module : mRoot)
-			{
-				if (!module["id"].empty())
-				{
-					std::string mID = module["id"].asString();
-					m_ModuleNames[mID] = module["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
-					m_ModuleIDs[mID] = crcId;
-					//Store thermostate name for later naming switch / sensor
-					if (module["type"] == "NATherm1")
-						m_ThermostatName = module["name"].asString();
-				}
-			}
+        //Return error if no devices are found
+        if (!bHaveHomes)
+        {
+                Log(LOG_STATUS, "No Homes found...");
+                return false;
+        }
+        //HomesData
+        std::vector<_tNetatmoDevice> _netatmo_devices;
+        int iDevIndex = 0;
+        for (auto home : root["body"]["homes"])
+        {
+                if (!home["id"].empty())
+                {
+                        // dict_keys(['id', 'name', 'altitude', 'coordinates', 'country', 'timezone', 'rooms', 'modules', 'temperature_control_mode', 'therm_mode', 'therm_setpoint_default_duration', 'persons', 'schedules'])
+                        // Home ID from Homesdata
+                        m_Home_ID = "home_id=" + home["id"].asString();
+                        Log(LOG_STATUS, "Home id updated.");
 
-			//Get the room names
-			if (root["body"]["homes"][m_ActHome]["rooms"].empty())
-				return false;
-			mRoot = root["body"]["homes"][m_ActHome]["rooms"];
-			for (auto room : mRoot)
-			{
+                        //Get the rooms
+                        if (home["rooms"].empty())
+                                return false;
+                        for (auto room : home["rooms"])
+                        {
 				if (!room["id"].empty())
 				{
 					std::string rID = room["id"].asString();
 					m_RoomNames[rID] = room["name"].asString();
-					int crcId = Crc32(0, (const unsigned char*)rID.c_str(), rID.length());
-					m_RoomIDs[rID] = crcId;
+					std::string roomTYPE = room["type"].asString();
+					for (auto module_ids : home["module_ids"])
+                                        {
+                                                 // List
+						m_Room[roomID] = module_ids.toStyledString();
+						int crcId = Crc32(0, (const unsigned char*)rID.c_str(), rID.length());
+						m_RoomIDs[rID] = crcId;
+					}
 				}
 			}
+			
+			//Get the module names
+                        if (home["modules"].empty())
+                                return false;
+                        for (auto module : home["modules"])
+                        {
+                                if (!module["id"].empty())
+                                {
+                                        std::string mID = module["id"].asString();
+                                        m_ModuleNames[mID] = module["name"].asString();
+                                        int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+                                        m_ModuleIDs[mID] = crcId;
+                                        //Store thermostate name for later naming switch / sensor
+                                        if (module["type"] == "NATherm1")
+                                                m_ThermostatName[mID] = module["name"].asString();
+                                }
+                        }
+
+                        //Get the Persons
+                        if (home["persons"].empty())
+                                return false;
+                        for (auto person : home["persons"])
+                        {
+                                if (!person["id"].empty())
+                                {
+                                        std::string mID = person["id"].asString();
+                                        m_PersonsNames[mID] = person["pseudo"].asString();
+                                        m_PersonUrl[mID] = person["url"].toStyledString();
+                                        int crcId = Crc32(0, (const unsigned char*)mID.c_str(), mID.length());
+                                        m_PersonsIDs[mID] = crcId;
+                                        //
+
+                                }
+                        }
 
 			//Get the schedules
-			if (!root["body"]["homes"][m_ActHome]["schedules"].empty())
+			if (!home["schedules"].empty())
+			        return false;
+                        for (auto schedule : home["schedules"])
 			{
-				mRoot = root["body"]["homes"][m_ActHome]["schedules"];
+				//mRoot = root["body"]["homes"][m_ActHome]["schedules"];
 
 				std::string allSchName = "Off";
 				std::string allSchAction = "00";
 				int index = 0;
-				for (auto schedule : mRoot)
+				std::string sID = schedule["id"].asString();
+				index += 10;
+				m_ScheduleNames[index] = schedule["name"].asString();
+				m_ScheduleIDs[index] = sID;
+				if (!schedule["selected"].empty() && schedule["selected"].asBool())
+					m_selectedScheduleID = index;
+				for (auto zone : schedule["zones"])
 				{
-					if (!schedule["id"].empty())
-					{
-						std::string sID = schedule["id"].asString();
-						index += 10;
-						m_ScheduleNames[index] = schedule["name"].asString();
-						m_ScheduleIDs[index] = sID;
-						if (!schedule["selected"].empty() && schedule["selected"].asBool())
-							m_selectedScheduleID = index;
-					}
+					if (!zone["id"].empty())
+                                        {
+                                                std::string sID = zone["id"].asString();
+                                                index += 10;
+                                                m_ZoneNames[index] = zone["name"].asString();
+                                                m_ZoneIDs[index] = sID;
+                                                m_ZoneTypes[index] = zone["type"].asString();
+                                                for (auto rooms_temp : schedule["rooms_temp"])
+                                                {
+                                                         if (!rooms_temp["room_id"].empty())
+                                                         {
+                                                                 std::string room_ID = rooms_temp["room_id"].asString();
+                                                                 // temp
+                                                         }
+                                                }
+                                                for (auto rooms : schedule["rooms"])
+                                                {
+                                                         if (rooms["id"].empty())
+                                                         {
+                                                                 std::string roomsID = zone["id"].asString();
+                                                                 // therm_setpoint_temperature
+                                                         }
+                                                }
+                                                //
+                                         }
 				}
 			}
-
-			return true;
 		}
 	}
-	if ((!m_bFirstTimeWeatherData) && (m_bPollWeatherData)  && (m_bPollHomecoachData) ) //&& (m_bPollHomeStatus) && (m_bPollco2Data))
-	{
-		//Do not warn if we check if we have a Thermostat device
-		Log(LOG_STATUS, "No Weather Station devices found...");
-	}
+	//return true;
 	return false;
 }
 
@@ -1876,7 +1884,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult)
 				if (!module["battery_level"].empty())
 				{
 					batteryLevel = module["battery_level"].asInt();
-					batteryLevel = GetBatteryLevel(module["type"].asString(), batteryLevel);
+					Debug(DEBUG_HARDWARE, "ParseBat %d", batteryLevel);
+					//batteryLevel = GetBatteryLevel(module["type"].asString(), batteryLevel);
 				}
 				if (!module["rf_strength"].empty())
 				{
@@ -1949,8 +1958,35 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult)
 			iDevIndex++;
 		}
 	}
+        //Parse Persons
+        int iPersonIndex = 0;
+        if (!root["body"]["home"]["persons"].empty())
+        {
+                if (!root["body"]["home"]["persons"].isArray())
+                        return false;
+                Json::Value mRoot = root["body"]["home"]["persons"];
 
-	return (iDevIndex > 0);
+                for (auto person : mRoot)
+                {
+                        if (!person["id"].empty())
+                        // home_persons_ dict_keys(['id', 'last_seen', 'out_of_sight'])
+                        {
+                                std::string PersonNetatmoID = person["id"].asString();
+                                std::string PersonName;
+                                int PersonID = iPersonIndex + 1;
+                                iPersonIndex ++;
+                                Debug(DEBUG_HARDWARE, "ParseHome Person %d", PersonID);
+                                //Find the Person name
+                                PersonName = m_PersonsNames[PersonNetatmoID];
+
+                                std::string PersonLastSeen = person["last_seen"].asString();
+                                std::string PersonAway = person["out_of_sight"].asString();
+                        }
+                }
+        }
+        return (iPersonIndex > 0);
+
+	//return (iDevIndex > 0);
 }
 
 /// <summary>
