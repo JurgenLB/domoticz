@@ -1268,6 +1268,8 @@ define(['app', 'livesocket'], function (app) {
 					(item.SubType == "Alert") ||
 					(item.SubType == "Pressure") ||
 					(item.SubType == "A/D") ||
+					(item.SubType == "Thermostat Mode") ||
+					(item.SubType == "Thermostat Fan Mode") ||
 					(item.SubType == "Fan") ||
 					(item.SubType == "Smartwares") ||
 					(item.SubType == "Waterflow") ||
@@ -1490,6 +1492,10 @@ define(['app', 'livesocket'], function (app) {
 							status = item.Data + '\u00B0 ' + $scope.config.TempSign;
 							bigtext = item.Data + '\u00B0 ' + $scope.config.TempSign;
 						}
+						else if ((item.SubType == "Thermostat Mode") || (item.SubType == "Thermostat Fan Mode")) {
+							status = "";
+							bigtext = item.Data;
+						}
 						else if (item.SubType == "Waterflow") {
 							status = "";
 							bigtext = item.Data;
@@ -1662,7 +1668,7 @@ define(['app', 'livesocket'], function (app) {
 								if (jj % rowItems == 0) {
 									//add divider
 									if (bHaveAddedDivider == true) {
-										//close previous devider
+										//close previous divider
 										htmlcontent += '</div>\n';
 									}
 									htmlcontent += '<div class="row divider">\n';
@@ -1751,7 +1757,7 @@ define(['app', 'livesocket'], function (app) {
 							}
 						}); //scenes
 						if (bHaveAddedDivider == true) {
-							//close previous devider
+							//close previous divider
 							htmlcontent += '</div>\n';
 						}
 						if (($scope.config.DashboardType == 2) || (window.myglobals.ismobile == true)) {
@@ -1808,7 +1814,7 @@ define(['app', 'livesocket'], function (app) {
 								if (jj % rowItems == 0) {
 									//add divider
 									if (bHaveAddedDivider == true) {
-										//close previous devider
+										//close previous divider
 										htmlcontent += '</div>\n';
 									}
 									htmlcontent += '<div class="row divider">\n';
@@ -2552,9 +2558,9 @@ define(['app', 'livesocket'], function (app) {
 										}
 									}
 									if (jj % rowItems == 0) {
-										//add devider
+										//add divider
 										if (bHaveAddedDivider == true) {
-											//close previous devider
+											//close previous divider
 											htmlcontent += '</div>\n';
 										}
 										htmlcontent += '<div class="row divider">\n';
@@ -2675,7 +2681,7 @@ define(['app', 'livesocket'], function (app) {
 								}
 							}); //temp devices
 							if (bHaveAddedDivider == true) {
-								//close previous devider
+								//close previous divider
 								htmlcontent += '</div>\n';
 							}
 							if (($scope.config.DashboardType == 2) || (window.myglobals.ismobile == true)) {
@@ -2715,9 +2721,9 @@ define(['app', 'livesocket'], function (app) {
 										}
 									}
 									if (jj % rowItems == 0) {
-										//add devider
+										//add divider
 										if (bHaveAddedDivider == true) {
-											//close previous devider
+											//close previous divider
 											htmlcontent += '</div>\n';
 										}
 										htmlcontent += '<div class="row divider">\n';
@@ -2886,7 +2892,7 @@ define(['app', 'livesocket'], function (app) {
 								}
 							}); //weather devices
 							if (bHaveAddedDivider == true) {
-								//close previous devider
+								//close previous divider
 								htmlcontent += '</div>\n';
 							}
 							if (($scope.config.DashboardType == 2) || (window.myglobals.ismobile == true)) {
@@ -2923,9 +2929,9 @@ define(['app', 'livesocket'], function (app) {
 									}
 								}
 								if (jj % rowItems == 0) {
-									//add devider
+									//add divider
 									if (bHaveAddedDivider == true) {
-										//close previous devider
+										//close previous divider
 										htmlcontent += '</div>\n';
 									}
 									htmlcontent += '<div class="row divider">\n';
@@ -3081,6 +3087,8 @@ define(['app', 'livesocket'], function (app) {
 										(item.SubType == "Alert") ||
 										(item.SubType == "Pressure") ||
 										(item.SubType == "A/D") ||
+										(item.SubType == "Thermostat Mode") ||
+										(item.SubType == "Thermostat Fan Mode") ||
 										(item.SubType == "Fan") ||
 										(item.SubType == "Smartwares") ||
 										(item.SubType == "Waterflow") ||
@@ -3110,9 +3118,9 @@ define(['app', 'livesocket'], function (app) {
 										}
 									}
 									if (jj % rowItems == 0) {
-										//add devider
+										//add divider
 										if (bHaveAddedDivider == true) {
-											//close previous devider
+											//close previous divider
 											htmlcontent += '</div>\n';
 										}
 										htmlcontent += '<div class="row divider">\n';
@@ -3245,6 +3253,9 @@ define(['app', 'livesocket'], function (app) {
 										else if (item.SubType == "Smartwares") {
 											status = item.Data + '\u00B0 ' + $scope.config.TempSign;
 											status += '<button class="btn btn-mini btn-info" type="button" onclick="ShowSetpointPopup(event, ' + item.idx + ', ' + item.Protected + ', ' + item.Data + ',true, ' + item.step + ', ' + item.min + ', ' + item.max + ');">' + $.t("Set") + '</button> ';
+										}
+										else if ((item.SubType == "Thermostat Mode") || (item.SubType == "Thermostat Fan Mode")) {
+											status = item.Data;
 										}
 
 										var bHaveReturnUsage = false;
@@ -3538,6 +3549,10 @@ define(['app', 'livesocket'], function (app) {
 										else if (item.SubType == "Smartwares") {
 											imagehtml += 'override.png" class="lcursor" onclick="ShowSetpointPopup(event, ' + item.idx + ', ' + item.Protected + ', ' + item.Data + ', false, ' + item.step + ', ' + item.min + ', ' + item.max + ');" height="40" width="40"></td>\n';
 											statushtml = item.Data + '\u00B0 ' + $scope.config.TempSign;
+										}
+										else if ((item.SubType == "Thermostat Mode") || (item.SubType == "Thermostat Fan Mode")) {
+											imagehtml += 'mode48.png" height="40" width="40"></td>\n';
+											statushtml = "";
 										}
 										else if (item.SubType == "Sound Level") {
 											item.Image = (item.CustomImage == 0) ? 'Speaker48_On.png' : item.Image + '48_On.png';
@@ -3904,9 +3919,8 @@ define(['app', 'livesocket'], function (app) {
 			ctrl.changeRoom = function () {
 				var idx = ctrl.roomSelected;
 				window.myglobals.LastPlanSelected = idx;
-	
 				$route.updateParams({
-						room: idx > 0 ? idx : undefined
+						room: idx >= 0 ? idx : undefined
 					});
 					$location.replace();
 					$scope.$apply();

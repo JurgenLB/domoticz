@@ -144,9 +144,6 @@
     <Filter Include="Devices\MySensors">
       <UniqueIdentifier>{16e4b391-9590-41fe-b5fa-aaf91d629b2b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="MQTT">
-      <UniqueIdentifier>{1315bb26-40a6-402e-84be-bc07bee1aef1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Devices\MQTT">
       <UniqueIdentifier>{3a449100-50ce-4b1e-96f5-5eab825f169c}</UniqueIdentifier>
     </Filter>
@@ -509,6 +506,15 @@
     </Filter>
     <Filter Include="Devices\Mitsubishi_WF_RAC">
       <UniqueIdentifier>{3ed60fed-bd93-4dae-aca5-13d7ccd3c6d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pushers\MQTT">
+      <UniqueIdentifier>{9b505904-8aa5-4496-b7ec-61bd8d8e4301}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Devices\ZWave">
+      <UniqueIdentifier>{4215cc65-39f6-40d9-9892-13519515736b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Devices\ZWave\ControlPanel">
+      <UniqueIdentifier>{dd597942-82d6-4aaf-aba7-da17ce1f9392}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -2237,6 +2243,21 @@
     <ClInclude Include="..\hardware\CounterHelper.h">
       <Filter>Devices</Filter>
     </ClInclude>
+    <ClInclude Include="..\push\MQTTPush.h">
+      <Filter>Pushers\MQTT</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hardware\OpenZWave.h">
+      <Filter>Devices\ZWave</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hardware\openzwave\control_panel\ozwcp.h">
+      <Filter>Devices\ZWave\ControlPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hardware\ZWaveBase.h">
+      <Filter>Devices\ZWave</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hardware\ZWaveCommands.h">
+      <Filter>Devices\ZWave</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\webserver\Base64.cpp">
@@ -3009,6 +3030,21 @@
     </ClCompile>
     <ClCompile Include="..\hardware\CounterHelper.cpp">
       <Filter>Devices</Filter>
+    </ClCompile>
+    <ClCompile Include="..\push\MQTTPush.cpp">
+      <Filter>Pushers\MQTT</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hardware\OpenZWave.cpp">
+      <Filter>Devices\ZWave</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hardware\openzwave\control_panel\ozwcp.cpp">
+      <Filter>Devices\ZWave\ControlPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hardware\openzwave\control_panel\zwavelib.cpp">
+      <Filter>Devices\ZWave\ControlPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hardware\ZWaveBase.cpp">
+      <Filter>Devices\ZWave</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

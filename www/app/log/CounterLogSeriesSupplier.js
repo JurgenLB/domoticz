@@ -88,7 +88,7 @@ define(['app', 'log/Chart'], function (app) {
 
         function counterCompareSeriesSuppliers(ctrl) {
             return function (data) {
-                if (data.firstYear === undefined) {
+                if ((data.firstYear === undefined)||(data.firstYear==0)) {
                     return [];
                 }
                 return _.range(data.firstYear, new Date().getFullYear() + 1)
@@ -119,6 +119,11 @@ define(['app', 'log/Chart'], function (app) {
                                         )
                                         .sort()*/;
                                 },
+                                postprocessYaxis: function (yAxis) {
+									if (this.dataSupplier.deviceCounterName !== undefined) {
+										yAxis.options.title.text = this.dataSupplier.deviceCounterName;
+									}
+								},
                                 initialiseDatapoints: function () {
                                     this.datapoints = this.dataSupplier.categories.map(function (category) {
                                         return null;
