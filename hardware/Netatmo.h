@@ -15,16 +15,32 @@ class CNetatmo : public CDomoticzHardwareBase
 	enum _eNetatmoType
 	{
 		NETYPE_WEATHER_STATION = 0,
-		NETYPE_MEASURE,
-		NETYPE_HOMECOACH,
-		NETYPE_THERMOSTAT,
-		NETYPE_HOME,
+		NETYPE_AIRCARE,
+                NETYPE_ENERGY,
+
+                NETYPE_MEASURE,
+                NETYPE_SETTHERMPOINT,
+
+                NETYPE_THERMOSTAT,                   //OLD API
+                NETYPE_HOME,                         //OLD API
+                NETYPE_CAMERAS,                      //OLD API
                 NETYPE_HOMESDATA,
-		NETYPE_STATUS,
-		NETYPE_CAMERAS,
-		NETYPE_EVENTS
+                NETYPE_STATUS,
+
+                NETYPE_EVENTS,
+                NETYPE_SETSTATE,
+                NETYPE_SETROOMTHERMPOINT,
+                NETYPE_SETTHERMMODE,
+                NETYPE_SETPERSONSAWAY,
+                NETYPE_SETPERSONSHOME,
+                NETYPE_NEWHOMESCHEDULE,
+                NETYPE_SYNCHOMESCHEDULE,
+                NETYPE_SWITCHHOMESCHEDULE,
+                NETYPE_ADDWEBHOOK,
+                NETYPE_DROPWEBHOOK,
+                NETYPE_PUBLICDATA,
 	};
-        Json::Value m_root;
+        //Json::Value m_root;
 	std::string m_clientId;
 	std::string m_clientSecret;
 	std::string m_scopes;
@@ -67,18 +83,19 @@ class CNetatmo : public CDomoticzHardwareBase
 
         void GetWeatherDetails();
 	void GetHomecoachDetails();
-        bool GetHomeDetails();
 	void GetHomesDataDetails();
 	void GetHomeStatusDetails();
-	void GetThermostatDetails();
+	void GetHomeDetails();
+	//void GetThermostatDetails();
 
         void Get_Measure();
         void Get_Picture();
         void Get_Events();
 
         bool ParseStationData(const std::string &sResult, bool bIsThermostat);
-	bool ParseHomeData(const std::string &sResult);
-	bool ParseHomeStatus(const std::string &sResult);
+	bool ParseHomeStatus(const std::string &sResult, Json::Value& root);
+
+	bool ParseHomeData(const std::string &sResult, Json::Value& root);
 
 	bool SetAway(int idx, bool bIsAway);
 	bool SetSchedule(int scheduleId);
@@ -90,15 +107,9 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_isLogged;
 	bool m_bForceLogin;
 	
-	_eNetatmoType m_measureType;
-	_eNetatmoType m_energyType;
 	_eNetatmoType m_weatherType;
 	_eNetatmoType m_homecoachType;
-	_eNetatmoType m_homeType;
-	_eNetatmoType m_dataType;
-	_eNetatmoType m_statusType;
-	_eNetatmoType m_camerasType;
-	_eNetatmoType m_eventsType;
+	_eNetatmoType m_energyType;
 
 	int m_ActHome;
 	std::string m_Home_ID;
@@ -112,9 +123,12 @@ class CNetatmo : public CDomoticzHardwareBase
 
         std::map<std::string, std::string> m_ThermostatName;
 	std::map<std::string, std::string> m_RoomNames;
-	std::map<std::string, int> m_RoomIDs;
+        std::map<std::string, std::string> m_Room_Type;
         std::map<std::string, std::string> m_Room;
+        std::map<std::string, int> m_RoomIDs;
+        std::map<std::string, std::string> m_Module_category;
 	std::map<std::string, std::string> m_ModuleNames;
+
 	std::map<std::string, int> m_ModuleIDs;
         std::map<std::string, std::string> m_Persons;
         std::map<std::string, std::string> m_PersonsNames;
@@ -138,7 +152,6 @@ class CNetatmo : public CDomoticzHardwareBase
         bool WriteToHardware(const char *, unsigned char) override;
         void SetSetpoint(int idx, float temp);
         bool SetProgramState(int idx, int newState);
-
         void Get_Respons_API(const _eNetatmoType& NType, std::string& sResult, std::string& home_id , bool& bRet, Json::Value& root );
         //
 };
