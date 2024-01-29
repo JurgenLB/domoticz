@@ -987,12 +987,12 @@ bool CNetatmo::GetHomeDetails()
         if (!root["body"]["homes"].empty())
 	{
                 //
-                bRet = ParseHomeData(sResult);
-                if (bRet)
-                {
+                //bRet = ParseHomeData(sResult);
+                //if (bRet)
+                //{
                         // Data was parsed with success
-                        Log(LOG_STATUS, "Home Data parsed");
-                }
+                Log(LOG_STATUS, "Home Data parsed");
+                //}
          }
 }
 
@@ -1162,14 +1162,14 @@ void CNetatmo::GetHomecoachDetails()
 	bool bRet;           //Parsing status
 	Json::Value root;    // root JSON object
 	//
-        Get_Respons_API(NETYPE_HOMECOACH, sResult, home_id, bRet, root);
+        Get_Respons_API(NETYPE_AIRCARE, sResult, home_id, bRet, root);
 
 	//Parse API response
 	bRet = ParseStationData(sResult, false);
 //	if (bRet)
 //		{
 //			// Data was parsed with success so we have our device
-//			m_weatherType = NETYPE_HOMECOACH;
+//			m_weatherType = NETYPE_AIRCARE;
 //		}
 	m_bPollHomecoachData = false;
 }
@@ -1424,7 +1424,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
                         if (!device["battery_percent"].empty())
                         {
                                 mbattery_percent = device["battery_percent"].asInt(); //Batterij
-                                Debug(DEBUG_HARDWARE, "batterij - bat %d", std::to_string(mbattery_percent));
+                                Debug(DEBUG_HARDWARE, "batterij - bat %d", mbattery_percent);
                         }
                         if (!device["wifi_status"].empty())
                         {
@@ -1870,8 +1870,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root )
 				if (!module["boiler_status"].empty())
 				{
 					//Thermostat status (boiler heating or not : informationnal switch)
-					std::string aName = m_ThermostatName + " - Heating Status";
-					bool bIsActive = (module["boiler_status"].asString() == "true");
+					std::string aName = m_ThermostatName + " - Heating Status".asString();
+					bool bIsActive = module["boiler_status"].asBool();
 					//
 					SendSwitch(moduleID, 0, 255, bIsActive, 0, aName, m_Name);
 
@@ -1943,12 +1943,28 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root )
 				m_thermostatModuleID[roomID & 0xFFFFFF] = roomNetatmoID;
 
 				//Create / update domoticz devices : Temp sensor / Set point sensor for each room
+				if (!room["reachable"].empty())
+                                {
+
+                                };
+                                if (!room["anticipating"].empty())
+                                {
+
+                                };
+                                if (!room["heating_power_request"].empty())
+                                {
+
+                                };
+                                if (!room["open_window"].empty())
+                                {
+
+                                };
 				if (!room["therm_measured_temperature"].empty())
 					SendTempSensor(crcId, 255, room["therm_measured_temperature"].asInt(), roomName);
 				if (!room["therm_setpoint_temperature"].empty())
 					SendSetPointSensor((uint8_t)((crcId & 0x00FF0000) >> 16), (roomID & 0XFF00) >> 8, roomID & 0XFF, room["therm_setpoint_temperature"].asInt(), roomName);
 
-				if (!setModeSwitch)
+				if (!room["therm_setpoint_mode"].empty())
 				{
 					// create / update the switch for setting away mode
 					// on the themostat (we could create one for each room also,
@@ -1960,10 +1976,15 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root )
 						setpoint_mode = "30";
 					else
 						setpoint_mode = "10";
-					SendSelectorSwitch(crcId, 3, setpoint_mode, m_ThermostatName + " - Mode", 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);
+					//SendSelectorSwitch(crcId, 3, setpoint_mode, m_ThermostatName + " - Mode", 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);
+					SendSelectorSwitch(crcId, 3, setpoint_mode, roomName + " - Mode", 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);
 
 					setModeSwitch = true;
 				}
+				if (!room["therm_setpoint_start_time"].empty())
+                                {
+
+                                };
 			}
 			iDevIndex++;
 		}
