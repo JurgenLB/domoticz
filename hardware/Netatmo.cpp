@@ -974,7 +974,7 @@ void CNetatmo::GetHomeDetails()
 	//Check if connected to the API
 	if (!m_isLogged)
 	{
-		return false;
+		return;
 	}
 	//Locals
 	std::string sResult; // text returned by API
@@ -1870,7 +1870,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root )
 				if (!module["boiler_status"].empty())
 				{
 					//Thermostat status (boiler heating or not : informationnal switch)
-					std::string aName = m_ThermostatName + " - Heating Status".c_str();
+					std::string aName = moduleName + " - Heating Status";
 					bool bIsActive = module["boiler_status"].asBool();
 					//
 					SendSwitch(moduleID, 0, 255, bIsActive, 0, aName, m_Name);
