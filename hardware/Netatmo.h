@@ -79,7 +79,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool StopHardware() override;
 	void Do_Work();
 
-	std::string MakeRequestURL(_eNetatmoType NetatmoType);
+	std::string MakeRequestURL(_eNetatmoType NetatmoType, std::string data);
 
         void GetWeatherDetails();
 	void GetHomecoachDetails();
