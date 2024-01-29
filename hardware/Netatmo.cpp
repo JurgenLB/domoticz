@@ -969,7 +969,7 @@ void CNetatmo::Get_Respons_API(const _eNetatmoType& NType, std::string& sResult,
 /// <summary>
 /// Get details for home         // OLD API
 /// </summary>
-bool CNetatmo::GetHomeDetails()
+void CNetatmo::GetHomeDetails()
 {
 	//Check if connected to the API
 	if (!m_isLogged)
@@ -987,7 +987,7 @@ bool CNetatmo::GetHomeDetails()
         if (!root["body"]["homes"].empty())
 	{
                 //
-                //bRet = ParseHomeData(sResult);
+                //bRet = ParseHomeData(sResult, root);
                 //if (bRet)
                 //{
                         // Data was parsed with success
@@ -1267,12 +1267,12 @@ void CNetatmo::Get_Picture()
         if (!root["body"]["homes"].empty())
         {
                 //ParseHomeData(sResult)
-                bRet = ParseHomeData(sResult);
-                if (bRet)
-                {
+                //bRet = ParseHomeData(sResult, root);
+                //if (bRet)
+                //{
                         // Data was parsed with success
-                        Log(LOG_STATUS, "Picture Data parsed");
-                }
+                Log(LOG_STATUS, "Picture Data parsed");
+                //}
          }
 }
 
@@ -1297,7 +1297,7 @@ void CNetatmo::Get_Events()
         if (!root["body"]["homes"].empty())
         {
                 //ParseHomeData(sResult)
-                //bRet = ParseHomeData(sResult);
+                //bRet = ParseHomeData(sResult, root);
                 //if (bRet)
                 //{
                         // Data was parsed with success
@@ -1870,7 +1870,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root )
 				if (!module["boiler_status"].empty())
 				{
 					//Thermostat status (boiler heating or not : informationnal switch)
-					std::string aName = m_ThermostatName + " - Heating Status".asString();
+					std::string aName = m_ThermostatName + " - Heating Status".c_str();
 					bool bIsActive = module["boiler_status"].asBool();
 					//
 					SendSwitch(moduleID, 0, 255, bIsActive, 0, aName, m_Name);
