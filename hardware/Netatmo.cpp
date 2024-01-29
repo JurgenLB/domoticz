@@ -82,15 +82,10 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 
 	m_nextRefreshTs = mytime(nullptr);
 	m_isLogged = false;
-        m_measureType = NETYPE_MEASURE;
-        m_energyType = NETYPE_THERMOSTAT;
+
         m_weatherType = NETYPE_WEATHER_STATION;
-        m_homecoachType = NETYPE_HOMECOACH;
-        m_homeType = NETYPE_HOME;
-        m_dataType = NETYPE_HOMESDATA;
-        m_statusType = NETYPE_STATUS;
-        m_camerasType = NETYPE_CAMERAS;
-        m_eventsType = NETYPE_EVENTS;
+        m_homecoachType = NETYPE_AIRCARE;
+        m_energyType = NETYPE_ENERGY;
 
 	m_HwdID = ID;
 	m_Home_ID = "";
@@ -105,6 +100,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_tSetpointUpdateTime = time(nullptr);
+	
 	Init();
 }
 
