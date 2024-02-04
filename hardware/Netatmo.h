@@ -2,14 +2,19 @@
 
 #include "DomoticzHardware.h"
 #include "../main/BaroForecastCalculator.h"
+#include <mutex>
 
 namespace Json
 {
 	class Value;
 } // namespace Json
 
+//class Respons; // forward declaration
+
 class CNetatmo : public CDomoticzHardwareBase
 {
+//      friend class Respons;
+//        void Get_Respons_API(const _eNetatmoType NType, std::string sResult, std::string home_id = 0 , bool bRet = 0, Json::Value root = 'k');
       //
       private:
 	enum _eNetatmoType
@@ -40,7 +45,7 @@ class CNetatmo : public CDomoticzHardwareBase
                 NETYPE_DROPWEBHOOK,
                 NETYPE_PUBLICDATA,
 	};
-        //Json::Value m_root;
+//        Json::Value m_root;
 	std::string m_clientId;
 	std::string m_clientSecret;
 	std::string m_scopes;
@@ -57,7 +62,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bPollHomeData;
         bool m_bPollHomesData;
 	bool m_bPollHomeStatus;
-
+        bool m_bPollHome;
 	//bool m_bPollMeasureData;
 	bool m_bPollThermostat;
         bool m_bFirstTimeThermostat;
@@ -81,21 +86,22 @@ class CNetatmo : public CDomoticzHardwareBase
 
 	std::string MakeRequestURL(_eNetatmoType NetatmoType, std::string data);
 
-        void GetWeatherDetails();
+	void GetWeatherDetails();
 	void GetHomecoachDetails();
 	void GetHomesDataDetails();
 	void GetHomeStatusDetails();
-	void GetHomeDetails();
+        void GetHomeDetails();
 	//void GetThermostatDetails();
-
-        void Get_Measure();
+        //void Get_Device_Details(_eNetatmoType NetatmoType);
+        //
         void Get_Picture();
-        void Get_Events();
+        void Get_Measure(std::string gateway, std::string module_id, std::string scale);
+        void Get_Events(std::string home_id, std::string device_types, std::string event_id, std::string person_id, std::string device_id, std::string module_id, bool offset, bool size, std::string locale);
 
-        bool ParseStationData(const std::string &sResult, bool bIsThermostat);
-	bool ParseHomeStatus(const std::string &sResult, Json::Value& root);
+	bool ParseStationData(const std::string &sResult, bool bIsThermostat);
+	bool ParseHomeStatus(const std::string &sResult, Json::Value& root );
 
-	bool ParseHomeData(const std::string &sResult, Json::Value& root);
+        bool ParseHomeData(const std::string &sResult, Json::Value& root );
 
 	bool SetAway(int idx, bool bIsAway);
 	bool SetSchedule(int scheduleId);
@@ -106,7 +112,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	void StoreRefreshToken();
 	bool m_isLogged;
 	bool m_bForceLogin;
-	
+
 	_eNetatmoType m_weatherType;
 	_eNetatmoType m_homecoachType;
 	_eNetatmoType m_energyType;
@@ -121,11 +127,11 @@ class CNetatmo : public CDomoticzHardwareBase
         std::map<std::string, std::string> m_Smoke_Name;
         std::map<std::string, std::string> m_Smoke_ID;
 
-        std::map<std::string, std::string> m_ThermostatName;
+	std::map<std::string, std::string> m_ThermostatName;
 	std::map<std::string, std::string> m_RoomNames;
         std::map<std::string, std::string> m_Room_Type;
         std::map<std::string, std::string> m_Room;
-        std::map<std::string, int> m_RoomIDs;
+	std::map<std::string, int> m_RoomIDs;
         std::map<std::string, std::string> m_Module_category;
 	std::map<std::string, std::string> m_ModuleNames;
 
@@ -141,10 +147,13 @@ class CNetatmo : public CDomoticzHardwareBase
         std::map<int, std::string> m_ZoneIDs;
         std::map<int, std::string> m_ZoneTypes;
 
+
 	std::map<int, CBaroForecastCalculator> m_forecast_calculators;
 
 	int GetBatteryLevel(const std::string &ModuleType, int battery_percent);
 	bool ParseDashboard(const Json::Value &root, int DevIdx, int ID, const std::string &name, const std::string &ModuleType, int battery_percent, int rf_status);
+//        bool ParseDashboard(const Json::Value root, int DevIdx, int ID, const std::string &name, const std::string &ModuleType, int battery_percent, int rf_status);
+      //
       public:
         CNetatmo(int ID, const std::string &username, const std::string &password);
         ~CNetatmo() override = default;
