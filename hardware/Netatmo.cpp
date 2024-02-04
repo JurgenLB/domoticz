@@ -1390,7 +1390,6 @@ void CNetatmo::Get_Measure(std::string gateway, std::string module_id, std::stri
         // https://api.netatmo.com/api/getmeasure?device_id=xxx&module_id=xxx&scale=30min&type=sum_boiler_on&type=boileron&type=boileroff&type=sum_boiler_off&date_begin=xxxx&date_end=xxxx&limit=10&optimize=false&real_time=false
         //type=  sum_boiler_off // sum_boiler_on // boileroff // boileron
         std::string home_data = "device_id=" + gateway + "&module_id=" + module_id + "&scale=" + scale + "&type=" + "boileron" + "&date_begin=" + date_begin + "&date_end=" + date_end + "&limit=" + limit  + "&optimize=" + "false" + "&real_time="  + "false";
-        std::string home_data = "";
         bool bRet;           //Parsing status
         //
         Get_Respons_API(NETYPE_MEASURE, sResult, home_data, bRet, root);
