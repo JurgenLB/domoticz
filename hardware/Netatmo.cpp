@@ -23,93 +23,6 @@
 #endif
 
 // Some testfunctions for debugging
-
-void SaveUchar2Disk(std::map<unsigned char, std::string> &m, std::string filename)
-{
-        int count = 0;
-        std::ofstream fOut;
-        fOut.open(filename);
-        if (fOut)
-        {
-                std::string buffer;
-                for (auto it = m.begin(); it != m.end(); it++)
-                        {
-                        fOut<<it->first<<" = "<<it->second<<"\n";
-                        count++;
-                        }
-                fOut.close();
-        }
-}
-
-
-void SaveUint8_t2Disk(std::map<uint8_t, std::string> &m, std::string filename)
-{
-        int count = 0;
-        std::ofstream fOut;
-        fOut.open(filename);
-        if (fOut)
-        {
-                std::string buffer;
-                for (auto it = m.begin(); it != m.end(); it++)
-                        {
-                        fOut<<it->first<<" = "<<it->second<<"\n";
-                        count++;
-                        }
-                fOut.close();
-        }
-}
-
-void SaveMapint2Disk(std::map<int, int> &m, std::string filename)
-{
-        int count = 0;
-        std::ofstream fOut;
-        fOut.open(filename);
-        if (fOut)
-        {
-                std::string buffer;
-                for (auto it = m.begin(); it != m.end(); it++)
-                        {
-                        fOut<<it->first<<" = "<<it->second<<"\n";
-                        count++;
-                        }
-                fOut.close();
-        }
-}
-
-void SaveDict2Disk(std::map<int, std::string> &m, std::string filename)
-{
-        int count = 0;
-        std::ofstream fOut;
-        fOut.open(filename);
-        if (fOut)
-        {
-                std::string buffer;
-                for (auto it = m.begin(); it != m.end(); it++)
-                        {
-                        fOut<<it->first<<" = "<<it->second<<"\n";
-                        count++;
-                        }
-                fOut.close();
-        }
-}
-
-void SaveMap2Disk(std::map<std::string, std::string> &m, std::string filename)
-{
-        int count = 0;
-        std::ofstream fOut;
-        fOut.open(filename);
-        if (fOut)
-        {
-                std::string buffer;
-                for (auto it = m.begin(); it != m.end(); it++)
-                        {
-                        fOut<<it->first<<" = "<<it->second<<"\n";
-                        count++;
-                        }
-                fOut.close();
-        }
-}
-
 void SaveJson2Disk(Json::Value str, std::string filename)
 {
 	FILE* fOut = fopen(filename.c_str(), "wb+");
@@ -635,6 +548,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
         {
                 Debug(DEBUG_HARDWARE, "Packettype pTypeGeneralSwitch ");
                 //int node_id = pCmd->LIGHTING2.id4;
+                // Recast raw data to get switch specific data
                 const _tGeneralSwitch* xcmd = reinterpret_cast<const _tGeneralSwitch*>(pdata);
                 int subtype = pCmd->LIGHTING2.subtype;
                 int id1 = pCmd->LIGHTING2.id1;
@@ -647,7 +561,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
                 int filler = pCmd->LIGHTING2.filler;
                 int rssi = pCmd->LIGHTING2.rssi;
                 std::string name = "";
-                uint64_t ulId1 = (ulong) id1; // PRIu64
+                uint64_t ulId1 = id1; // PRIu64
                 int idx;
                 int iUsed;
                 bool bValid;
@@ -717,162 +631,6 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
         }
         return false;
 }
-
-
-//        std::string m_RetransSourceId;
-//        m_RetransSourceId = pdata;  //std::to_string(pdata );
-//        _log.Debug(DEBUG_HARDWARE, "debug_pdata %s ", m_RetransSourceId.c_str());
-
-	//Get a common structure to identify the actual action
-	//the user has selected in domoticz (actionning a switch....)
-	//Here a LIGHTING2 is used as we have selector switch for
-	//our thermostat / valve devices
-//	const tRBUF* pCmd = reinterpret_cast<const tRBUF*>(pdata);
-
-//	if (pCmd->LIGHTING2.packettype != pTypeLighting2 &&
-//		(pCmd->LIGHTING2.packettype != pTypeGeneralSwitch && pCmd->LIGHTING2.subtype != sSwitchTypeSelector))
-//                _log.Debug(DEBUG_HARDWARE, "sSwitchTypeSelector %s ", sSwitchTypeSelector);
-//		return false;
-
-        //
-	//This is the boiler status switch : do nothing
-	// unitcode == 0x00 ### means boiler_status switch
-//	if ((int)(pCmd->LIGHTING2.unitcode) == 0)
-//		return true;
-
-	//This is the selector switch for setting the thermostat schedule
-	//
-//	if ((int)(pCmd->LIGHTING2.unitcode) == 10)
-
-		//Recast raw data to get switch specific data
-//		const _tGeneralSwitch* xcmd = reinterpret_cast<const _tGeneralSwitch*>(pdata);
-//                int len = xcmd->len;             //uint8_t len;
-//                int type = xcmd->devType;           //uint8_t type;
-                //uint8_t devType = xcmd->devType;
-                //int len = xcmd->packetlength;
-                //int type = xcmd->packettype;
-//                int subtype = xcmd->subtype;     //uint8_t subtype;
-//		int ID = xcmd->id;               //int32_t id - switch ID
-                //int ID1 = xcmd->id1;
-                //int ID3 = xcmd->id2;
-                //int ID2 = xcmd->id3;
-                //int ID4 = xcmd->id4;
-//                int unitcode = xcmd->unitcode;   //int32_t unitcode - Unitcode
-//                int cmnd = xcmd->cmnd;         //uint8_t cmnd -
-//                int level = xcmd->level;         //uint8_t level - Level selected on the switch
-                //int filler = xcmd->filler;
-                //int rssi = xcmd -> SignalLevel;
-                //int battery_level = xcmd -> BatteryLevel;
-                //std::string roomNetatmoID = xcmd -> roomNetatmoID;
-//                int seqnbr = xcmd->seqnbr ;      //uint8_t seqnbr;
-//                int reserved_int = xcmd->reserved_int;     //int32_t reserved_int;   #619
-//                float reserved_float = xcmd->reserved_float; //float reserved_float;
-                //
-//                std::stringstream sw_id;
-//                sw_id << std::hex << ID;
-//                std::string strhex = sw_id.str();
-
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo THERMOSTAT selector");
-//                //Debug(DEBUG_HARDWARE, "Netatmo devType  = %d", devType);
-//                //Debug(DEBUG_HARDWARE, "Netatmo len  = %d", len);
-//                //Debug(DEBUG_HARDWARE, "Netatmo type  = %d", type);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo subtype  = %d", subtype);
-//                //Debug(DEBUG_HARDWARE, "Netatmo ID1  = %d", ID1);
-//                //Debug(DEBUG_HARDWARE, "Netatmo ID2  = %d", ID2);
-//                //Debug(DEBUG_HARDWARE, "Netatmo ID3  = %d", ID3);
-//                //Debug(DEBUG_HARDWARE, "Netatmo ID4  = %d", ID4);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo unitcode  = %d", unitcode);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo cmd  = %d", cmnd);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo level  = %d", level);
-//                //Debug(DEBUG_HARDWARE, "Netatmo filler  = %d", filler);
-
-//                Debug(DEBUG_HARDWARE, "Netatmo len      = %d", len);
-//                Debug(DEBUG_HARDWARE, "Netatmo type     = %d", type);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo subtype  = %d", subtype);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID     = %d  - %s", ID, strhex.c_str());
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID1    = %d", (pCmd->LIGHTING2.id1));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID2    = %d", (pCmd->LIGHTING2.id2));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID3    = %d", (pCmd->LIGHTING2.id3));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID4    = %d", (pCmd->LIGHTING2.id4));
-//                //Debug(DEBUG_HARDWARE, "Netatmo ID     = %d", (pCmd->LIGHTING2.id));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo unitcode = %d", unitcode);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo level = %d", level);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo seqnbr = %d", seqnbr);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo reserved_int   = %d", reserved_int);
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo reserved_float = %f", reserved_float);
-		//Set the schedule on the thermostat
-//
-
-	//Set Away mode on thermostat
-//
-		//Switch active = Turn on Away Mode
-//		bool bIsOn = (pCmd->LIGHTING2.cmnd == light2_sOn);
-		//Recast raw data to get switch specific data
-//		const _tGeneralSwitch* xcmd = reinterpret_cast<const _tGeneralSwitch*>(pdata);
-//		int ID = xcmd->id;// switch ID
-//		int level = (xcmd->level);//Level selected on the switch
-
-//		// Get the mode ID and thermostat ID
-//		int mode = (level / 10) - 1;
-//		unsigned long therm_id = (pCmd->LIGHTING2.id1 << 24) + (pCmd->LIGHTING2.id2 << 16) + (pCmd->LIGHTING2.id3 << 8) + pCmd->LIGHTING2.id4;
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo len      = %d", (pCmd->LIGHTING2.packetlength));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo type     = %d", (pCmd->LIGHTING2.packettype));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo subtype  = %d", (pCmd->LIGHTING2.subtype));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID     = %d  - ", (ID));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID1    = %d", (pCmd->LIGHTING2.id1));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID2    = %d", (pCmd->LIGHTING2.id2));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID3    = %d", (pCmd->LIGHTING2.id3));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID4    = %d", (pCmd->LIGHTING2.id4));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID4    = %d  IDX ", (pCmd->LIGHTING2.id4));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo command  = %d", (pCmd->LIGHTING2.cmnd));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo unitcode = %d", (pCmd->LIGHTING2.unitcode));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo level    = %d", (pCmd->LIGHTING2.level));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo filler   = %d", (pCmd->LIGHTING2.filler));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo reserved_int   = %d", (pCmd->LIGHTING2.rssi));
-//                Debug(DEBUG_HARDWARE, "Netatmo seqnbr++ = %d", (pCmd->LIGHTING2.seqnbr++));
-//                Debug(DEBUG_HARDWARE, "Netatmo reserved_float = %d", (pCmd->LIGHTING2.reserved_float));
-
-
-//        //This is the selector switch for the Floodlight
-//        const _tGeneralSwitch* xcmd = reinterpret_cast<const _tGeneralSwitch*>(pdata);
-//        unsigned long _id = (pCmd->LIGHTING2.id1 << 24) + (pCmd->LIGHTING2.id2 << 16) + (pCmd->LIGHTING2.id3 << 8) + pCmd->LIGHTING2.id4;
-//
-//                //Recast raw data to get switch specific data
-//
-//                const _tGeneralSwitch* xcmd = reinterpret_cast<const _tGeneralSwitch*>(pdata);
-//                int ID = xcmd->id; //switch ID
-//                int level = xcmd->level; //Level selected on the switch
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo len      = %d", (pCmd->LIGHTING2.packetlength));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo type     = %d", (pCmd->LIGHTING2.packettype));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo subtype  = %d", (pCmd->LIGHTING2.subtype));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID     = %d  - ", (ID));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID1    = %d", (pCmd->LIGHTING2.id1));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID2    = %d", (pCmd->LIGHTING2.id2));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID3    = %d", (pCmd->LIGHTING2.id3));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID4    = %d", (pCmd->LIGHTING2.id4));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID4    = %d", (pCmd->LIGHTING2.id4));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo unitcode = %d", (pCmd->LIGHTING2.unitcode));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo level    = %d", (pCmd->LIGHTING2.level));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo filler   = %d", (pCmd->LIGHTING2.filler));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo reserved_int   = %d", (pCmd->LIGHTING2.rssi));
-//                Debug(DEBUG_HARDWARE, "Netatmo reserved_float = %d", (pCmd->LIGHTING2.reserved_float));
-//
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo len      = %d", (xcmd->len));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo type     = %d", (xcmd->type));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo subtype  = %d", (xcmd->subtype));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID     = %d  - %s", ID, strhex.c_str());
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo ID1    = %d", (xcmd->id));
-//                Debug(DEBUG_HARDWARE, "Netatmo ID1    = %d", (xcmd->id1));
-//                Debug(DEBUG_HARDWARE, "Netatmo ID2    = %d", (xcmd->id2));
-//                Debug(DEBUG_HARDWARE, "Netatmo ID3    = %d", (xcmd->id3));
-//                Debug(DEBUG_HARDWARE, "Netatmo ID4    = %d", (xcmd->id4));
-//                Debug(DEBUG_HARDWARE, "Netatmo ID4    = %d", (xcmd->id4));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo unitcode = %d", (xcmd->unitcode));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo level    = %d", (xcmd->level));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo seqnbr   = %d", (xcmd->seqnbr));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo reserved_int   = %d", (xcmd->reserved_int));
-//                _log.Debug(DEBUG_HARDWARE, "Netatmo reserved_float = %f", (xcmd->reserved_float));
-//
 
 
 /// <summary>
@@ -961,7 +719,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			return false;
 		}
                 //https://api.netatmo.com/api/setthermmode?home_id=xxxxx&mode=schedule
-                home_data = "home_id=" + Home_id + "&mode=" + thermState + "&";
+                home_data = "home_id=" + Home_id + "&mode=" + thermState + "&get_favorites=true&";
                 Get_Respons_API(NETYPE_SETTHERMMODE, sResult, home_data, bRet, root, "");
                 if (!bRet)
 		{
@@ -973,7 +731,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
                 // So we have to update the corresponding devices       Device_Types {NAPlug, OTH, BNS}
                 // https://api.netatmo.com/api/homestatus?home_id=xxxxx&device_types=NAPlug
                 std::string Type = "NAPlug";
-                _data = "home_id=" + Home_id + "&device_types=" + Type + "&";
+                _data = "home_id=" + Home_id + "&device_types=" + Type + "&get_favorites=true&";
                 Debug(DEBUG_HARDWARE, "Home_Data = %s ", _data.c_str());
                 Get_Respons_API(NETYPE_STATUS, sResult, _data, bRet, root, "");
                 //Parse API response
@@ -989,12 +747,12 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 		switch (newState)
 		{
 		case 0:
-			State = "off"; //The Floodlight is currently following its weekly schedule
+			State = "off";
 			break;
-		case 1:
-			State = "on"; //The Floodlight is currently applying the away temperature
+		case 10:
+			State = "on";
 			break;
-		case 2:
+		case 20:
 			State = "auto";
 			break;
 		default:
@@ -1005,12 +763,17 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
                 //https://api.netatmo.com/api/setstate?{\"home\":{\"id\":\xxxxx,\"modules\":[{\"id\":\xxxxx,\"floodlight\":\"on\"}]}}
                 //std::string extra_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" + "&";
                 Json::Value json_data;
+                //json_data["body"]
                 json_data["home"]["id"] = Home_id;
-                json_data["home"]["modules"]["id"] = module_id;
-                json_data["home"]["modules"]["floodlight"] = State;
+                json_data["home"]["modules"][0]["floodlight"] = State;
+                json_data["home"]["modules"][0]["id"] = module_id;
                 std::string extra_data = json_data.toStyledString();
                 //std::string extra_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" + "&";
-                home_data = "";
+                //home_data = "home_id=" + Home_id + "&";
+                home_data = "home_id=" + Home_id + "&{home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}&";
+                home_data = "home_id=" + Home_id + "&" + extra_data + "&";
+                home_data = "data=" + extra_data + "&";
+                extra_data = "";
                 Get_Respons_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, extra_data);
 		if (!bRet)
                 {
@@ -1069,11 +832,8 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
         //
         Debug(DEBUG_HARDWARE, "DevID = %08X", ID);                //correct
         //
-//                                        m_thermostat_IDX[DeviceRowIdx] =     
-//                                        m_thermostatDeviceID[Hardware_int] = 
 //                                        m_thermostatModuleID[crcId] = module_id;            // mac-adres
 //                                        m_thermostats[DeviceRowIdx] = roomNetatmoID;        // Room Netatmo ID
-//                                        m_ModuleIDs[Hardware_int] = crcId;   
 //                                        m_DeviceModuleID[uid] = module_id;                  // mac-adres
 //                                        m_ModuleNames[module_id] = name;                    // Device Name
 //                                        m_RoomIDs[module_id] = roomNetatmoID;               // Room Netatmo ID
@@ -1134,7 +894,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 			return;
 		}
 
-                home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + Mode  + "&temp=" + std::to_string(temp)  + "&endtime=" + std::to_string(end_time) + "&";
+                home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + Mode  + "&temp=" + std::to_string(temp)  + "&endtime=" + std::to_string(end_time) + "&get_favorites=true&";
                 // https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
                 Get_Respons_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
                 Debug(DEBUG_HARDWARE, "Netatmo Energytype Energy ");
@@ -1150,7 +910,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 			return;
 		}
 
-                home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + Mode  + "&temp=" + std::to_string(temp)  + "&endtime=" + std::to_string(end_time) + "&";
+                home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + Mode  + "&temp=" + std::to_string(temp)  + "&endtime=" + std::to_string(end_time) + "&get_favorites=true&";
                 // https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
                 Get_Respons_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
                 Debug(DEBUG_HARDWARE, "Netatmo module else ? ");
@@ -1188,7 +948,7 @@ bool CNetatmo::SetSchedule(int scheduleId)
 	std::stringstream bstr;
         std::string sResult;
         Json::Value root;       // root JSON object
-        std::string home_data = "home_id=" + m_Home_ID + "&mode=schedule" + "&"; //schedule, away, hg
+        std::string home_data = "home_id=" + m_Home_ID + "&mode=schedule" + "&get_favorites=true&"; //schedule, away, hg
         bool bRet;              //Parsing status
 	if (m_energyType == NETYPE_ENERGY)
 	{
@@ -1328,10 +1088,10 @@ std::string CNetatmo::MakeRequestURL(const _eNetatmoType NType, std::string data
 
         sstr << "?";
         sstr << data;
-//        sstr << "&";
+//        //sstr << "&";
         sstr << "access_token=" << m_accessToken;
-        sstr << "&";
-	sstr << "get_favorites=" << "true";
+//        sstr << "&";
+//	sstr << "get_favorites=" << "true";
 	return sstr.str();
 }
 
@@ -1349,22 +1109,22 @@ void CNetatmo::Get_Respons_API(const _eNetatmoType& NType, std::string& sResult,
         std::string httpUrl;                             //URI to be tested
         //
         std::stringstream sstr;
+//        sstr << "accept: application/json";
+//        sstr << "Authorization: Bearer " + m_accessToken;
+        sstr << "Content-Type: application/json";
         sstr << extra_data;
         std::vector<std::string> ExtraHeaders;           // HTTP Headers
         //
         httpUrl = MakeRequestURL(NType, home_data);
-        std::string sPostData = "";
+        std::string sPostData = extra_data;
         Debug(DEBUG_HARDWARE, "Respons URL   %s", httpUrl.c_str());
-        //var content = new StringContent(jsonObject.ToString(), Encoding.UTF8, "application/json");
-        //content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        //var result = client.PostAsync(url, content).Result;
         //
 	//static bool POST(const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders, std::string &response,
 	//		 bool bFollowRedirect = true, bool bIgnoreNoDataReturned = false);
         //static bool POST(const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders, std::string &response, std::vector<std::string> &vHeaderData,
 	//		 bool bFollowRedirect = true, bool bIgnoreNoDataReturned = false);
 
-        if (!HTTPClient::POST(httpUrl, sPostData,  ExtraHeaders, sResult))
+        if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult))
         {
                 Log(LOG_ERROR, "Error connecting to Server...");
                 return ;
@@ -1395,7 +1155,7 @@ void CNetatmo::GetHomesDataDetails()
 {
 	//Locals
 	std::string sResult;  // text returned by API
-        std::string home_data;
+        std::string home_data = "&get_favorites=true&";
         std::string homeID;
         bool bRet;            //Parsing status
         Json::Value root;     // root JSON object
@@ -1606,7 +1366,7 @@ void CNetatmo::GetWeatherDetails()
         if (m_bFirstTimeWeatherData)
         {
         	std::string sResult; // text returned by API
-                std::string home_data;
+                std::string home_data = "&get_favorites=true&";
                 bool bRet;           //Parsing
 	        Json::Value root;    // root JSON object
                 //
@@ -1635,7 +1395,7 @@ void CNetatmo::GetHomecoachDetails()
 		return;
 	//Locals
 	std::string sResult; // text returned by API
-	std::string home_data;
+	std::string home_data = "&get_favorites=true&";
 	bool bRet;           //Parsing status
         Json::Value root;    // root JSON object
         //
@@ -1684,7 +1444,7 @@ void CNetatmo::GetHomeStatusDetails()
         for (int i = 0; i < m_homeid.size(); i++)
         {
                 home_id = m_homeid[i];
-                home_data = "home_id=" + home_id + "&";
+                home_data = "home_id=" + home_id + "&get_favorites=true&";
                 Debug(DEBUG_HARDWARE, "Home_Data = %s ", home_data.c_str());
                 Get_Respons_API(NETYPE_STATUS, sResult, home_data, bRet, root, "");
                 //Parse API response
@@ -1720,7 +1480,7 @@ void CNetatmo::Get_Measure(std::string gateway, std::string module_id, std::stri
         std::string limit = "30";  //
         // https://api.netatmo.com/api/getmeasure?device_id=xxx&module_id=xxx&scale=30min&type=sum_boiler_on&type=boileron&type=boileroff&type=sum_boiler_off&date_begin=xxxx&date_end=xxxx&limit=10&optimize=false&real_time=false
         //type=  sum_boiler_off // sum_boiler_on // boileroff // boileron
-        std::string home_data = "device_id=" + gateway + "&module_id=" + module_id + "&scale=" + scale + "&type=" + "boileron" + "&date_begin=" + date_begin + "&date_end=" + date_end + "&limit=" + limit  + "&optimize=" + "false" + "&real_time="  + "false" + "&";
+        std::string home_data = "device_id=" + gateway + "&module_id=" + module_id + "&scale=" + scale + "&type=" + "boileron" + "&date_begin=" + date_begin + "&date_end=" + date_end + "&limit=" + limit  + "&optimize=" + "false" + "&real_time="  + "false" + "&get_favorites=true&";
         bool bRet;           //Parsing status
         //
         Get_Respons_API(NETYPE_MEASURE, sResult, home_data, bRet, root, "");
@@ -1757,7 +1517,7 @@ void CNetatmo::Get_Events(std::string home_id, std::string device_types, std::st
         if (!device_id.empty())
                 home_events_data = home_id + "&device_types=" + device_types + "&event_id=" + event_id + "&person_id=" + person_id + "&module_id=" + module_id + "&offset=" + offset_str + "&size=" + size_str + "&";
         else
-                home_events_data = home_id +"&";
+                home_events_data = home_id + "&";
 
 	bool bRet;           //Parsing status
         //
@@ -2217,9 +1977,9 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
                 //UpdateValueInt(Hardware_int, Hardware_ID.c_str(), 0, pTypeGeneral, sTypeTemperature, rssiLevel, batValue, temp, sValue.c_str(), name, 0, m_Name);
                 UpdateValueInt(Hardware_int, str_ID.c_str(), 0, pTypeGeneral, sTypeTemperature, rssiLevel, batValue, temp, sValue.c_str(), name, 0, m_Name);
         }
-	//Thermostat device
-	if (bHaveSetpoint)
-	{
+        //Thermostat device
+        if (bHaveSetpoint)
+        {
                 std::string sName = name + " - SetPoint ";
                 //Debug(DEBUG_HARDWARE, "sName [%s] ", sName.c_str());
                 const uint8_t Unit = 7;
@@ -2230,7 +1990,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
                 std::string sValue = sp_str.str();
                 Debug(DEBUG_HARDWARE, "(%ld) %s (%s) [%s] parsedashboard  %s %s %d %d", Hardware_int, str_ID.c_str(), pchar_ID, name.c_str(), sValue.c_str(), m_Name.c_str(), rssiLevel, batValue);
                 //
-	}
+        }
 
 	//Rain meter
 	if (bHaveRain)
@@ -2369,11 +2129,6 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
         bool setModeSwitch = false;
         std::vector<_tNetatmoDevice> _netatmo_devices;
         _tNetatmoDevice nDevice;
-        //nDevice.ID = id;
-        //nDevice.ModuleName = name;
-        //nDevice.StationName = station_name;
-        //nDevice.home_id = home_id;
-        //m_thermostats[iDevIndex] = nDevice;
 
         if (!root["body"]["home"]["rooms"].empty())
         {
@@ -2403,6 +2158,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
                                 // from Homesdata
                                 roomName = m_RoomNames[roomNetatmoID];
                                 std::string roomType = m_Types[roomNetatmoID];
+                                SaveJson2Disk(room, std::string("./room_") + roomName.c_str() + ".txt");
                                 //
                                 if (!room["reachable"].empty())
                                 {
@@ -2521,6 +2277,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
                                 std::string moduleName = m_ModuleNames[module_id];
                                 crcId = Crc32(0, (const unsigned char*)module_id.c_str(), module_id.length());
                                 m_ModuleIDs[Hardware_int] = crcId;
+                                //
+                                SaveJson2Disk(module, std::string("./") + moduleName.c_str() + ".txt");
                                 //
                                 Debug(DEBUG_HARDWARE, " %ld -  %s in Home; %s" , Hardware_int, module_id.c_str(), home_id.c_str());
                                 std::string type = module["type"].asString();
@@ -2740,17 +2498,17 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
                                         }
                                         else if (status == "on")
                                         {
-                                                nValue = 1;
-                                                Selector = "1";
+                                                nValue = 10;
+                                                Selector = "10";
                                         }
                                         else if (status == "auto")
                                         {
-                                                nValue = 2;
-                                                Selector = "2";
+                                                nValue = 20;
+                                                Selector = "20";
                                         }
 
                                         std::string LevelNames = "off|on|auto";
-                                        std::string LevelActions = "0|1|2";
+                                        std::string LevelActions = "0|10|20";
                                         //nDevice.Selector = Selector;
                                         std::map<std::string, std::string> Options;
                                         //Options["SelectorStyle"] = "18";
@@ -2768,22 +2526,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
                                         m_DeviceModuleID[crcId] = module_id;
                                         m_LightDeviceID[crcId] = lName;
                                         SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, Selector, lName, 0, true, "off|on|auto", "", false, m_Name);
-                                        //
-                                        //SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, setpoint_mode_str, sName, 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);
-                                        std::vector<std::vector<std::string> > result;
-                                        result = m_sql.safe_query("SELECT ID, sValue, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit == '%d')", m_HwdID, crcId, NETATMO_PRESET_UNIT);
-                                        if (!result.empty())
-                                        {
-                                                Idx = std::stoi(result[0][0]);
-                                                Debug(DEBUG_HARDWARE, "Floodlight name %s - IDX %d  - %s / mode %s", lName.c_str(), Idx,  sValue.c_str(), status.c_str());
-                                        };
-                                        //Send Selector Switch(const int NodeID, const uint8_t ChildID, const std::string &sValue, const std::string &defaultname,
-                                        //                   const int customImage, const bool bDropdown, const std::string &LevelNames,
-                                        //                   const std::string &LevelActions, const bool bHideOff, const std::string &userName)
-                                        //void Send Selector Switch(int NodeID, uint8_t ChildID, &sValue, &defaultname, customImage, nDropdown, &LevelNames, &LevelActions, bHideOff, &userName);
-                                        //Send Selector Switch(crcId, 6, sValue, lName, 11, true, LevelNames, LevelActions, false, m_Name);
-//                                        DeviceRowIdx = m_sql.UpdateValue(m_HwdID, moduleID, module_id.c_str(), 2, pTypeGeneralSwitch, sSwitchTypeSelector, 12, 255, 0, options.c_str(), lName, 0, m_Name.c_str());
-//                                        m_sql.SetDeviceOptions(DeviceRowIdx, Options);
+                                        //Send Selector Switch(crcId, NETATMO_PRESET_UNIT, setpoint_mode_str, sName, 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);
                                         //
                                 };
                                 if ((type == "NATherm1") || (type == "NRV"))
@@ -2848,7 +2591,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
                                         std::stringstream ssv;
                                         ssv << m_selectedScheduleID;
                                         // "SelectorStyle:1;LevelNames:Off;LevelOffHidden:true;LevelActions:00"
-                                        // "SelectorStyle:0;LevelNames:Off|Main|Sub|Main+Sub;LevelOffHidden:true;LevelActions:00|01|02|03"
+                                        // "SelectorStyle:0;LevelNames:Off|Main|Sub|Main+Sub;LevelOffHidden:true;LevelActions:00|10|20|30"
 
 		                	std::map<std::string, std::string> Options;
                 			//Options["SelectorStyle"] = "1";
@@ -2862,7 +2605,6 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
                                         std::string options = "SelectorStyle:18;LevelOffHidden:true;LevelNames:Off|On|Away|Frost Guard;LevelActions:00|10|20|30;CustomImage:15";
                                         //create update / domoticz device
                                         std::string sName = moduleName + " - schedule"; // " - mode";
-                                        //void Send Selector Switch(int NodeID, uint8_t ChildID, &sValue, &defaultname, customImage, nDropdown, &LevelNames, &LevelActions, bHideOff, &userName);
                                         //
                                         Debug(DEBUG_HARDWARE, "setpoint_mode_str = %s", setpoint_mode_str.c_str());
                                         SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, setpoint_mode_str, sName, 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);
@@ -2882,35 +2624,10 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 //                                        m_RoomIDs[module_id] = roomNetatmoID;               // Room Netatmo ID
 //                                        m_DeviceHomeID[roomNetatmoID] = homeID;             // Home_ID
 //                                        m_LightDeviceID[uid] = lName
-
-                                        //m_thermostat_IDX[DeviceRowIdx] = Hardware_int;        // Hardware_int
-                                        //m_DeviceID[Hardware_int] = DeviceRowIdx;              // idx
+                                        //
                                         m_thermostatModuleID[uid] = module_id;                // mac-adres
                                         m_DeviceHomeID[roomNetatmoID] = home_id;              // Home_ID
                                         m_thermostats[DeviceRowIdx] = roomNetatmoID;          // Room Netatmo ID
-                                        //
-                                        //         std::map<std::string, int> m_ModuleIDs;
-                                        // Save Map_uint64_t_int2Disk(m_ModuleIDs, std::string("./") + "m_ModuleIDs.txt"); //m_ModuleIDs[mID] = crcId;
-                                        //SaveDict2Disk(m_ModuleIDs, std::string("./") + "m_ModuleIDs.txt");
-                                        SaveMap2Disk(m_ModuleNames, std::string("./") + "m_ModuleNames.txt");
-                                        SaveMap2Disk(m_RoomIDs, std::string("./") + "m_RoomIDs.txt");
-                                        SaveMap2Disk(m_Types, std::string("./") + "m_Types.txt");
-                                        SaveMap2Disk(m_Module_category, std::string("./") + "m_Module_category.txt");
-                                        SaveMap2Disk(m_Room_setpoint, std::string("./") + "m_Room_setpoint.txt");
-                                        SaveMap2Disk(m_Room_mode, std::string("./") + "m_Room_mode.txt");
-                                        SaveMap2Disk(m_Room_Temp, std::string("./") + "m_Room_Temp.txt");
-                                        SaveMap2Disk(m_RoomNames, std::string("./") + "m_RoomNames.txt");
-                                        SaveMap2Disk(m_ThermostatName, std::string("./") + "m_ThermostatName.txt");
-                                        //SaveMap2Disk(m_thermostatModuleID, std::string("./") + "m_thermostatModuleID.txt");
-                                        //SaveDict2Disk(m_thermostat_IDX, std::string("./") + "m_thermostat_IDX.txt");
-                                        // Save Map_uint64_t_int2Disk(m_thermostatDeviceID, std::string("./") + "m_thermostatDeviceID.txt");
-                                        SaveDict2Disk(m_thermostatModuleID, std::string("./") + "m_thermostatModuleID.txt");
-                                        // Save Map_uint64_t_int2Disk(m_DeviceID, std::string("./") + "m_DeviceID.txt");
-                                        SaveMap2Disk(m_DeviceHomeID, std::string("./") + "m_DeviceHomeID.txt");
-                                        SaveDict2Disk(m_thermostats, std::string("./") + "m_thermostats.txt");
-                                        // Save Map_int_uint64_t2Disk(m_thermostat_IDX, std::string("./") + "m_thermostat_int.txt");
-                                        SaveUchar2Disk(m_DeviceModuleID, std::string("./") + "m_DeviceModuleID.txt");
-                                        SaveUint8_t2Disk(m_DeviceModuleID, std::string("./") + "m_DeviceModuleID_8.txt");
                                         //
                                 };
 
@@ -2941,6 +2658,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 //                                Debug(DEBUG_HARDWARE, "ParseHome Person %d", PersonID);
                                 //Find the Person name
                                 PersonName = m_PersonsNames[PersonNetatmoID];
+
+                                SaveJson2Disk(person, std::string("./person_") + PersonName.c_str() + ".txt");
 
                                 std::string PersonLastSeen = person["last_seen"].asString();
                                 std::string PersonAway = person["out_of_sight"].asString();
@@ -2984,6 +2703,10 @@ bool CNetatmo::ParseEvents(const std::string& sResult, Json::Value& root )
                 {
                         if (!events["id"].empty())
                         // Domoticz Device for Events ? / Camera's ?
+                        {
+                                events_ID = events["id"].asString();
+                                SaveJson2Disk(events, std::string("./events_") + events_ID.c_str() + ".txt");
+                        };
 			// Using Textstatus / Alert for now
                         if (!events["id"].empty())
                         {
