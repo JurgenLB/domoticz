@@ -106,7 +106,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	int  GetBatteryLevel(const std::string& ModuleType, int battery_percent);
 //
         void Get_Picture();
-        void Get_Measure(std::string gateway, std::string module_id, std::string scale);
+        void Get_Measure(std::string gateway, std::string module_id, std::string scale, std::string type);
         void Get_Events(std::string home_id, std::string device_types, std::string event_id, std::string person_id, std::string device_id, std::string module_id, bool offset, bool size, std::string locale);
 
         bool ParseStationData(const std::string &sResult, bool bIsThermostat);
