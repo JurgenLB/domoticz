@@ -2316,6 +2316,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 			if (!module["id"].empty())
 			{
 				std::string module_id = module["id"].asString();
+                                std::string bat_percentage;
+                                std::string batName;
                                 int batteryLevel = 255;
                                 float mrf_percentage = 12;
                                 int mrf_status;
