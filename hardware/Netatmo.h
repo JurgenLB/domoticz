@@ -152,7 +152,7 @@ class CNetatmo : public CDomoticzHardwareBase
         std::map<std::string, std::string> m_ModuleNames;
         std::map<std::string, int> m_Module_Bat_Level;
         std::map<std::string, int> m_Module_RF_Level;
-
+        std::map<std::string, int> m_wifi_status;
         std::map<uint64_t, int> m_ModuleIDs;
         std::map<uint64_t, int> m_DeviceID;
         std::map<uint8_t, std::string> m_DeviceModuleID;
