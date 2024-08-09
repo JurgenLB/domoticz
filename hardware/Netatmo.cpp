@@ -2368,7 +2368,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				//Device to get battery level / network strength
 				if (!module["battery_level"].empty())
 				{
-                                        std::string batName = " " + moduleName + " Bat. Lvl";
+                                        batName = " " + moduleName + " Bat. Lvl";
 					float battery_Level = module["battery_level"].asFloat() / 100;
                                         batteryLevel = static_cast<int>(battery_Level);       // Float to int
 
