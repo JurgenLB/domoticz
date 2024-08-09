@@ -2500,7 +2500,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
                                         std::string Module_Name = moduleName + " - Bridge";
                                         std::string bridgeValue = bridge_ + " " + Bridge_Name;
                                         nDevice.StationName = Bridge_Name;
-                                        //SendTextSensor(crcId, 1, 255, Bridge_Text, Module_Name);
+                                        int mrf_status_bridge = m_wifi_status[bridge_];
                                         //UpdateValueInt(int HardwareID, const char* ID, unsigned char unit, unsigned char devType, unsigned char subType, unsigned char signallevel, unsigned char batterylevel, int nValue, const char* sValue, std::string& devname, bool bUseOnOffAction, const std::string& user)
                                         UpdateValueInt(Hardware_int, ID.c_str(), 4, pTypeGeneral, sTypeTextStatus, mrf_status_bridge, 255, '0', bridge_.c_str(), Module_Name, 0, m_Name);
                                 };
