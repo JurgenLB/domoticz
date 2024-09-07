@@ -2233,7 +2233,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				int Interval = NETAMO_POLL_INTERVALL + 60;
 				Debug(DEBUG_HARDWARE, "Module [%s] Interval = %d %lu", moduleName.c_str(), Interval, tNetatmoLastUpdate);
 				//These devices have no "last seen" so no check for Cloud data possible
-				if ((type != "NAMain") || (type != "NAPlug") || (type != "NATherm1") ||  (type != "NACamera") || (type != "NOC") || (type != "NDB") || (type != "NSD") || (type != "NCO") || (type != "BNCX") || (type != "BFII") || (type !=>
+				if ((type != "NAMain") || (type != "NAPlug") || (type != "NATherm1") ||  (type != "NACamera") || (type != "NOC") || (type != "NDB") || (type != "NSD") || (type != "NCO") || (type != "BNCX") || (type != "BFII")  || (type != "BNMH"))
                                 {
 					if (tNetatmoLastUpdate > (tNow - Interval))
 					{
