@@ -79,19 +79,30 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 //	m_energyType = NETYPE_ENERGY;
 //	m_Home_ID = "";
 	m_ActHome = 0;
-
+	Debug(DEBUG_HARDWARE, "Netatmo Actif Scopes %s ", m_scopes.c_str() );
 	m_bPollThermostat = true;
 
-        if(m_scopes.find("read_station") != std::string::npos)
-                m_bPollWeatherData = true;
-        else
+	if(m_scopes.find("read_station"))
+	{
+		Log(LOG_STATUS, "read weatherstation active");
+		m_bPollWeatherData = true;
+	}
+	else
+	{
+		
 		m_bPollWeatherData = false;
-
-	if(m_scopes.find("read_homecoach") != std::string::npos)
+	}
+		
+	if(m_scopes.find("read_homecoach"))
+	{
+		Log(LOG_STATUS, "read homecoach active");
 		m_bPollHomecoachData = true;
 	else
+	{
+		
 		m_bPollHomecoachData = false;
-
+	}
+		
 	m_bPollHomeStatus = true;
 	m_bPollHome = true;
 	m_bFirstTimeThermostat = true;
@@ -129,8 +140,6 @@ void CNetatmo::Init()
 	m_PersonsNames.clear();
 
         m_bPollThermostat = true;
-	m_bPollWeatherData = false;
-	m_bPollHomecoachData = false;
 	m_bPollHomeStatus = true;
 	m_bPollHome = true;
 	m_bFirstTimeThermostat = true;
