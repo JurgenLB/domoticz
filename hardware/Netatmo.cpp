@@ -1963,9 +1963,9 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 
 	if (bHaveCO2)
 	{
-		SendAirQualitySensor(ID, DevIdx, batValue, co2, name);
-		Debug(DEBUG_HARDWARE, "(%d) %s (%s) [%s] co2 %s %s %d %d", Hardware_int, str_ID.c_str(), pchar_ID, name.c_str(), std::to_string(co2).c_str(), m_Name.c_str(), rssiLevel, batValue);
-		UpdateValueInt(Hardware_int, str_ID.c_str(), 0, pTypeAirQuality, sTypeVoc, rssiLevel, batValue, '0', std::to_string(co2).c_str(), name, 0, m_Name);
+		//SendAirQualitySensor(ID, DevIdx, batValue, co2, name);
+		Debug(DEBUG_HARDWARE, "(%d) %s (%s) [%s] co2 rssiLevel %d batValue %d nValue %d sValue %s %s ", Hardware_int, str_ID.c_str(), pchar_ID, name.c_str(), rssiLevel, batValue, co2, std::to_string(co2).c_str(), m_Name.c_str());
+		UpdateValueInt(Hardware_int, str_ID.c_str(), 0, pTypeAirQuality, sTypeVoc, rssiLevel, batValue, co2, std::to_string(co2).c_str(), name, 0, m_Name);
 	}
 
 	if (bHaveSound)
@@ -2212,7 +2212,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				}
 				if (!module["last_seen"].empty())
 				{
-					tNetatmoLastUpdate = module["last_seen"].asFloat();
+					tNetatmoLastUpdate = module["last_seen"].asUInt();
 					// Check when module last updated values
 
 				}
@@ -2232,9 +2232,9 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				// check if Netatmo data was updated in the past NETAMO_POLL_INTERVALL (+1 min for sync time lags)... if not means sensors failed to send to cloud
 				int Interval = NETAMO_POLL_INTERVALL + 60;
 				Debug(DEBUG_HARDWARE, "Module [%s] Interval = %d %lu", moduleName.c_str(), Interval, tNetatmoLastUpdate);
-				//These devices have no "last seen" so no check for Cloud data possible
-				if ((type != "NAMain") || (type != "NAPlug") || (type != "NATherm1") ||  (type != "NACamera") || (type != "NOC") || (type != "NDB") || (type != "NSD") || (type != "NCO") || (type != "BNCX") || (type != "BFII")  || (type != "BNMH"))
-                                {
+				//Not all devices have "last seen" so no check for Cloud data possible tNetatmoLastUpdate remains 0
+				if (tNetatmoLastUpdate != 0)
+				{
 					if (tNetatmoLastUpdate > (tNow - Interval))
 					{
 						Log(LOG_STATUS, "cloud data for module [%s] is now updated again", moduleName.c_str());
