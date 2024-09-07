@@ -110,6 +110,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	m_bFirstTimeWeatherData = true;
 	m_tSetpointUpdateTime = time(nullptr);
 	Init();
+	m_bPollHomecoachData = false;   //Blocking Homecoach because off JSON logic error in Get Respons API
 }
 
 
@@ -1047,6 +1048,12 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	}
 
 	//Check for error
+	if (sResult.find("error"))
+        {
+                Log(LOG_ERROR, "Error data ...  %s", sResult.c_str());
+                return ;
+        }
+	
 	bRet = ParseJSon(sResult, root);
 	if ((!bRet) || (!root.isObject()))
 	{
