@@ -223,15 +223,15 @@ void CNetatmo::Do_Work()
 						GetWeatherDetails();
 						Log(LOG_STATUS,"Weather %d",  m_isLogged);
 					}
-					if (m_bPollHomecoachData)
+					elif (m_bPollHomecoachData)
 					{
 						// ParseStationData
 						GetHomecoachDetails();
 						Log(LOG_STATUS,"HomeCoach %d",  m_isLogged);
 					}
-					if (m_bPollHomeStatus)
+					else
 					{
-						// GetHomesDataDetails
+						// GetHomesDataDetails // (m_bPollHomeStatus)
 						GetHomeStatusDetails();
 						Log(LOG_STATUS,"Status %d",  m_isLogged);
 					}
@@ -533,7 +533,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		//Debug(DEBUG_HARDWARE, "Netatmo length %d", length);
 		//Debug(DEBUG_HARDWARE, "Netatmo uid %d", uid);
 		//std::stringstream sw_id;
-		//sw_id << uid;
+		//sw_id << std::hex << uid;
 		//sw_id << std::setfill ('0') << std::uppercase << std::hex uid;
 		//std::string uid_hex = sw_id.str();
 		//Debug(DEBUG_HARDWARE, "Netatmo uid_hex %d", uid_hex);
@@ -1280,7 +1280,7 @@ void CNetatmo::GetWeatherDetails()
 	Json::Value root;    // root JSON object
 	bool bRet;           //Parsing status
 	std::string home_data = "&get_favorites=true&";
-	Debug(DEBUG_HARDWARE, "Poll Get Weather (%d)", m_bPollWeatherData);
+	Debug(DEBUG_HARDWARE, "Poll Get Weather (%d)", m_bFirstTimeWeatherData);
 
 	if (m_bFirstTimeWeatherData)
 	{
@@ -1315,7 +1315,7 @@ void CNetatmo::GetHomecoachDetails()
 		std::string home_data = "&get_favorites=true&";
 		bool bRet;           //Parsing status
 		Json::Value root;    // root JSON object
-		Debug(DEBUG_HARDWARE, "Poll Get Homecoach (%d)", m_bPollHomecoachData);
+		Debug(DEBUG_HARDWARE, "Poll Get Homecoach (%d)", m_bFirstTimeWeatherData);
 
 		Get_Respons_API(NETYPE_AIRCARE, sResult, home_data, bRet, root, "");
 
