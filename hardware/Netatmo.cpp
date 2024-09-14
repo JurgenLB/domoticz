@@ -533,7 +533,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		//Debug(DEBUG_HARDWARE, "Netatmo length %d", length);
 		//Debug(DEBUG_HARDWARE, "Netatmo uid %d", uid);
 		//std::stringstream sw_id;
-		//sw_id << std::hex << uid;
+		//sw_id << uid;
+		//sw_id << std::setfill ('0') << std::uppercase << std::hex uid;
 		//std::string uid_hex = sw_id.str();
 		//Debug(DEBUG_HARDWARE, "Netatmo uid_hex %d", uid_hex);
 		//Debug(DEBUG_HARDWARE, "Netatmo unitcode %d", unitcode);
@@ -1279,6 +1280,7 @@ void CNetatmo::GetWeatherDetails()
 	Json::Value root;    // root JSON object
 	bool bRet;           //Parsing status
 	std::string home_data = "&get_favorites=true&";
+	Debug(DEBUG_HARDWARE, "Poll Get Weather (%d)", m_bPollWeatherData);
 
 	if (m_bFirstTimeWeatherData)
 	{
@@ -1313,6 +1315,7 @@ void CNetatmo::GetHomecoachDetails()
 		std::string home_data = "&get_favorites=true&";
 		bool bRet;           //Parsing status
 		Json::Value root;    // root JSON object
+		Debug(DEBUG_HARDWARE, "Poll Get Homecoach (%d)", m_bPollHomecoachData);
 
 		Get_Respons_API(NETYPE_AIRCARE, sResult, home_data, bRet, root, "");
 
@@ -1367,7 +1370,8 @@ void CNetatmo::GetHomeStatusDetails()
 		//Parse API response
 		bRet = ParseHomeStatus(sResult, root, home_id);
 
-		Get_Events(home_data, device_types, event_id, person_id, bridge_id, module_id, offset, size, locale);
+		if (m_bPollGetEvents)
+			Get_Events(home_data, device_types, event_id, person_id, bridge_id, module_id, offset, size, locale);
 	}
 	//if (bRet)
 	//{
@@ -2024,6 +2028,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 	bool setModeSwitch = false;
 	std::vector<m_tNetatmoDevice> m_netatmo_devices;
 	m_tNetatmoDevice nDevice;
+	m_bPollGetEvents = false;
 
 	if (!root["body"]["home"]["rooms"].empty())
 	{
@@ -2720,6 +2725,14 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						m_thermostatModuleID[uid] = module_id;                // mac-adres
 						m_DeviceHomeID[roomNetatmoID] = home_id;              // Home_ID
 					}
+					if ((type =="NACamera") || (type == "NCO") || (type == "NDB") || (type == "NOC") || (type == "NSD") || (type == "NIS"))
+					{
+						//Only use Get Events when correct device is presend
+
+						m_bPollGetEvents = true;
+					}
+					Debug(DEBUG_HARDWARE, "Poll Get Events (%d)", m_bPollGetEvents);
+					m_bPollGetEvents = false;  // Blocking GetEvents because off Error "User Usage"
 				}
 			//m_tNetatmoDevice.push_back(nDevice);
 			m_netatmo_devices.push_back(nDevice);
