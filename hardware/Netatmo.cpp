@@ -231,9 +231,13 @@ void CNetatmo::Do_Work()
 					}
 					else
 					{
-						// GetHomesDataDetails // (m_bPollHomeStatus)
+						
+						{
+							if (m_bPollHomeStatus)
+						}
+						// GetHomesDataDetails
 						GetHomeStatusDetails();
-						Log(LOG_STATUS,"Status %d",  m_isLogged);
+						Log(LOG_STATUS,"Status %d",  m_isLogged);	
 					}
 				}
 
@@ -833,12 +837,13 @@ bool CNetatmo::SetSchedule(int scheduleId, int state)
 			return false;
 	}
 
-	//Debug(DEBUG_HARDWARE, "Schedule id = %d", scheduleId);
+	Debug(DEBUG_HARDWARE, "Schedule id = %d - %d", scheduleId, state);
 	std::stringstream bstr;
 	//std::string home_ID = [scheduleId];
 	std::string sResult;
 	Json::Value root;       // root JSON object
-	std::string home_data = "home_id=" + m_Home_ID + "&mode=schedule" + "&get_favorites=true&"; //schedule, away, hg
+	
+	std::string home_data = "home_id=" + m_Home_ID + "&mode=" + state + "&get_favorites=true&"; //schedule, away, hg
 	bool bRet;              //Parsing status
 
 	//Setting the schedule only if we have
@@ -1210,7 +1215,7 @@ void CNetatmo::GetHomesDataDetails()
 				if (!home["schedules"].empty())
 				{
 					Debug(DEBUG_HARDWARE, "Get the schedules from %s", homeID.c_str());
-
+					std::stringstream schedules;
 					for (auto schedule : home["schedules"])
 					{
 						for (auto timetable : schedule["timetable"])
@@ -1243,7 +1248,13 @@ void CNetatmo::GetHomesDataDetails()
 						std::string schedule_id = schedule["id"].asString();
 						std::string schedule_type = schedule["type"].asString();
 						bool schedule_selected = schedule["selected"].asBool();                // true / false
-					}
+						
+						schedules << schedule_name;
+SendSelectorSwitch(const int NodeID, const uint8_t ChildID, const std::string &sValue, const std::string &defaultname, const int customImage, const bool bDropdown,
+					       const std::string &LevelNames, const std::string &LevelActions, const bool bHideOff, const std::string &userName)
+{					}
+					//SendSelectorSwitch(ID, ChildID, sValue, defaultname, customImage, bDropdown, LevelNames, LevelActions, bHideOff, userName)
+					SendSelectorSwitch(crcId, 11, Selector, " - Schedules", 0, true, schedules.str().c_str(), "", true, m_Name);
 				}
 				//Get the user info
 				if (!home["user"].empty())
@@ -2701,6 +2712,9 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						//Selected Index for the dropdown list
 						std::stringstream ssv;
 						ssv << m_selectedScheduleID;
+						
+						//create update / domoticz device
+						SendSelectorSwitch(Hardware_int, 2, ssv.str(), moduleName + " - Schedule", 15, true, allSchName, allSchAction, true, m_Name);
 
 						std::map<std::string, std::string> Options;
 						//Options["SelectorStyle"] = "1";
@@ -2714,7 +2728,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string options = "SelectorStyle:18;LevelOffHidden:true;LevelNames:Off|On|Away|Frost Guard;LevelActions:00|10|20|30;CustomImage:15";
 
 						//create update / domoticz device
-						std::string sName = moduleName + " - schedule"; // " - mode";
+						std::string sName = moduleName + " - mode";
 						//Debug(DEBUG_HARDWARE, "setpoint_mode_str = %s", setpoint_mode_str.c_str());
 						SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, setpoint_mode_str, sName, 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);
 
