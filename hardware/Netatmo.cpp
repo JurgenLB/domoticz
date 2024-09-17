@@ -550,8 +550,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		//Debug(DEBUG_HARDWARE, "Netatmo length %d", length);
 		//Debug(DEBUG_HARDWARE, "Netatmo uid %d", uid);
 		//std::stringstream sw_id;
-		//sw_id << std::hex << uid;
-		//sw_id << std::setfill ('0') << std::uppercase << std::hex uid;
+		//sw_id << std::uppercase << std::hex << uid;
 		//std::string uid_hex = sw_id.str();
 		//Debug(DEBUG_HARDWARE, "Netatmo uid_hex %d", uid_hex);
 		//Debug(DEBUG_HARDWARE, "Netatmo unitcode %d", unitcode);
@@ -1795,6 +1794,8 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	int wind_angle = 0;
 	float wind_strength = 0;
 	float wind_gust = 0;
+	std::string Temp_outdoor = "0";
+	int WindChill_c = 0;
 
 	int batValue = battery_percent;
 	bool action = 0;
@@ -1807,7 +1808,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
         uint64_t Hardware_convert = convert_mac(Hardware_ID);
         int Hardware_int = (int)Hardware_convert;
 	std::stringstream hardware;
-        hardware << std::hex << ID;
+        hardware << std::uppercase << std::hex << ID;
         hardware >> str_ID;
         //converting ID to char const
         char const* pchar_ID = str_ID.c_str();
@@ -1848,8 +1849,14 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	if (!root["Temperature"].empty())
 	{
 		bHaveTemp = true;
+		std::stringstream bt;
 		Temp = root["Temperature"].asFloat();
 		t_str << std::setprecision(2) << Temp;
+		if(ModuleType == "NAModule1")
+		{
+			bt << std::setprecision(2) << Temp;
+			Temp_outdoor = bt.str();
+		}
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Temperature [%s]", t_str.str().c_str());
 	}
 	else if (!root["temperature"].empty())
@@ -2052,9 +2059,9 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		y << ";";
 		y << wind_gust;
 		y << ";";
-		y << '0';
+		y << Temp_outdoor;
 		y << ";";
-		y << '0';
+		y << WindChill_c;
 		std::string sValue = y.str().c_str();
 		// sValue: "<WindDirDegrees>;<WindDirText>;<WindAveMeterPerSecond*10>;<WindGustMeterPerSecond*10>;<Temp_c>;<WindChill_c>"
 		//SendWind(ID, batValue, wind_angle, wind_strength, wind_gust, 0, 0, false, false, name, rssiLevel);
@@ -2271,7 +2278,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 				std::string ID;
 				std::stringstream moduleid;
-				moduleid << std::hex << crcId;
+				moduleid << std::uppercase << std::hex << crcId;
 				moduleid >> ID;
 				std::string sValue;
 				sValue = module_id;
@@ -2902,7 +2909,7 @@ bool CNetatmo::ParseEvents(const std::string& sResult, Json::Value& root )
 				crcId = Crc32(0, (const unsigned char*)events_Module_ID.c_str(), events_Module_ID.length());
 
 				std::stringstream events;
-				events << std::hex << crcId;
+				events << std::uppercase << std::hex << crcId;
 				events >> str_id;
 
 				pchar_ID = str_id.c_str();
