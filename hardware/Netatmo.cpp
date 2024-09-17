@@ -223,21 +223,17 @@ void CNetatmo::Do_Work()
 						GetWeatherDetails();
 						Log(LOG_STATUS,"Weather %d",  m_isLogged);
 					}
-					elif (m_bPollHomecoachData)
+					if (m_bPollHomecoachData)
 					{
 						// ParseStationData
 						GetHomecoachDetails();
 						Log(LOG_STATUS,"HomeCoach %d",  m_isLogged);
 					}
-					else
+					if (m_bPollHomeStatus)
 					{
-						
-						{
-							if (m_bPollHomeStatus)
-						}
 						// GetHomesDataDetails
 						GetHomeStatusDetails();
-						Log(LOG_STATUS,"Status %d",  m_isLogged);	
+						Log(LOG_STATUS,"Status %d",  m_isLogged);
 					}
 				}
 
@@ -495,6 +491,23 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		Debug(DEBUG_HARDWARE, "Packettype pTypeLighting2 ");
 		return true;
 	}
+	//This is the selector switch for setting the thermostat schedule
+	// unitcode == 0x02 ### means schedule switch
+	if ((int)(pCmd->LIGHTING2.unitcode) == 2)
+	{
+		//Debug(DEBUG_HARDWARE, "Schedule");
+		//Recast raw data to get switch specific data
+		const _tGeneralSwitch* xcmd = reinterpret_cast<const _tGeneralSwitch*>(pdata);
+		int uid = xcmd->id;       //switch ID
+		int level = xcmd->level;  //Level selected on the switch
+		int cmnd_SetLevel = xcmd->cmnd;
+		int _rssi_ = xcmd->rssi;
+
+		//Set the schedule on the thermostat
+		SetSchedule(uid, level);
+
+		return true;
+	}
 	if (packettype == pTypeGeneralSwitch)
 	{
 		Debug(DEBUG_HARDWARE, "Packettype pTypeGeneralSwitch ");
@@ -533,7 +546,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int cmnd_SetLevel = xcmd->cmnd;
 		int selectorLevel = xcmd->level;
 		int _rssi_ = xcmd->rssi;
-		Debug(DEBUG_HARDWARE, "Netatmo subType ( %" PRIu64 ") %08X ", ulId1, uid);
+		//Debug(DEBUG_HARDWARE, "Netatmo subType ( %" PRIu64 ") %08X ", ulId1, uid);
 		//Debug(DEBUG_HARDWARE, "Netatmo length %d", length);
 		//Debug(DEBUG_HARDWARE, "Netatmo uid %d", uid);
 		//std::stringstream sw_id;
@@ -554,7 +567,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int devType = packettype;  //unsigned char
 		int subType = sSwitchTypeSelector;
 		Debug(DEBUG_HARDWARE, "Netatmo uid %08X", uid);
-		//
+
 		return SetProgramState(uid, xcmd->level);
 		//return true;
 	}
@@ -599,11 +612,11 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			return false;
 	}
 
+	Debug(DEBUG_HARDWARE, "SetProgramState");
 	std::vector<std::string> ExtraHeaders;
 	std::string sResult;
 	Json::Value root;       // root JSON object
 	std::string home_data;
-	std::string _data;
 	bool bRet;              //Parsing status
 	bool bHaveDevice;
 	std::string module_id = m_DeviceModuleID[uid];
@@ -611,6 +624,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 	std::string name = m_ModuleNames[module_id];
 	std::string roomNetatmoID = m_RoomIDs[module_id];
 	std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
+	Debug(DEBUG_HARDWARE, "Device MAC %s", module_id.c_str());
 
 	if (!m_thermostatModuleID[uid].empty())
 	{
@@ -621,23 +635,23 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 		switch (newState)
 		{
 		case 0:
-			thermState = "off"; //The Thermostat is off
+			thermState = "off";      //The Thermostat is off (Not Supported by Thermostat)
 			break;
 		case 10:
 			thermState = "schedule"; //The Thermostat is currently following its weekly schedule
 			break;
 		case 20:
-			thermState = "away"; //The Thermostat is currently applying the away temperature
+			thermState = "away";     //The Thermostat is currently applying the away temperature
 			break;
 		case 30:
-			thermState = "hg"; //he Thermostat is currently applying the frost-guard temperature
+			thermState = "hg";       //he Thermostat is currently applying the frost-guard temperature
 			break;
 		default:
 			Log(LOG_ERROR, "Netatmo: Invalid Thermostat state!");
 			return false;
 		}
-		//https://api.netatmo.com/api/setthermmode?home_id=xxxxx&mode=schedule
-		home_data = "home_id=" + Home_id + "&mode=" + thermState + "&get_favorites=true&";
+		//https://api.netatmo.com/api/setthermmode?home_id=xxxxx&mode=schedule/away/hg
+		home_data = "home_id=" + Home_id + "&mode=" + thermState ;
 		Get_Respons_API(NETYPE_SETTHERMMODE, sResult, home_data, bRet, root, "");
 
 		if (!bRet)
@@ -654,11 +668,16 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 		// So we have to update the corresponding devices       Device_Types {NAPlug, OTH, BNS}
 		// https://api.netatmo.com/api/homestatus?home_id=xxxxx&device_types=NAPlug
 		std::string Type = "NAPlug";
-		_data = "home_id=" + Home_id + "&device_types=" + Type + "&get_favorites=true&";
+		std::string _data = "home_id=" + Home_id + "&device_types=" + Type ;
 		//Debug(DEBUG_HARDWARE, "Home_Data = %s ", _data.c_str());
 		Get_Respons_API(NETYPE_STATUS, sResult, _data, bRet, root, "");
 		//Parse API response
 		bRet = ParseHomeStatus(sResult, root, Home_id);
+		if (!bRet)
+		{
+			Log(LOG_ERROR, "NetatmoThermostat: Error setting setpoint state!");
+			return false;
+		}
 	}
 
 	if(!m_LightDeviceID[uid].empty())
@@ -683,18 +702,15 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			return false;
 		}
 		//
-		//https://api.netatmo.com/api/setstate?{\"home\":{\"id\":\xxxxx,\"modules\":[{\"id\":\xxxxx,\"floodlight\":\"on\"}]}}
-		//std::string extra_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" + "&";
 		Json::Value json_data;
 		//json_data {"body":{"home":{"id":
-		json_data["body"]["home"]["id"] = Home_id;
-		json_data["body"]["home"]["modules"][0]["floodlight"] = State;
-		json_data["body"]["home"]["modules"][0]["id"] = module_id;
+		json_data["home"]["id"] = Home_id;
+		json_data["home"]["modules"][0]["floodlight"] = State;
+		json_data["home"]["modules"][0]["id"] = module_id;
 		std::string extra_data = json_data.toStyledString();
-		std::string _data = "{\"body\":{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}}" ;
-		_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" ;
+		std::string _data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" ;
 		home_data = "&";
-		//home_data = "home_id=" + Home_id + "&" + _data + "&";
+
 		Get_Respons_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
 		if (!bRet)
 		{
@@ -828,7 +844,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 /// <param name="scheduleId">ID of the schedule to use</param>
 /// <param name="state"> Status of the schedule</param>
 /// <returns>success status</returns>
-bool CNetatmo::SetSchedule(int scheduleId, int state)
+bool CNetatmo::SetSchedule(int uId, int selected)
 {
 	//Checking if we are still connected to the API
 	if (!m_isLogged == true)
@@ -837,31 +853,62 @@ bool CNetatmo::SetSchedule(int scheduleId, int state)
 			return false;
 	}
 
-	Debug(DEBUG_HARDWARE, "Schedule id = %d - %d", scheduleId, state);
+	std::string scheduleId = m_ScheduleIDs[selected];
+	std::string Home_id = m_DeviceHomeID[scheduleId];            // Home_ID
+	Debug(DEBUG_HARDWARE, "Schedule id = %s %d", scheduleId.c_str(), uId);
 	std::stringstream bstr;
-	//std::string home_ID = [scheduleId];
 	std::string sResult;
 	Json::Value root;       // root JSON object
-	
-	std::string home_data = "home_id=" + m_Home_ID + "&mode=" + state + "&get_favorites=true&"; //schedule, away, hg
+	std::string scheduleState;
 	bool bRet;              //Parsing status
 
-	//Setting the schedule only if we have
-	//the right thermostat type
-	if (m_energyType == NETYPE_ENERGY)
-	{
-		Get_Respons_API(NETYPE_SETTHERMMODE, sResult, home_data, bRet, root, "");
-		std::string thermState = "schedule";
-		std::string sPostData = "access_token=" + m_accessToken + "&home_id=" + m_Home_ID + "&mode=" + std::to_string(state) + "&schedule_id=" + m_ScheduleIDs[scheduleId];
+	int state = 10;             //Forcing Thermostat to follow the selected weekly schedule
 
-		if (!bRet)
-		{
-			Log(LOG_ERROR, "NetatmoThermostat: Error setting setpoint state!");
+	switch (state)
+	{
+		case 0:
+			scheduleState = "off";      //The Thermostat is off (Not Suported by  Thermostat)
+			break;
+		case 10:
+			scheduleState = "schedule"; //The Thermostat is currently following its weekly schedule
+			break;
+		case 20:
+			scheduleState = "away";     //The Thermostat is currently applying the away temperature
+			break;
+		case 30:
+			scheduleState = "hg";       //he Thermostat is currently applying the frost-guard temperature
+			break;
+		default:
+			Log(LOG_ERROR, "Netatmo: Invalid Schedule state!");
 			return false;
-		}
-		//store the selected schedule in our local data to avoid
-		//changing back the schedule when using away mode
-		m_selectedScheduleID = scheduleId;
+	}
+
+	//https://api.netatmo.com/api/switchhomeschedule?home_id=xxxxxxxx&schedule_id=xxxxxxxx
+	std::string home_data = "home_id=" + Home_id + "&schedule_id=" + scheduleId;
+	Get_Respons_API(NETYPE_SWITCHHOMESCHEDULE, sResult, home_data, bRet, root, "");
+
+	if (!bRet)
+	{
+		Log(LOG_ERROR, "NetatmoThermostat: Error setting setpoint state!");
+		return false;
+	}
+	//store the selected schedule in our local data to avoid
+	//changing back the schedule when using away mode
+	m_selectedScheduleID = uId;
+
+	// When a thermostat mode is changed all thermostat/valves in Home are changed by Netatmo
+	// So we have to update the corresponding devices       Device_Types {NAPlug, OTH, BNS}
+	// https://api.netatmo.com/api/homestatus?home_id=xxxxx&device_types=NAPlug
+	std::string Type = "NAPlug";
+	std::string _data = "home_id=" + Home_id + "&device_types=" + Type;
+	//Debug(DEBUG_HARDWARE, "Home_Data = %s ", _data.c_str());
+	Get_Respons_API(NETYPE_STATUS, sResult, _data, bRet, root, "");
+	//Parse API response
+	bRet = ParseHomeStatus(sResult, root, Home_id);
+	if (!bRet)
+	{
+		Log(LOG_ERROR, "NetatmoThermostat: Error setting setpoint state!");
+		return false;
 	}
 
 	return true;
@@ -1019,14 +1066,16 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	//https://api.netatmo.com/api/getevents?home_id=
 	//https://api.netatmo.com/api/getroommeasure?home_id=xxxxxxxx&room_id=xxxx&scale=30min&type=temperature&optimize=false&real_time=false"
 	//https://api.netatmo.com/api/setthermmode?home_id=xxxxxxxxx&mode=schedule
+	//https://api.netatmo.com/api/switchhomeschedule?home_id=xxxxxxxx&schedule_id=xxxxxxxx
 	//https://api.netatmo.com/api/getmeasure?device_id=xx:xx&module_id=xx:xx&scale=30min&type=boileron&optimize=false&real_time=false
 	//https://api.netatmo.com/api/setstate 
 	//        //"Content-Type: application/json" -d "{\"home\":{\"id\":\"xxxxxxxx\",\"modules\":[{\"id\":\"00:xx:xx:xx:xx:xx\",\"floodlight\":\"auto\"}]}}"
 
 	httpUrl = MakeRequestURL(NType, home_data);
 	std::string sPostData = sstr.str();
-	//Debug(DEBUG_HARDWARE, "Respons URL   %s", httpUrl.c_str());
-        if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
+	Debug(DEBUG_HARDWARE, "Respons URL   %s", httpUrl.c_str());
+
+	if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
 	{
 		Log(LOG_ERROR, "Error connecting to Server (Get_Respons_API): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return ;
@@ -1216,6 +1265,9 @@ void CNetatmo::GetHomesDataDetails()
 				{
 					Debug(DEBUG_HARDWARE, "Get the schedules from %s", homeID.c_str());
 					std::stringstream schedules;
+					std::string allSchName = "Off";
+					std::string allSchAction = "00";
+					int index = 0;
 					for (auto schedule : home["schedules"])
 					{
 						for (auto timetable : schedule["timetable"])
@@ -1248,13 +1300,14 @@ void CNetatmo::GetHomesDataDetails()
 						std::string schedule_id = schedule["id"].asString();
 						std::string schedule_type = schedule["type"].asString();
 						bool schedule_selected = schedule["selected"].asBool();                // true / false
-						
-						schedules << schedule_name;
-SendSelectorSwitch(const int NodeID, const uint8_t ChildID, const std::string &sValue, const std::string &defaultname, const int customImage, const bool bDropdown,
-					       const std::string &LevelNames, const std::string &LevelActions, const bool bHideOff, const std::string &userName)
-{					}
-					//SendSelectorSwitch(ID, ChildID, sValue, defaultname, customImage, bDropdown, LevelNames, LevelActions, bHideOff, userName)
-					SendSelectorSwitch(crcId, 11, Selector, " - Schedules", 0, true, schedules.str().c_str(), "", true, m_Name);
+						//int schedule_int = schedule["id"].asInt();
+						index += 10;
+						m_ScheduleNames[index] = schedule["name"].asString();
+						m_ScheduleIDs[index] = schedule_id;
+						m_DeviceHomeID[schedule_id] = homeID;
+						if (!schedule["selected"].empty() && schedule["selected"].asBool())
+							m_selectedScheduleID = index;
+					}
 				}
 				//Get the user info
 				if (!home["user"].empty())
@@ -1429,7 +1482,7 @@ void CNetatmo::Get_Measure(std::string gateway, std::string module_id, std::stri
 	//// date_max_temp // date_min_temp // sum_rain // max_rain // min_rain // max_noise // min_noise // max_pressure // min_pressure // max_co2 // min_co2 // max_hum // min_hum
 	//// max_temp // min_temp // gustangle // guststrength // windangle // windstrength // rain // noise // pressure // co2 // humidity
 
-	std::string home_data = "device_id=" + gateway + "&module_id=" + module_id + "&scale=" + scale + "&type=" + type + "boileron" + "&date_begin=" + date_begin + "&date_end=" + date_end + "&limit=" + limit  + "&optimize=" + "false" + "&real_time="  + "false" + "&get_favorites=true&";
+	std::string home_data = "device_id=" + gateway + "&module_id=" + module_id + "&scale=" + scale + "&type=" + type + "boileron" + "&date_begin=" + date_begin + "&date_end=" + date_end + "&limit=" + limit  + "&optimize=" + "false" + "&real_time="  + "false" ;
 	bool bRet;           //Parsing status
 
 	Get_Respons_API(NETYPE_MEASURE, sResult, home_data, bRet, root, "");
@@ -2458,6 +2511,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						//Debug(DEBUG_HARDWARE, "Floodlight name %s  mode %s, %s .", lName.c_str(), setpoint_mode.c_str(), sValue.c_str());
 						m_DeviceModuleID[crcId] = module_id;
 						m_LightDeviceID[crcId] = lName;
+						Debug(DEBUG_HARDWARE, "Floodlight =  %s -  %d", lName.c_str(), crcId);
 						SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, Selector, lName, 0, true, "off|on|auto", "", false, m_Name);
 					}
 					// Sensors from new API
@@ -2712,7 +2766,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						//Selected Index for the dropdown list
 						std::stringstream ssv;
 						ssv << m_selectedScheduleID;
-						
+
 						//create update / domoticz device
 						SendSelectorSwitch(Hardware_int, 2, ssv.str(), moduleName + " - Schedule", 15, true, allSchName, allSchAction, true, m_Name);
 
