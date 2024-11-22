@@ -492,10 +492,10 @@ uint64_t CNetatmo::convert_mac(std::string mac)
 /// Send sensors to Main worker
 /// This gives a long thread runtime on some occasions
 /// </summary>
-uint64_t CNetatmo::UpdateValueInt(int HardwareID, const char* ID, unsigned char unit, unsigned char devType, unsigned char subType, unsigned char signallevel, unsigned char batterylevel, int nValue,
+uint64_t CNetatmo::UpdateValueInt(int HardwareID, const char* deviceID, unsigned char unit, unsigned char devType, unsigned char subType, unsigned char signallevel, unsigned char batterylevel, int nValue,
         const char* sValue, std::string& devname, bool bUseOnOffAction, const std::string& user)
 {
-        uint64_t DeviceRowIdx = m_sql.UpdateValue(m_HwdID, HardwareID, ID, unit, devType, subType, signallevel, batterylevel, nValue, sValue, devname, bUseOnOffAction, user.c_str());
+        uint64_t DeviceRowIdx = m_sql.UpdateValue(m_HwdID, HardwareID, deviceID, unit, devType, subType, signallevel, batterylevel, nValue, sValue, devname, bUseOnOffAction, user.c_str());
         if (DeviceRowIdx == (uint64_t)-1)
                 return -1;
         if (m_bOutputLog)
@@ -504,7 +504,7 @@ uint64_t CNetatmo::UpdateValueInt(int HardwareID, const char* ID, unsigned char 
                 Log(LOG_NORM, szLogString);
         }
         m_mainworker.sOnDeviceReceived(m_HwdID, DeviceRowIdx, devname, nullptr);
-        m_notifications.CheckAndHandleNotification(DeviceRowIdx, m_HwdID, ID, devname, unit, devType, subType, nValue, sValue);
+        m_notifications.CheckAndHandleNotification(DeviceRowIdx, m_HwdID, std::string(deviceID), devname, unit, devType, subType, nValue, sValue);
         m_mainworker.CheckSceneCode(DeviceRowIdx, devType, subType, nValue, sValue, "MQTT Auto");
         return DeviceRowIdx;
 }
@@ -1136,7 +1136,7 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 		std::size_t found = e_str.find("error");
 		if (found!=std::string::npos)
 		{
-			Log(LOG_ERROR, "Error data ...  %s", sResult.c_str());
+			Log(LOG_ERROR, "Error data (Get_Respons_API) ...  %s", sResult.c_str());
 			return ;     // This prevents JSON Logic Error in case off Error respons.
 		}
 	}
@@ -1145,14 +1145,14 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 
 	if ((!bRet) || (!root.isObject()))
 	{
-		Log(LOG_ERROR, "Invalid data received...J");
+		Log(LOG_ERROR, "Invalid data received (Get_Respons_API) ...");
 		return ;
 	}
 
 	if (!root["error"].empty())
         {
 		//We received an error
-		Log(LOG_ERROR, "Error %s", root.asString().c_str());  // possible; 'error'  'errors'  'error [message]'
+		Log(LOG_ERROR, "Get_Respons_API: Error = %s", root.asString().c_str());  // possible; 'error'  'errors'  'error [message]'
 		m_isLogged = false;
 		return ;
 	}
@@ -1478,7 +1478,7 @@ void CNetatmo::GetHomeStatusDetails()
 
 	Debug(DEBUG_HARDWARE, "Home Status Details");   // Multiple Homes possible
 	size = (int)m_homeid.size();
-	Log(LOG_STATUS, "Home_ID size = %d", size);
+	Log(LOG_STATUS, "Home Status Details, size (number of homes) is %d", size);
 	for (int i = 0; i < size; i++)
 	{
 		home_id = m_homeid[i];
@@ -1616,7 +1616,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 	bool ret = ParseJSon(sResult, root);
 	if ((!ret) || (!root.isObject()))
 	{
-		Log(LOG_STATUS, "Invalid data received...");
+		Log(LOG_STATUS, "Invalid data received (ParseStationData) ...");
 		return false;
 	}
 	bool bHaveDevices = true;
@@ -2357,7 +2357,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				moduleid >> ID;
 				std::string sValue;
 				sValue = module_id;
-				uint8_t ID4 = (uint8_t)((crcId & 0x000000FF));
+				//---uint8_t ID4 = (uint8_t)((crcId & 0x000000FF));	// Not used
 				std::string module_Name = moduleName + " - MAC-adres";
 				bool reachable;
 				bool connected = true;
@@ -2533,6 +2533,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						b << boiler_boost;
 						std::string sValue = b.str().c_str();
 						//UpdateValueInt(0, ID.c_str(), 0, pTypeGeneralSwitch, sSwitchGeneralSwitch, '0', 255, '0', sValue.c_str(), bName,  bIsActive, m_Name);
+						//??? No send function to replace the line above???
 					}
 					if (!module["boiler_status"].empty())
 					{
