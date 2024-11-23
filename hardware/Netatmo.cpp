@@ -2533,7 +2533,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						b << boiler_boost;
 						std::string sValue = b.str().c_str();
 						//UpdateValueInt(0, ID.c_str(), 0, pTypeGeneralSwitch, sSwitchGeneralSwitch, '0', 255, '0', sValue.c_str(), bName,  bIsActive, m_Name);
-						//??? No send function to replace the line above???
+						//SendSwitch(crcId, 9, batteryLevel, bIsActive, Level, bName, m_Name, mrf_status);
 					}
 					if (!module["boiler_status"].empty())
 					{
@@ -2889,7 +2889,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						m_bPollGetEvents = true;
 					}
 					Debug(DEBUG_HARDWARE, "Poll Get Events (%d)", m_bPollGetEvents);
-					//m_bPollGetEvents = false;  // Blocking GetEvents because off Error
+					//m_bPollGetEvents = false;  // Possible to Block GetEvents in case off Error
 				}
 			//m_tNetatmoDevice.push_back(nDevice);
 			m_netatmo_devices.push_back(nDevice);
