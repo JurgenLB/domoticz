@@ -1662,6 +1662,17 @@ namespace http
 						switchtype = STYPE_BlindsPercentageWithStop;
 						devid = "0" + id;
 					}
+					else if (lighttype == 317)
+					{
+						// Orcon 2
+						dtype = pTypeFan2;
+						subtype = sTypeOrcon;
+						std::string id = request::findValue(&req, "id");
+						if (id.empty())
+							return false;
+						devid = id;
+						sunitcode = "0";
+					}
 					else if (lighttype == 400)
 					{
 						// Openwebnet Bus Blinds
