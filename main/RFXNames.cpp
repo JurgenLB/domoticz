@@ -801,6 +801,8 @@ const char* RFX_Type_SubType_Desc(const unsigned char dType, const unsigned char
 		{ pTypeFan, sTypeOrcon, "Orcon" },
 		{ pTypeFan, sTypeIthoHRU400, "Itho HRU400" },
 
+		{ pTypeFan2, sTypeOrcon, "Orcon 2" },
+
 		{ pTypeTEMP_RAIN, sTypeTR1, "Alecto WS1200" },
 
 		{ pTypeBBQ, sTypeBBQ1, "Maverick ET-732" },
