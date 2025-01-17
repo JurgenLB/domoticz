@@ -945,6 +945,7 @@ SDK version 4.9
 #define fan_NovyFilter 0x6
 #define fan_NovyMood 0x7
 
+#define pTypeFan2 0x22
 #define fan_Orconlow 0x1
 #define fan_Orconmedium 0x2
 #define fan_Orconhigh 0x3
