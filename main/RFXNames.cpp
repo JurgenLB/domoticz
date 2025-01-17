@@ -2199,6 +2199,33 @@ void GetLightStatus(
 		break;
 		}
 		break;
+	case pTypeFan2:
+		switch (dSubType)
+		{
+		case sTypeOrcon:
+		{
+			switch (nValue)
+			{
+			case fan_Low:              //Fan speed:01 = Low
+				lstatus = "low";
+				break;
+			case fan_Med:              //Fan speed:02 = Medium
+				lstatus = "med";
+				break;
+			case fan_High:              //Fan speed:03 = High
+				lstatus = "high";
+				break;
+			case fan_Auto:              //Fan speed:04 = Auto
+				lstatus = "auto";
+				break;
+			case fan_Off:              //Fan speed:00 = Off
+				lstatus = "off";
+				break;
+			}
+		}
+		break;
+		}
+		break;
 	case pTypeHunter:
 		switch (dSubType)
 		{
