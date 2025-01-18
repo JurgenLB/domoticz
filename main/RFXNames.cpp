@@ -2206,19 +2206,19 @@ void GetLightStatus(
 		{
 			switch (nValue)
 			{
-			case fan_Low:              //Fan speed:01 = Low
+			case fan_Orconlow:              //Fan speed:01 = Low
 				lstatus = "low";
 				break;
-			case fan_Med:              //Fan speed:02 = Medium
+			case fan_Orconmedium:              //Fan speed:02 = Medium
 				lstatus = "med";
 				break;
-			case fan_High:              //Fan speed:03 = High
+			case fan_Orconhigh:              //Fan speed:03 = High
 				lstatus = "high";
 				break;
-			case fan_Auto:              //Fan speed:04 = Auto
+			case fan_Orconauto:              //Fan speed:04 = Auto
 				lstatus = "auto";
 				break;
-			case fan_Off:              //Fan speed:00 = Off
+			case fan_Orconaway:              //Fan speed:00 = Off
 				lstatus = "off";
 				break;
 			}
