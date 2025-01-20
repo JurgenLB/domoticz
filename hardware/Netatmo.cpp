@@ -2243,7 +2243,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				std::string Temp_outdoor = "0";
 
 				int ionflag = 0;
-				Double powerflag = 0;
+				double powerflag = 0;
 
 				//uint64_t DeviceRowIdx;
 				iModuleIndex ++;
