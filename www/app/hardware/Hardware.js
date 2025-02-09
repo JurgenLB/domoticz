@@ -238,8 +238,10 @@ define(['app'], function (app) {
 				logLevel |= 4;
 
 			var text = $("#hardwarecontent #hardwareparamstable #combotype option:selected").text();
+			ShowNotify($.t('Update ' + hardwaretype + ': ' + bEnabled), 2500, true);
 
 			if($scope.calledFetch) {
+				ShowNotify($.t('Update Domoticz HW!'), 2500, true);
 				ActionDomoticzHW("update", hardwaretype, logLevel, datatimeout, bEnabled, idx);
 				return;
 			}
