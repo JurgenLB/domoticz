@@ -436,8 +436,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 /// <returns>true if token retrieved, store the token in member variables</returns>
 bool CNetatmo::LoadRefreshToken()
 {
-	std::vector<std::vector<std::string> > result;
-	result = m_sql.safe_query("SELECT Extra FROM Hardware WHERE (ID==%d)", m_HwdID);
+	auto result = m_sql.safe_query("SELECT Extra FROM Hardware WHERE (ID==%d)", m_HwdID);
 	if (result.empty())
 	{
 		Debug(DEBUG_HARDWARE, "Result Token Not found ... ");
@@ -2063,8 +2062,7 @@ void CNetatmo::Get_Scenarios(std::string home_id, Json::Value& scenarios)
 			//Selected Scenario ?
 			int ChildID = 14;
 			int crcId = Crc32(0, (const unsigned char*)home_id.c_str(), home_id.length());
-			std::vector<std::vector<std::string> > result;
-			result = m_sql.safe_query("SELECT ID, nValue, sValue, LastLevel FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+			auto result = m_sql.safe_query("SELECT ID, nValue, sValue, LastLevel FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 			if (!result.empty())
 			{
@@ -2547,8 +2545,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 
 		if (m_bFirstTimeHomeStatus)
 		{
-			std::vector<std::vector<std::string> > result;
-			result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%d') AND (Unit==%d)", m_HwdID, ID & 0xff, DevIdx);
+			auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%d') AND (Unit==%d)", m_HwdID, ID & 0xff, DevIdx);
 
 			if (!result.empty())
 			{
@@ -3051,8 +3048,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 						std::string setpoint_mode = module["monitoring"].asString();
 
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
 
 						if (!result.empty())
                                                 {
@@ -3288,8 +3284,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						SendAirQualitySensor(crcId, unit, batteryLevel, co2, moduleName);
 						//Debug(DEBUG_HARDWARE, "AirQualitySensor DeviceID = %04X %d unit = %d", crcId & 0xff, crcId & 0xff, unit);
 
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d)  AND (DeviceID=='%d')", m_HwdID, crcId & 0xff);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d)  AND (DeviceID=='%d')", m_HwdID, crcId & 0xff);
 
 						if (m_bFirstTimeHomeStatus)
 						{
@@ -3378,8 +3373,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							m_ModuleNames[home_id] = module_id;
 
 							// Set option SwitchType to STYPE_Contact
-							std::vector<std::vector<std::string> > result;
-							result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+							auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 							if (!result.empty())
                                                         {
@@ -3440,8 +3434,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					{
 						//Debug(DEBUG_HARDWARE, "NRV");
 						int ChildID = NETATMO_PRESET_UNIT;
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 						if (!result.empty())
 						{
@@ -3475,8 +3468,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						if (!module["brightness"].empty())
 						{
 							m_LightDeviceID[crcId] = bName;
-							std::vector<std::vector<std::string> > result;
-							result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+							auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 							if (!result.empty())
                                                         {
@@ -3532,8 +3524,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						SendKwhMeter(crcId, 5, batteryLevel, powerflag, mTotal, cName, mrf_status);
 
 						m_PowerDeviceID[crcId] = bName;
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
 
 						if (!result.empty())
 						{
