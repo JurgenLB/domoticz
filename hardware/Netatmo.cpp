@@ -1524,7 +1524,7 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
 	ExtraHeaders.push_back("accept: application/json;charset=UTF-8");
 	//ExtraHeaders.push_back("Content-Type: application/json;charset=UTF-8");
-	ExtraHeaders.push_back("Content-Type","application/x-www-form-urlencoded;charset=utf-8");
+	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=utf-8");
 	ExtraHeaders.push_back("Authorization: Bearer " + m_accessToken);
 	//             //extra_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" ;
 	std::vector<std::string> returnHeaders;         // HTTP returned headers
