@@ -351,19 +351,19 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 	// Time to refresh the token
 	std::stringstream sstr;
-	sstr << "grant_type : refresh_token&";
-	sstr << "refresh_token : " << m_refreshToken << "&";
-	sstr << "client_id : " << m_clientId << "&";
-	sstr << "client_secret : " << m_clientSecret;
+	sstr << "grant_type=refresh_token&";
+	sstr << "refresh_token=" << m_refreshToken << "&";
+	sstr << "client_id=" << m_clientId << "&";
+	sstr << "client_secret=" << m_clientSecret;
 
 	std::string httpData = sstr.str();
 	std::vector<std::string> ExtraHeaders;
 	std::vector<std::string> returnHeaders;
 
-//	ExtraHeaders.push_back("Host: api.netatmo.com");
-	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+	//ExtraHeaders.push_back("Host: api.netatmo.com");
+	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=utf-8");
 
-//        std::string httpUrl(NETATMO_API_URI + "oauth2/token?")
+	//std::string httpUrl(NETATMO_API_URI + "oauth2/token?")
 	std::string httpUrl(NETATMO_OAUTH2_TOKEN_URI);
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
 
@@ -1523,7 +1523,8 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	//
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
 	ExtraHeaders.push_back("accept: application/json;charset=UTF-8");
-	ExtraHeaders.push_back("Content-Type: application/json;charset=UTF-8");
+	//ExtraHeaders.push_back("Content-Type: application/json;charset=UTF-8");
+	ExtraHeaders.push_back("Content-Type","application/x-www-form-urlencoded;charset=utf-8");
 	ExtraHeaders.push_back("Authorization: Bearer " + m_accessToken);
 	//             //extra_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" ;
 	std::vector<std::string> returnHeaders;         // HTTP returned headers
