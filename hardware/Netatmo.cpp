@@ -3370,7 +3370,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							int ChildID = 9;
 							std::string bName = moduleName + " - Boiler Status";
 							SendGeneralSwitch(crcId, ChildID, batteryLevel, bIsActive, bIsActive, bName, m_Name, mrf_status);
-							m_ModuleNames[home_id] = module_id;
+							m_DeviceBridge[home_id] = module_id;
+							//m_ModuleNames[home_id] = module_id;
 
 							// Set option SwitchType to STYPE_Contact
 							auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
