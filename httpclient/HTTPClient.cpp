@@ -328,7 +328,7 @@ bool HTTPClient::POSTBinary(const std::string &url, const std::string &postdata,
 		_log.Debug("...CURL URL %s", url.c_str());
 		for (const auto& header : vHeaderData)
 		{
-			_log.Debug("...CURL vHeaderData %s", header.c_str());
+			_log.Debug(DEBUG_HARDWARE, "...CURL vHeaderData %s", header.c_str());
 		}
 		
 		struct curl_slist *headers = nullptr;
