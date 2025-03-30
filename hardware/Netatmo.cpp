@@ -1400,7 +1400,7 @@ std::string CNetatmo::MakeRequestURL(const m_eNetatmoType NType, std::string dat
 		//"https://api.netatmo.com/api/getevents?home_id=";
 		break;
 	case NETYPE_SETSTATE:
-		URI += "api/setstate?");
+		URI += "api/setstate?";
 		//"https://api.netatmo.com/api/setstate?";
 		break;
 	case NETYPE_SCENARIOS:
