@@ -382,6 +382,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		m_isLogged = false;
 
 		//Access is Blocked so we clear AccessToken - Ready for renew
+		HTTPClient::Cleanup()
  		m_accessToken = "";
 		m_bForceLogin = false;
 		m_bForceSetpointUpdate = false;
