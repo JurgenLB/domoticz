@@ -8,6 +8,7 @@
 #include "../main/json_helper.h"
 #include "../notifications/NotificationHelper.h"
 #include <cinttypes>                    //PRIu64
+#include <curl/curl.h>
 
 #define NETATMO_API_URI "https://api.netatmo.com/"
 #define NETATMO_PRESET_UNIT 10
@@ -71,6 +72,73 @@ std::string ReadFile(std::string filename)
 	return sResult;
 }
 #endif
+
+
+// Function to handle the response from the cURL request
+size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
+{
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+
+bool Client(const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders, std::string &response, std::vector<std::string> &vHeaderData, const bool bFollowRedirect, const bool bIgnoreNoDataReturned, long TimeOut = -1)
+{
+    CURL* curl;
+    CURLcode res;
+    std::string readBuffer;
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+
+    if (TimeOut != -1)
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, TimeOut);
+    if (!bFollowRedirect)
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
+
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);
+	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
+	
+	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_curl_headerdata);
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &vHeaderData);
+	
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response);
+	curl_easy_setopt(curl, CURLOPT_POST, 1);
+
+	if (!bIgnoreNoDataReturned && response.empty())
+		return false;
+
+	struct curl_slist *headers = nullptr;
+	if (!ExtraHeaders.empty())
+	{
+		for (const auto &header : ExtraHeaders)
+		{
+			headers = curl_slist_append(headers, header.c_str());
+		}
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	}
+
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
+        res = curl_easy_perform(curl);
+
+        if(res != CURLE_OK)
+	{
+		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+		curl_global_cleanup();
+        	return false;
+    	}
+
+	curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+
+    return readBuffer;
+}
+
 
 CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string& password)
 	: m_username(CURLEncode::URLDecode(username))
@@ -356,7 +424,11 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
 
 	std::string sResult;
-	bool ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
+	bool bFollowRedirect = true;
+	long TimeOut = 20;
+	//static bool POST      (const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders,                std::string &response, std::vector<std::string> &vHeaderData, bool bFollowRedirect = true, bool bIgnoreNoDataReturned = false);
+	//bool ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
+	bool ret = Client(url, httpData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut))
 
 	//Check for returned data
 	if (!ret)
@@ -376,13 +448,12 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		std::string Port = m_mainworker.GetWebserverPort();
 		m_ErrorFlag = true;
 		Log (LOG_STATUS, "Retry LOGIN within %d min. ", (NETAMO_ERROR_INTERVALL / 60));
-		Log (LOG_STATUS, "Please check if 'http://%s:%s' is added to APP Parameters on dev.netatmo.com ", IP_adress.c_str(), Port.c_str());
+		Log (LOG_STATUS, "Please check if 'http://<IP>:<PORT>/' is added to APP Parameters on dev.netatmo.com ");
 
 		//Force login next time
 		m_isLogged = false;
 
 		//Access is Blocked so we clear AccessToken - Ready for renew
-		HTTPClient::Cleanup();
  		m_accessToken = "";
 		m_bForceLogin = false;
 		m_bForceSetpointUpdate = false;
@@ -1485,10 +1556,12 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	//        //"Content-Type: application/json" -d "{\"home\":{\"id\":\"xxxxxxxx\",\"modules\":[{\"id\":\"00:xx:xx:xx:xx:xx\",\"floodlight\":\"auto\"}]}}"
 
 	httpUrl = MakeRequestURL(NType, home_data);
+	bool bFollowRedirect = true;
+	long TimeOut = 20;
 	std::string sPostData = extra_data;
 	Debug(DEBUG_HARDWARE, "Respons URL   %s - POST %s", httpUrl.c_str(), extra_data.c_str()); // URI to be tested
 
-	if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
+	if (!Client(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut))))
 	{
 		Log(LOG_ERROR, "Error connecting to Server (Get_Respons_API): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return ;
