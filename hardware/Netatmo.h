@@ -85,7 +85,6 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bPollHomeStatus;
 	bool m_bPollHome;
 	bool m_bFirstTimeHomeStatus;
-	bool m_bFirstTimeThermostat;
 	bool m_bFirstTimeWeatherData;
 	bool m_bForceSetpointUpdate;
 	time_t m_tSetpointUpdateTime;
@@ -127,7 +126,6 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool RefreshToken(bool bForce = false);
 	bool LoadRefreshToken();
 	void StoreRefreshToken();
-	void StoreRequestTokenFlag(bool bFlag = false);
 	bool m_isLogged;
 	bool m_ErrorFlag;
 	bool m_bForceLogin;
