@@ -341,13 +341,11 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	m_ErrorFlag = false;
 
 	// Time to refresh the token
-	std::stringstream sstr;
-	sstr << "grant_type=refresh_token"
-		<< "&refresh_token=" << m_refreshToken
-		<< "&client_id=" << m_clientId
-		<< "&client_secret=" << m_clientSecret;
+	std::string httpData = "grant_type=refresh_token"
+		+ "&refresh_token=" + m_refreshToken
+		+ "&client_id=" + m_clientId
+		+ "&client_secret=" + m_clientSecret;
 
-	std::string httpData = sstr.str();
 	std::vector<std::string> ExtraHeaders;
 	std::vector<std::string> returnHeaders;
 
@@ -1467,10 +1465,7 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 		return;
 	//Locals
 	std::string httpUrl;                             //URI
-	//
-	std::stringstream sstr;
-	sstr << extra_data.c_str();
-	//
+
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
 	ExtraHeaders.push_back("accept: application/json;charset=utf-8");
 	ExtraHeaders.push_back("Content-Type: application/json;charset=utf-8");
@@ -1488,8 +1483,8 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	//        //"Content-Type: application/json" -d "{\"home\":{\"id\":\"xxxxxxxx\",\"modules\":[{\"id\":\"00:xx:xx:xx:xx:xx\",\"floodlight\":\"auto\"}]}}"
 
 	httpUrl = MakeRequestURL(NType, home_data);
-	std::string sPostData = sstr.str();
-	Debug(DEBUG_HARDWARE, "Respons URL   %s", httpUrl.c_str()); // URI to be tested
+	std::string sPostData = extra_data;
+	Debug(DEBUG_HARDWARE, "Respons URL   %s - POST %s", httpUrl.c_str(), extra_data.c_str()); // URI to be tested
 
 	if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
 	{
