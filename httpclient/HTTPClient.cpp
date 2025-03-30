@@ -325,7 +325,7 @@ bool HTTPClient::POSTBinary(const std::string &url, const std::string &postdata,
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response);
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
-		_log.Debug("...CURL URL %s", url.c_str());
+		_log.Debug(DEBUG_HARDWARE, "...CURL URL %s", url.c_str());
 		for (const auto& header : vHeaderData)
 		{
 			_log.Debug(DEBUG_HARDWARE, "...CURL vHeaderData %s", header.c_str());
