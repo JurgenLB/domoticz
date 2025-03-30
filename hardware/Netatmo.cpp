@@ -1359,98 +1359,99 @@ bool CNetatmo::SetSchedule(int uId, int selected)
 /// <returns>API response</returns>
 std::string CNetatmo::MakeRequestURL(const m_eNetatmoType NType, std::string data)
 {
-	std::string URI;
+	std::string URI = m_netatmo_api_uri;
 
 	switch (NType)
 	{
 	case NETYPE_MEASURE:
-		URI = (m_netatmo_api_uri + "api/getmeasure?" + data);
+		URI += "api/getmeasure?";
 		//"https://api.netatmo.com/api/getmeasure?";
 		break;
 	case NETYPE_WEATHER_STATION:
-		URI = (m_netatmo_api_uri + "api/getstationsdata?" + data);
+		URI += "api/getstationsdata?";
 		//"https://api.netatmo.com/api/getstationsdata?";
 		break;
 	case NETYPE_AIRCARE:
-		URI = (m_netatmo_api_uri + "api/gethomecoachsdata?" + data);
+		URI += "api/gethomecoachsdata?";
 		//"https://api.netatmo.com/api/gethomecoachsdata?";
 		break;
 	case NETYPE_THERMOSTAT:        // OLD API
-		URI = (m_netatmo_api_uri + "api/getthermostatsdata?" + data);
+		URI += "api/getthermostatsdata?";
 		//"https://api.netatmo.com/api/getthermostatsdata?";
 		break;
 	case NETYPE_HOME:              // OLD API
-		URI = (m_netatmo_api_uri + "api/homedata?" + data);
+		URI += "api/homedata?";
 		//"https://api.netatmo.com/api/homedata?";
 		break;
 	case NETYPE_HOMESDATA:         // was NETYPE_ENERGY
-		URI = (m_netatmo_api_uri + "api/homesdata?" + data);
+		URI += "api/homesdata?";
 		//"https://api.netatmo.com/api/homesdata?";
 		break;
 	case NETYPE_STATUS:
-		URI = (m_netatmo_api_uri + "api/homestatus?" + data);
+		URI += "api/homestatus?";
 		//"https://api.netatmo.com/api/homestatus?home_id=";
 		break;
 	case NETYPE_CAMERAS:           // OLD API
-		URI = (m_netatmo_api_uri + "api/getcamerapicture?" + data);
+		URI += "api/getcamerapicture?";
 		//"https://api.netatmo.com/api/getcamerapicture?";
 		break;
 	case NETYPE_EVENTS:
-		URI = (m_netatmo_api_uri + "api/getevents?" + data);
+		URI += "api/getevents?";
 		//"https://api.netatmo.com/api/getevents?home_id=";
 		break;
 	case NETYPE_SETSTATE:
-		URI = (m_netatmo_api_uri + "api/setstate?" + data);
+		URI += "api/setstate?");
 		//"https://api.netatmo.com/api/setstate?";
 		break;
 	case NETYPE_SCENARIOS:
-		URI = (m_netatmo_api_uri + "api/getscenarios?" + data);
+		URI += "api/getscenarios?";
 		//"https://api.netatmo.com/api/getscenarios?";
 		break;
 	case NETYPE_SETROOMTHERMPOINT:
-		URI = (m_netatmo_api_uri + "api/setroomthermpoint?" + data);
+		URI += "api/setroomthermpoint?";
 		//"https://api.netatmo.com/api/setroomthermpoint?";
 		break;
 	case NETYPE_SETTHERMMODE:
-		URI = (m_netatmo_api_uri + "api/setthermmode?" + data);
+		URI += "api/setthermmode?";
 		//"https://api.netatmo.com/api/setthermmode?";
 		break;
 	case NETYPE_SETPERSONSAWAY:
-		URI = (m_netatmo_api_uri + "api/setpersonsaway?" + data);
+		URI += "api/setpersonsaway?";
 		//"https://api.netatmo.com/api/setpersonsaway?";
 		break;
 	case NETYPE_SETPERSONSHOME:
-		URI = (m_netatmo_api_uri + "api/setpersonshome?" + data);
+		URI += "api/setpersonshome?";
 		//"https://api.netatmo.com/api/setpersonshome?";
 		break;
 	case NETYPE_NEWHOMESCHEDULE:
-		URI = (m_netatmo_api_uri + "api/createnewhomeschedule?" + data);
+		URI += "api/createnewhomeschedule?";
 		//"https://api.netatmo.com/api/createnewhomeschedule?";
 		break;
 	case NETYPE_SYNCHOMESCHEDULE:
-		URI = (m_netatmo_api_uri + "api/synchomeschedule?" + data);
+		URI = "api/synchomeschedule?";
 		//"https://api.netatmo.com/api/synchomeschedule?";
 		break;
 	case NETYPE_SWITCHHOMESCHEDULE:
-		URI = (m_netatmo_api_uri + "api/switchhomeschedule?" + data);
+		URI = "api/switchhomeschedule?";
 		//"https://api.netatmo.com/api/switchhomeschedule?";
 		break;
 	case NETYPE_ADDWEBHOOK:
-		URI = (m_netatmo_api_uri + "api/addwebhook?" + data);
+		URI = "api/addwebhook?";
 		//"https://api.netatmo.com/api/addwebhook?";
 		break;
 	case NETYPE_DROPWEBHOOK:
-		URI = (m_netatmo_api_uri + "api/dropwebhook?" + data);
+		URI = "api/dropwebhook?";
 		//"https://api.netatmo.com/api/dropwebhook?";
 		break;
 	case NETYPE_PUBLICDATA:
-		URI = (m_netatmo_api_uri + "api/getpublicdata?" + data);
+		URI = "api/getpublicdata?";
 		//"https://api.netatmo.com/api/getpublicdata?";
 		break;
 
 	default:
 		return "";
 	}
+	URI += data;
 	return URI;
 }
 
