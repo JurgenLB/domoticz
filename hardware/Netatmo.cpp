@@ -88,14 +88,14 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	}
 	else
 	{
-		Log(LOG_ERROR, "The username does not contain the client_id:client_secret!");
+		Log(LOG_ERROR, "%s The username does not contain the client_id:client_secret!", m_Name.c_str());
 	}
 
 	m_nextRefreshTs = mytime(nullptr);
 	m_isLogged = false;
 	m_ErrorFlag = false;
 
-	Debug(DEBUG_HARDWARE, "Netatmo Actif Scopes %s ", m_scopes.c_str());
+	Debug(DEBUG_HARDWARE, "%s Actif Scopes %s ", m_Name.c_str(), m_scopes.c_str());
 
 	m_netatmo_api_uri = std::string(NETATMO_API_URI);
 
