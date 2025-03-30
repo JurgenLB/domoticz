@@ -89,6 +89,27 @@ size_t write_curl_header(void *contents, size_t size, size_t nmemb, void *userp)
 	return realsize;
 }
 
+std::string gen_R_ST(int length)
+{
+    const string CHARACTERS
+        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+          "wxyz0123456789";
+
+    random_device rd;
+    mt19937 generator(rd());
+
+    uniform_int_distribution<> distribution(
+        0, CHARACTERS.size() - 1);
+
+    string r_string;
+    for (int i = 0; i < length; ++i) {
+        r_string
+            += CHARACTERS[distribution(generator)];
+    }
+
+    return r_string;
+}
+
 bool Client(const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders, std::string &response, std::vector<std::string> &vHeaderData, const bool bFollowRedirect, const bool bIgnoreNoDataReturned, long TimeOut = -1)
 {
     CURL* curl;
@@ -462,7 +483,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		m_isLogged = false;
 
 		//Access is Blocked so we clear AccessToken - Ready for renew
-		HTTPClient::Cleanup();
+		//HTTPClient::Cleanup();
  		m_accessToken = "";
 		m_bForceLogin = false;
 		m_bForceSetpointUpdate = false;
@@ -630,28 +651,6 @@ uint64_t CNetatmo::convert_mac(std::string mac)
         mac.erase(std::remove(mac.begin(), mac.end(), ':'), mac.end());
         // Convert to uint64_t
         return strtoul(mac.c_str(), NULL, 16);
-}
-
-
-string gen_R_ST(int length)
-{
-    const string CHARACTERS
-        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
-          "wxyz0123456789";
-
-    random_device rd;
-    mt19937 generator(rd());
-
-    uniform_int_distribution<> distribution(
-        0, CHARACTERS.size() - 1);
-
-    string r_string;
-    for (int i = 0; i < length; ++i) {
-        r_string
-            += CHARACTERS[distribution(generator)];
-    }
-
-    return r_string;
 }
 
 
