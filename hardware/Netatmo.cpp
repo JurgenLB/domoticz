@@ -81,7 +81,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
     return size * nmemb;
 }
 
-size_t write_curl_headerdata(void *contents, size_t size, size_t nmemb, void *userp) // called once for each header
+size_t write_curl_header(void *contents, size_t size, size_t nmemb, void *userp) // called once for each header
 {
 	size_t realsize = size * nmemb;
 	std::vector<std::string>* pvHeaderData = (std::vector<std::string>*)userp;
@@ -104,11 +104,12 @@ bool Client(const std::string &url, const std::string &postdata, const std::vect
 
     if(curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, gen_R_ST(10).c_str());
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);
 	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
 	
-	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_curl_headerdata);
+	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_curl_header);
 	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &vHeaderData);
 	
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -434,11 +435,11 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	bool bFollowRedirect = true;
 	long TimeOut = 20;
 	//static bool POST      (const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders,                std::string &response, std::vector<std::string> &vHeaderData, bool bFollowRedirect = true, bool bIgnoreNoDataReturned = false);
-	//bool ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
-	bool ret = Client(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut);
+	//bool bret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
+	bool bret = Client(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut);
 
 	//Check for returned data
-	if (!ret)
+	if (!bret)
 	{
 		Log(LOG_ERROR, "Error connecting to Server (refresh tokens): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return false;
@@ -446,7 +447,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 	//Check for valid JSON
 	Json::Value root;
-	ret = ParseJSon(sResult, root);
+	bool ret = ParseJSon(sResult, root);
 	if ((!ret) || (!root.isObject()))
 	{
 		Debug(DEBUG_HARDWARE, "Netatmo Invalid ... %s", sResult.c_str());
@@ -461,6 +462,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		m_isLogged = false;
 
 		//Access is Blocked so we clear AccessToken - Ready for renew
+		HTTPClient::Cleanup();
  		m_accessToken = "";
 		m_bForceLogin = false;
 		m_bForceSetpointUpdate = false;
@@ -628,6 +630,28 @@ uint64_t CNetatmo::convert_mac(std::string mac)
         mac.erase(std::remove(mac.begin(), mac.end(), ':'), mac.end());
         // Convert to uint64_t
         return strtoul(mac.c_str(), NULL, 16);
+}
+
+
+string gen_R_ST(int length)
+{
+    const string CHARACTERS
+        = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
+          "wxyz0123456789";
+
+    random_device rd;
+    mt19937 generator(rd());
+
+    uniform_int_distribution<> distribution(
+        0, CHARACTERS.size() - 1);
+
+    string r_string;
+    for (int i = 0; i < length; ++i) {
+        r_string
+            += CHARACTERS[distribution(generator)];
+    }
+
+    return r_string;
 }
 
 
@@ -1568,6 +1592,7 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	std::string sPostData = extra_data;
 	Debug(DEBUG_HARDWARE, "Respons URL   %s - POST %s", httpUrl.c_str(), extra_data.c_str()); // URI to be tested
 
+	//if (!if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
 	if (!Client(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut))
 	{
 		Log(LOG_ERROR, "Error connecting to Server (Get_Respons_API): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
