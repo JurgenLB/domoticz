@@ -4,6 +4,7 @@ class HTTPClient
 {
 	// give MainWorker acces to the protected Cleanup() function
 	friend class MainWorker;
+	friend class Netatmo;
 
       public:
 	enum _eHTTPmethod
