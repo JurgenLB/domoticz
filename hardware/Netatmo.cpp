@@ -3322,6 +3322,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							int ChildID = 9;
 							std::string bName = moduleName + " - Boiler Status";
 							SendGeneralSwitch(crcId, ChildID, batteryLevel, bIsActive, bIsActive, bName, m_Name, mrf_status);
+							Debug(DEBUG_HARDWARE, "NATherm1 %s from Home %s", module_id.c_str(), home_id.c_str());
 							m_DeviceBridge[home_id] = module_id;
 							//m_ModuleNames[home_id] = module_id;
 
