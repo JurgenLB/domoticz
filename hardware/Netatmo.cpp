@@ -341,10 +341,10 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	m_ErrorFlag = false;
 
 	// Time to refresh the token
-	std::string httpData = "grant_type=refresh_token"
-		+ "&refresh_token=" + m_refreshToken
-		+ "&client_id=" + m_clientId
-		+ "&client_secret=" + m_clientSecret;
+	std::string httpData("grant_type=refresh_token");
+	httpData += "&refresh_token=" + m_refreshToken;
+	httpData += "&client_id=" + m_clientId;
+	httpData += "&client_secret=" + m_clientSecret;
 
 	std::vector<std::string> ExtraHeaders;
 	std::vector<std::string> returnHeaders;
