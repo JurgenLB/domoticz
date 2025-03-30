@@ -9,7 +9,6 @@
 #include "../notifications/NotificationHelper.h"
 #include <cinttypes>                    //PRIu64
 
-#define NETATMO_OAUTH2_TOKEN_URI "https://api.netatmo.com/oauth2/token?"
 #define NETATMO_API_URI "https://api.netatmo.com/"
 #define NETATMO_PRESET_UNIT 10
 // 03/03/2022 - PP Changing the Weather polling from 600 to 900s. This has reduce the number of server errors,
@@ -106,9 +105,10 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 
 	m_bPollThermostat = true;
 	m_bFirstTimeHomeStatus = true;
-	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_tSetpointUpdateTime = time(nullptr);
+
+	LoadRefreshToken();
 
 	Init();
 }
@@ -149,7 +149,7 @@ void CNetatmo::Init()
 	m_ScheduleHomes.clear();
 	m_selected_Schedule.clear();
 	m_bPollThermostat = true;
-	m_bFirstTimeThermostat = true;
+	m_bFirstTimeHomeStatus = true;
 	m_bFirstTimeWeatherData = true;
 	m_bForceSetpointUpdate = false;
 
@@ -207,10 +207,7 @@ std::string CNetatmo::ExtractHtmlStatusCode(const std::vector<std::string>& head
 void CNetatmo::Do_Work()
 {
 	int sec_counter = 600 - 5;
-	bool bFirstTimeWS = true;
-	bool bFirstTimeHS = true;
-	bool bFirstTimeSS = true;
-	bool bFirstTimeTH = true;
+	bool bFirstTime = true;
 
 	Log(LOG_STATUS, "Worker started...");
 
@@ -236,52 +233,50 @@ void CNetatmo::Do_Work()
 				}
 			}
 		}
-		if (m_isLogged)
+		if (!m_isLogged)
+ 			continue;
+ 
+ 		if (m_ErrorFlag)
+ 			continue;
+ 
+ 		if (RefreshToken())
 		{
-			if (!m_ErrorFlag)
+                	// Thermostat is accessable through Homestatus / Homesdata in New API
+			//Weather, HomeCoach, and Thermostat data is updated every  NETAMO_POLL_INTERVALL  seconds
+			if ((sec_counter % NETAMO_POLL_INTERVALL == 0) || (bFirstTime) )
 			{
-				if (RefreshToken())
+				bFirstTime = false;
+				if (m_bPollWeatherData)
 				{
-                                	// Thermostat is accessable through Homestatus / Homesdata in New API
-                                	//Weather, HomeCoach, and Thermostat data is updated every  NETAMO_POLL_INTERVALL  seconds
-					if ((sec_counter % NETAMO_POLL_INTERVALL == 0) || (bFirstTimeWS) || (bFirstTimeHS) || (bFirstTimeSS))
-					{
-						bFirstTimeWS = false;
-                                        	bFirstTimeHS = false;
-                                        	bFirstTimeSS = false;
-						if (m_bPollWeatherData)
-						{
-							// ParseStationData
-							GetWeatherDetails();
-							Log(LOG_STATUS,"Weather %d",  m_isLogged);
-						}
-						if (m_bPollHomecoachData)
-						{
-							// ParseStationData
-							GetHomecoachDetails();
-							Log(LOG_STATUS,"HomeCoach %d",  m_isLogged);
-						}
-						if (m_bPollHomeStatus)
-						{
-							// GetHomesDataDetails
-							GetHomeStatusDetails();
-							Log(LOG_STATUS,"Status %d",  m_isLogged);
-							m_bFirstTimeHomeStatus = false;
-						}
-					}
+					// ParseStationData
+					GetWeatherDetails();
+					Log(LOG_STATUS,"Weather %d",  m_isLogged);
+				}
+				if (m_bPollHomecoachData)
+				{
+					// ParseStationData
+					GetHomecoachDetails();
+					Log(LOG_STATUS,"HomeCoach %d",  m_isLogged);
+				}
+				if (m_bPollHomeStatus)
+				{
+					// GetHomesDataDetails
+					GetHomeStatusDetails();
+					Log(LOG_STATUS,"Status %d",  m_isLogged);
+					m_bFirstTimeHomeStatus = false;
+				}
+			}
 
-					//Update Thermostat data when the
-					//manual set point reach its end
-					if (m_bForceSetpointUpdate)
-					{
-						time_t atime = time(nullptr);
-						if (atime >= m_tSetpointUpdateTime)
-						{
-							m_bForceSetpointUpdate = false;
-							if (m_bPollThermostat)
-								GetHomeStatusDetails();
-						}
-					}
+			//Update Thermostat data when the
+			//manual set point reach its end
+			if (m_bForceSetpointUpdate)
+			{
+				time_t atime = time(nullptr);
+				if (atime >= m_tSetpointUpdateTime)
+				{
+					m_bForceSetpointUpdate = false;
+					if (m_bPollThermostat)
+						GetHomeStatusDetails();
 				}
 			}
 		}
@@ -300,26 +295,21 @@ bool CNetatmo::Login()
 	if (m_isLogged)
 		return true;
 
-	//Check if a stored token is available
-	if (LoadRefreshToken())
-	{
-		//Yes : we refresh our take
-		if (RefreshToken(true))
-		{
-			Log(LOG_STATUS, "We refresh our token ...");
-			m_isLogged = true;
-			m_bPollThermostat = true;
-			return true;
-		}
-	}
-
 	if (m_refreshToken.empty())
 	{
-		Log (LOG_ERROR, "No refresh token available; please login to retreive a new one from Netatmo");
-		StoreRequestTokenFlag(true);
+		Log(LOG_ERROR, "No refresh token available; please login to retreive a new one from Netatmo");
 		return false;
 	}
-	return true;
+
+	if (RefreshToken(true))
+ 	{
+ 		Log(LOG_STATUS, "We refreshed our token ...");
+ 		m_isLogged = true;
+ 		m_bPollThermostat = true;
+ 		return true;
+ 	}
+
+	return false;
 }
 
 
@@ -331,14 +321,9 @@ bool CNetatmo::Login()
 /// <returns>true if token refreshed, false otherwise</returns>
 bool CNetatmo::RefreshToken(const bool bForce)
 {
-	//To refresh a token, we must have
-	//one to refresh...
-	if (m_refreshToken.empty())
-		return false;
-
 	//Check if we need to refresh the
 	//token (token is valid for a fixed duration)
-	if (!bForce)
+	if ((!bForce) && (!m_accessToken.empty()))
 	{
 		if (!m_isLogged)
 			return false;
@@ -346,15 +331,20 @@ bool CNetatmo::RefreshToken(const bool bForce)
 			return true; //no need to refresh the token yet
 	}
 
-	Log (LOG_STATUS, "Requesting refreshed tokens");
+	//To refresh a access_token, we must have a refresh_token
+ 	if (m_refreshToken.empty())
+ 		return false;
+ 
+ 	Log (LOG_STATUS, "Requesting new access_token");
+
 	m_ErrorFlag = false;
 
 	// Time to refresh the token
 	std::stringstream sstr;
-	sstr << "grant_type=refresh_token&";
-	sstr << "refresh_token=" << m_refreshToken << "&";
-	sstr << "client_id=" << m_clientId << "&";
-	sstr << "client_secret=" << m_clientSecret;
+	sstr << "grant_type=refresh_token"
+		<< "&refresh_token=" << m_refreshToken
+		<< "&client_id=" << m_clientId
+		<< "&client_secret=" << m_clientSecret;
 
 	std::string httpData = sstr.str();
 	std::vector<std::string> ExtraHeaders;
@@ -363,8 +353,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	//ExtraHeaders.push_back("Host: api.netatmo.com");
 	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=utf-8");
 
-	//std::string httpUrl(NETATMO_API_URI + "oauth2/token?")
-	std::string httpUrl(NETATMO_OAUTH2_TOKEN_URI);
+	std::string httpUrl(NETATMO_API_URI + "oauth2/token?")
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
 
 	std::string sResult;
@@ -384,23 +373,23 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	{
 		Debug(DEBUG_HARDWARE, "Netatmo Invalid ... %s", sResult.c_str());
 		Log(LOG_ERROR, "Invalid/no data received (refresh tokens)... %s", ExtractHtmlStatusCode(returnHeaders).c_str());
-
+		std::string IP_adress = GetWebserverAddress();
+		std::string Port = GetWebserverPort();
 		m_ErrorFlag = true;
 		Log (LOG_STATUS, "Retry LOGIN within %d min. ", (NETAMO_ERROR_INTERVALL / 60));
+		Log (LOG_STATUS, "Please check if 'http://%s:%s' is added to APP Parameters on dev.netatmo.com ", IP_adress.c_str(), Port.c_str());
 
 		//Force login next time
 		m_isLogged = false;
 
 		//Access is Blocked so we clear AccessToken - Ready for renew
-		m_accessToken = "";
-		root.clear();
+ 		m_accessToken = "";
 		m_bForceLogin = false;
 		m_bForceSetpointUpdate = false;
 
 		m_tSetpointUpdateTime = time(nullptr);
 		m_nextRefreshTs = mytime(nullptr);
 
-		StoreRequestTokenFlag(true);
 		return false;
 	}
 
@@ -413,7 +402,6 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		//Force login next time
 		StoreRefreshToken();
 		m_isLogged = false;
-		StoreRequestTokenFlag(true);
 		return false;
 	}
 
@@ -424,7 +412,6 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	//Store the duration of validity of the token
 	m_nextRefreshTs = mytime(nullptr) + expires * 2 / 3;
 
-	StoreRequestTokenFlag(false);
 	StoreRefreshToken();
 	return true;
 }
@@ -436,44 +423,27 @@ bool CNetatmo::RefreshToken(const bool bForce)
 /// <returns>true if token retrieved, store the token in member variables</returns>
 bool CNetatmo::LoadRefreshToken()
 {
-	auto result = m_sql.safe_query("SELECT Extra FROM Hardware WHERE (ID==%d)", m_HwdID);
+	auto result = m_sql.safe_query("SELECT Extra, Address FROM Hardware WHERE (ID==%d)", m_HwdID);
 	if (result.empty())
 	{
-		Debug(DEBUG_HARDWARE, "Result Token Not found ... ");
+		Debug(DEBUG_HARDWARE, "No refresh_token found in database ... ");
 		return false;
 	}
-	std::string refreshToken = result[0][0];
-	if (refreshToken.empty())
-	{
-		Debug(DEBUG_HARDWARE, "No Refresh Token Found ... ");
-		return false;
-	}
-	m_refreshToken = refreshToken;
-	Log(LOG_STATUS, "Use refresh token from database...");
+	m_refreshToken = result[0][0];
+	m_nextRefreshTs = result[0][1];
 	return true;
 }
 
 
 /// <summary>
-/// Store an access token in the database for reuse after domoticz restart
-/// (Note : we should also store token duration)
-/// </summary>
-void CNetatmo::StoreRequestTokenFlag(bool flag)
-{
-	Debug(DEBUG_HARDWARE, "Refresh Token Flag %d ...", flag?1:0);
-	m_sql.safe_query("UPDATE Hardware SET Mode1='%d' WHERE (ID == %d)", flag?1:0, m_HwdID);
-}
-
-
-/// <summary>
-/// Store an access token in the database for reuse after domoticz restart
-/// (Note : we should also store token duration)
+/// Store an Refresh token and Token duration in the database for reuse after domoticz restart
+///
 /// </summary>
 void CNetatmo::StoreRefreshToken()
 {
 	if (m_refreshToken.empty())
 		return;
-	m_sql.safe_query("UPDATE Hardware SET Extra='%q' WHERE (ID == %d)", m_refreshToken.c_str(), m_HwdID);
+	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q' WHERE (ID == %d)", m_refreshToken.c_str(), m_nextRefreshTs.c_str(), m_HwdID);
 }
 
 
@@ -1387,123 +1357,99 @@ bool CNetatmo::SetSchedule(int uId, int selected)
 /// <returns>API response</returns>
 std::string CNetatmo::MakeRequestURL(const m_eNetatmoType NType, std::string data)
 {
-	std::stringstream sstr;
+	std::string URI;
 
 	switch (NType)
 	{
 	case NETYPE_MEASURE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getmeasure";
+		URI = (NETATMO_API_URI + "api/getmeasure?" + data)
 		//"https://api.netatmo.com/api/getmeasure?";
 		break;
 	case NETYPE_WEATHER_STATION:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getstationsdata";
+		URI = (NETATMO_API_URI + "api/getstationsdata?" + data)
 		//"https://api.netatmo.com/api/getstationsdata?";
 		break;
 	case NETYPE_AIRCARE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/gethomecoachsdata";
+		URI = (NETATMO_API_URI + "api/gethomecoachsdata?" + data)
 		//"https://api.netatmo.com/api/gethomecoachsdata?";
 		break;
 	case NETYPE_THERMOSTAT:        // OLD API
-		sstr << NETATMO_API_URI;
-		sstr << "api/getthermostatsdata";
+		URI = (NETATMO_API_URI + "api/getthermostatsdata?" + data)
 		//"https://api.netatmo.com/api/getthermostatsdata?";
 		break;
 	case NETYPE_HOME:              // OLD API
-		sstr << NETATMO_API_URI;
-		sstr << "api/homedata";
+		URI = (NETATMO_API_URI + "api/homedata?" + data)
 		//"https://api.netatmo.com/api/homedata?";
 		break;
 	case NETYPE_HOMESDATA:         // was NETYPE_ENERGY
-		sstr << NETATMO_API_URI;
-		sstr << "api/homesdata";
+		URI = (NETATMO_API_URI + "api/homesdata?" + data)
 		//"https://api.netatmo.com/api/homesdata?";
 		break;
 	case NETYPE_STATUS:
-		sstr << NETATMO_API_URI;
-		sstr << "api/homestatus";
+		URI = (NETATMO_API_URI + "api/homestatus?" + data)
 		//"https://api.netatmo.com/api/homestatus?home_id=";
 		break;
 	case NETYPE_CAMERAS:           // OLD API
-		sstr << NETATMO_API_URI;
-		sstr << "api/getcamerapicture";
+		URI = (NETATMO_API_URI + "api/getcamerapicture?" + data)
 		//"https://api.netatmo.com/api/getcamerapicture?";
 		break;
 	case NETYPE_EVENTS:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getevents";
+		URI = (NETATMO_API_URI + "api/getevents?" + data)
 		//"https://api.netatmo.com/api/getevents?home_id=";
 		break;
 	case NETYPE_SETSTATE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setstate";
+		URI = (NETATMO_API_URI + "api/setstate?" + data)
 		//"https://api.netatmo.com/api/setstate?";
 		break;
 	case NETYPE_SCENARIOS:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getscenarios";
+		URI = (NETATMO_API_URI + "api/getscenarios?" + data)
 		//"https://api.netatmo.com/api/getscenarios?";
 		break;
 	case NETYPE_SETROOMTHERMPOINT:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setroomthermpoint";
+		URI = (NETATMO_API_URI + "api/setroomthermpoint?" + data)
 		//"https://api.netatmo.com/api/setroomthermpoint?";
 		break;
 	case NETYPE_SETTHERMMODE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setthermmode";
+		URI = (NETATMO_API_URI + "api/setthermmode?" + data)
 		//"https://api.netatmo.com/api/setthermmode?";
 		break;
 	case NETYPE_SETPERSONSAWAY:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setpersonsaway";
+		URI = (NETATMO_API_URI + "api/setpersonsaway?" + data)
 		//"https://api.netatmo.com/api/setpersonsaway?";
 		break;
 	case NETYPE_SETPERSONSHOME:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setpersonshome";
+		URI = (NETATMO_API_URI + "api/setpersonshome?" + data)
 		//"https://api.netatmo.com/api/setpersonshome?";
 		break;
 	case NETYPE_NEWHOMESCHEDULE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/createnewhomeschedule";
+		URI = (NETATMO_API_URI + "api/createnewhomeschedule?" + data)
 		//"https://api.netatmo.com/api/createnewhomeschedule?";
 		break;
 	case NETYPE_SYNCHOMESCHEDULE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/synchomeschedule";
+		URI = (NETATMO_API_URI + "api/synchomeschedule?" + data)
 		//"https://api.netatmo.com/api/synchomeschedule?";
 		break;
 	case NETYPE_SWITCHHOMESCHEDULE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/switchhomeschedule";
+		URI = (NETATMO_API_URI + "api/switchhomeschedule?" + data)
 		//"https://api.netatmo.com/api/switchhomeschedule?";
 		break;
 	case NETYPE_ADDWEBHOOK:
-		sstr << NETATMO_API_URI;
-		sstr << "api/addwebhook";
+		URI = (NETATMO_API_URI + "api/addwebhook?" + data)
 		//"https://api.netatmo.com/api/addwebhook?";
 		break;
 	case NETYPE_DROPWEBHOOK:
-		sstr << NETATMO_API_URI;
-		sstr << "api/dropwebhook";
+		URI = (NETATMO_API_URI + "api/dropwebhook?" + data)
 		//"https://api.netatmo.com/api/dropwebhook?";
 		break;
 	case NETYPE_PUBLICDATA:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getpublicdata";
+		URI = (NETATMO_API_URI + "api/getpublicdata?" + data)
 		//"https://api.netatmo.com/api/getpublicdata?";
 		break;
 
 	default:
 		return "";
 	}
-
-	sstr << "?";
-	sstr << data;
-	return sstr.str();
+	return URI;
 }
 
 
@@ -1522,9 +1468,9 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	sstr << extra_data.c_str();
 	//
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
-	ExtraHeaders.push_back("accept: application/json;charset=UTF-8");
-	//ExtraHeaders.push_back("Content-Type: application/json;charset=UTF-8");
-	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=utf-8");
+	ExtraHeaders.push_back("accept: application/json;charset=utf-8");
+	ExtraHeaders.push_back("Content-Type: application/json;charset=UTF-8");
+	//ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=utf-8");
 	ExtraHeaders.push_back("Authorization: Bearer " + m_accessToken);
 	//             //extra_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" ;
 	std::vector<std::string> returnHeaders;         // HTTP returned headers
