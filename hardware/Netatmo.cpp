@@ -8,6 +8,7 @@
 #include "../main/json_helper.h"
 #include "../notifications/NotificationHelper.h"
 #include <cinttypes>                    //PRIu64
+#include <random>
 #include <curl/curl.h>
 
 #define NETATMO_API_URI "https://api.netatmo.com/"
@@ -91,17 +92,17 @@ size_t write_curl_header(void *contents, size_t size, size_t nmemb, void *userp)
 
 std::string gen_R_ST(int length)
 {
-    const string CHARACTERS
+    const std::string CHARACTERS
         = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv"
           "wxyz0123456789";
 
-    random_device rd;
-    mt19937 generator(rd());
+    std::random_device rd;
+    std::mt19937 generator(rd());
 
-    uniform_int_distribution<> distribution(
+    std::uniform_int_distribution<> distribution(
         0, CHARACTERS.size() - 1);
 
-    string r_string;
+    std::string r_string;
     for (int i = 0; i < length; ++i) {
         r_string
             += CHARACTERS[distribution(generator)];
