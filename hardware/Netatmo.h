@@ -74,16 +74,14 @@ class CNetatmo : public CDomoticzHardwareBase
 	std::string m_password;
 	std::string m_accessToken;
 	std::string m_refreshToken;
+	std::string m_netatmo_api_uri;
 	std::vector<m_tNetatmoDevice> m_known_thermotats;
 	std::map<int, std::string> m_thermostatModuleID;
 	bool m_bPollThermostat;
 	bool m_bPollWeatherData;
 	bool m_bPollHomecoachData;
 	bool m_bPollGetEvents;
-	bool m_bPollHomeData;
-	bool m_bPollHomesData;
 	bool m_bPollHomeStatus;
-	bool m_bPollHome;
 	bool m_bFirstTimeHomeStatus;
 	bool m_bFirstTimeWeatherData;
 	bool m_bForceSetpointUpdate;
@@ -131,11 +129,8 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool m_bForceLogin;
 	bool find_scopes();
 
-	m_eNetatmoType m_weatherType;
-	m_eNetatmoType m_homecoachType;
 	m_eNetatmoType m_energyType;
 
-	int m_ActHome;
 	std::vector<std::string> m_homeid;
 	std::string m_Home_ID;
 	std::string m_Home_name;
