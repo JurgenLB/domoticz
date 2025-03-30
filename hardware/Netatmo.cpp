@@ -81,6 +81,13 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
     return size * nmemb;
 }
 
+size_t write_curl_headerdata(void *contents, size_t size, size_t nmemb, void *userp) // called once for each header
+{
+	size_t realsize = size * nmemb;
+	std::vector<std::string>* pvHeaderData = (std::vector<std::string>*)userp;
+	pvHeaderData->push_back(std::string((unsigned char*)contents, (std::find((unsigned char*)contents, (unsigned char*)contents + realsize, '\r'))));
+	return realsize;
+}
 
 bool Client(const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders, std::string &response, std::vector<std::string> &vHeaderData, const bool bFollowRedirect, const bool bIgnoreNoDataReturned, long TimeOut = -1)
 {
@@ -136,7 +143,7 @@ bool Client(const std::string &url, const std::string &postdata, const std::vect
 
     curl_global_cleanup();
 
-    return readBuffer;
+    return true;
 }
 
 
@@ -428,7 +435,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	long TimeOut = 20;
 	//static bool POST      (const std::string &url, const std::string &postdata, const std::vector<std::string> &ExtraHeaders,                std::string &response, std::vector<std::string> &vHeaderData, bool bFollowRedirect = true, bool bIgnoreNoDataReturned = false);
 	//bool ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
-	bool ret = Client(url, httpData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut))
+	bool ret = Client(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut);
 
 	//Check for returned data
 	if (!ret)
@@ -1561,7 +1568,7 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	std::string sPostData = extra_data;
 	Debug(DEBUG_HARDWARE, "Respons URL   %s - POST %s", httpUrl.c_str(), extra_data.c_str()); // URI to be tested
 
-	if (!Client(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut))))
+	if (!Client(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders, bFollowRedirect, TimeOut))
 	{
 		Log(LOG_ERROR, "Error connecting to Server (Get_Respons_API): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return ;
