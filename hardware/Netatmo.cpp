@@ -97,11 +97,12 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 
 	Debug(DEBUG_HARDWARE, "Netatmo Actif Scopes %s ", m_scopes.c_str());
 
+	m_netatmo_api_uri = std::string(NETATMO_API_URI);
+
 	m_bPollWeatherData = (m_scopes.find("station_R") != std::string::npos);      //read_station
 	m_bPollHomecoachData = (m_scopes.find("homecoach_R") != std::string::npos);  //read_homecoach
 
 	m_bPollHomeStatus = find_scopes(); //"thermostat_RW","camera_RWA","presence_RWA","carbonmonoxidedetector_R","smokedetector_R","magellan_RW","bubendorff_RW","smarther_RW","mx_RW","mhs1_RW"
-	m_bPollHome = true;
 
 	m_bPollThermostat = true;
 	m_bFirstTimeHomeStatus = true;
@@ -353,7 +354,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	//ExtraHeaders.push_back("Host: api.netatmo.com");
 	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=utf-8");
 
-	std::string httpUrl(NETATMO_API_URI + "oauth2/token?")
+	std::string httpUrl(m_netatmo_api_uri + "oauth2/token?")
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
 
 	std::string sResult;
@@ -373,8 +374,8 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	{
 		Debug(DEBUG_HARDWARE, "Netatmo Invalid ... %s", sResult.c_str());
 		Log(LOG_ERROR, "Invalid/no data received (refresh tokens)... %s", ExtractHtmlStatusCode(returnHeaders).c_str());
-		std::string IP_adress = GetWebserverAddress();
-		std::string Port = GetWebserverPort();
+		std::string IP_adress = m_mainworker.GetWebserverAddress();
+		std::string Port = m_mainworker.GetWebserverPort();
 		m_ErrorFlag = true;
 		Log (LOG_STATUS, "Retry LOGIN within %d min. ", (NETAMO_ERROR_INTERVALL / 60));
 		Log (LOG_STATUS, "Please check if 'http://%s:%s' is added to APP Parameters on dev.netatmo.com ", IP_adress.c_str(), Port.c_str());
@@ -430,7 +431,7 @@ bool CNetatmo::LoadRefreshToken()
 		return false;
 	}
 	m_refreshToken = result[0][0];
-	m_nextRefreshTs = result[0][1];
+	m_nextRefreshTs = std::stol(result[0][1]);
 	return true;
 }
 
@@ -443,7 +444,7 @@ void CNetatmo::StoreRefreshToken()
 {
 	if (m_refreshToken.empty())
 		return;
-	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q' WHERE (ID == %d)", m_refreshToken.c_str(), m_nextRefreshTs.c_str(), m_HwdID);
+	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q' WHERE (ID == %d)", m_refreshToken.c_str(), std::to_string(m_nextRefreshTs).c_str(), m_HwdID);
 }
 
 
@@ -1362,87 +1363,87 @@ std::string CNetatmo::MakeRequestURL(const m_eNetatmoType NType, std::string dat
 	switch (NType)
 	{
 	case NETYPE_MEASURE:
-		URI = (NETATMO_API_URI + "api/getmeasure?" + data)
+		URI = (m_netatmo_api_uri + "api/getmeasure?" + data)
 		//"https://api.netatmo.com/api/getmeasure?";
 		break;
 	case NETYPE_WEATHER_STATION:
-		URI = (NETATMO_API_URI + "api/getstationsdata?" + data)
+		URI = (m_netatmo_api_uri + "api/getstationsdata?" + data)
 		//"https://api.netatmo.com/api/getstationsdata?";
 		break;
 	case NETYPE_AIRCARE:
-		URI = (NETATMO_API_URI + "api/gethomecoachsdata?" + data)
+		URI = (m_netatmo_api_uri + "api/gethomecoachsdata?" + data)
 		//"https://api.netatmo.com/api/gethomecoachsdata?";
 		break;
 	case NETYPE_THERMOSTAT:        // OLD API
-		URI = (NETATMO_API_URI + "api/getthermostatsdata?" + data)
+		URI = (m_netatmo_api_uri + "api/getthermostatsdata?" + data)
 		//"https://api.netatmo.com/api/getthermostatsdata?";
 		break;
 	case NETYPE_HOME:              // OLD API
-		URI = (NETATMO_API_URI + "api/homedata?" + data)
+		URI = (m_netatmo_api_uri + "api/homedata?" + data)
 		//"https://api.netatmo.com/api/homedata?";
 		break;
 	case NETYPE_HOMESDATA:         // was NETYPE_ENERGY
-		URI = (NETATMO_API_URI + "api/homesdata?" + data)
+		URI = (m_netatmo_api_uri + "api/homesdata?" + data)
 		//"https://api.netatmo.com/api/homesdata?";
 		break;
 	case NETYPE_STATUS:
-		URI = (NETATMO_API_URI + "api/homestatus?" + data)
+		URI = (m_netatmo_api_uri + "api/homestatus?" + data)
 		//"https://api.netatmo.com/api/homestatus?home_id=";
 		break;
 	case NETYPE_CAMERAS:           // OLD API
-		URI = (NETATMO_API_URI + "api/getcamerapicture?" + data)
+		URI = (m_netatmo_api_uri + "api/getcamerapicture?" + data)
 		//"https://api.netatmo.com/api/getcamerapicture?";
 		break;
 	case NETYPE_EVENTS:
-		URI = (NETATMO_API_URI + "api/getevents?" + data)
+		URI = (m_netatmo_api_uri + "api/getevents?" + data)
 		//"https://api.netatmo.com/api/getevents?home_id=";
 		break;
 	case NETYPE_SETSTATE:
-		URI = (NETATMO_API_URI + "api/setstate?" + data)
+		URI = (m_netatmo_api_uri + "api/setstate?" + data)
 		//"https://api.netatmo.com/api/setstate?";
 		break;
 	case NETYPE_SCENARIOS:
-		URI = (NETATMO_API_URI + "api/getscenarios?" + data)
+		URI = (m_netatmo_api_uri + "api/getscenarios?" + data)
 		//"https://api.netatmo.com/api/getscenarios?";
 		break;
 	case NETYPE_SETROOMTHERMPOINT:
-		URI = (NETATMO_API_URI + "api/setroomthermpoint?" + data)
+		URI = (m_netatmo_api_uri + "api/setroomthermpoint?" + data)
 		//"https://api.netatmo.com/api/setroomthermpoint?";
 		break;
 	case NETYPE_SETTHERMMODE:
-		URI = (NETATMO_API_URI + "api/setthermmode?" + data)
+		URI = (m_netatmo_api_uri + "api/setthermmode?" + data)
 		//"https://api.netatmo.com/api/setthermmode?";
 		break;
 	case NETYPE_SETPERSONSAWAY:
-		URI = (NETATMO_API_URI + "api/setpersonsaway?" + data)
+		URI = (m_netatmo_api_uri + "api/setpersonsaway?" + data)
 		//"https://api.netatmo.com/api/setpersonsaway?";
 		break;
 	case NETYPE_SETPERSONSHOME:
-		URI = (NETATMO_API_URI + "api/setpersonshome?" + data)
+		URI = (m_netatmo_api_uri + "api/setpersonshome?" + data)
 		//"https://api.netatmo.com/api/setpersonshome?";
 		break;
 	case NETYPE_NEWHOMESCHEDULE:
-		URI = (NETATMO_API_URI + "api/createnewhomeschedule?" + data)
+		URI = (m_netatmo_api_uri + "api/createnewhomeschedule?" + data)
 		//"https://api.netatmo.com/api/createnewhomeschedule?";
 		break;
 	case NETYPE_SYNCHOMESCHEDULE:
-		URI = (NETATMO_API_URI + "api/synchomeschedule?" + data)
+		URI = (m_netatmo_api_uri + "api/synchomeschedule?" + data)
 		//"https://api.netatmo.com/api/synchomeschedule?";
 		break;
 	case NETYPE_SWITCHHOMESCHEDULE:
-		URI = (NETATMO_API_URI + "api/switchhomeschedule?" + data)
+		URI = (m_netatmo_api_uri + "api/switchhomeschedule?" + data)
 		//"https://api.netatmo.com/api/switchhomeschedule?";
 		break;
 	case NETYPE_ADDWEBHOOK:
-		URI = (NETATMO_API_URI + "api/addwebhook?" + data)
+		URI = (m_netatmo_api_uri + "api/addwebhook?" + data)
 		//"https://api.netatmo.com/api/addwebhook?";
 		break;
 	case NETYPE_DROPWEBHOOK:
-		URI = (NETATMO_API_URI + "api/dropwebhook?" + data)
+		URI = (m_netatmo_api_uri + "api/dropwebhook?" + data)
 		//"https://api.netatmo.com/api/dropwebhook?";
 		break;
 	case NETYPE_PUBLICDATA:
-		URI = (NETATMO_API_URI + "api/getpublicdata?" + data)
+		URI = (m_netatmo_api_uri + "api/getpublicdata?" + data)
 		//"https://api.netatmo.com/api/getpublicdata?";
 		break;
 
