@@ -431,7 +431,10 @@ bool CNetatmo::LoadRefreshToken()
 		return false;
 	}
 	m_refreshToken = result[0][0];
-	m_nextRefreshTs = std::stol(result[0][1]);
+	if (!result[0][1].empty())
+	{
+		m_nextRefreshTs = std::stol(result[0][1]);
+	}
 	return true;
 }
 
