@@ -9,7 +9,6 @@
 #include "../notifications/NotificationHelper.h"
 #include <cinttypes>                    //PRIu64
 
-#define NETATMO_OAUTH2_TOKEN_URI "https://api.netatmo.com/oauth2/token?"
 #define NETATMO_API_URI "https://api.netatmo.com/"
 #define NETATMO_PRESET_UNIT 10
 // 03/03/2022 - PP Changing the Weather polling from 600 to 900s. This has reduce the number of server errors,
@@ -96,13 +95,13 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	m_isLogged = false;
 	m_ErrorFlag = false;
 
-	Debug(DEBUG_HARDWARE, "Netatmo Actif Scopes %s ", m_scopes.c_str());
+	Debug(DEBUG_HARDWARE, "%s Netatmo Actif Scopes %s ", m_Name.c_str(), m_scopes.c_str());
 
 	m_bPollWeatherData = (m_scopes.find("station_R") != std::string::npos);      //read_station
 	m_bPollHomecoachData = (m_scopes.find("homecoach_R") != std::string::npos);  //read_homecoach
 
 	m_bPollHomeStatus = find_scopes(); //"thermostat_RW","camera_RWA","presence_RWA","carbonmonoxidedetector_R","smokedetector_R","magellan_RW","bubendorff_RW","smarther_RW","mx_RW","mhs1_RW"
-	m_bPollHome = true;
+	m_netatmo_api_uri = std::string(NETATMO_API_URI);
 
 	m_bPollThermostat = true;
 	m_bFirstTimeHomeStatus = true;
@@ -151,8 +150,8 @@ void CNetatmo::Init()
 	m_ScheduleHomes.clear();
 	m_selected_Schedule.clear();
 	m_bPollThermostat = true;
-	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
+	m_bFirstTimeHomeStatus = true;
 	m_bForceSetpointUpdate = false;
 
 	m_bForceLogin = false;
@@ -209,10 +208,7 @@ std::string CNetatmo::ExtractHtmlStatusCode(const std::vector<std::string>& head
 void CNetatmo::Do_Work()
 {
 	int sec_counter = 600 - 5;
-	bool bFirstTimeWS = true;
-	bool bFirstTimeHS = true;
-	bool bFirstTimeSS = true;
-	bool bFirstTimeTH = true;
+	bool bFirstTime = true;
 
 	Log(LOG_STATUS, "Worker started...");
 
@@ -246,13 +242,12 @@ void CNetatmo::Do_Work()
 
 		if (RefreshToken())
 		{
-            // Thermostat is accessable through Homestatus / Homesdata in New API
-            //Weather, HomeCoach, and Thermostat data is updated every  NETAMO_POLL_INTERVALL  seconds
+			// Thermostat is accessable through Homestatus / Homesdata in New API
+			//Weather, HomeCoach, and Thermostat data is updated every  NETAMO_POLL_INTERVALL  seconds
 			if ((sec_counter % NETAMO_POLL_INTERVALL == 0) || (bFirstTimeWS) || (bFirstTimeHS) || (bFirstTimeSS))
 			{
-				bFirstTimeWS = false;
-                bFirstTimeHS = false;
-                bFirstTimeSS = false;
+				bFirstTime = false;
+
 				if (m_bPollWeatherData)
 				{
 					// ParseStationData
@@ -305,7 +300,6 @@ bool CNetatmo::Login()
 	if (m_refreshToken.empty())
 	{
 		Log(LOG_ERROR, "No refresh token available; please login to retreive a new one from Netatmo");
-		StoreRequestTokenFlag(true);
 		return false;
 	}
 
@@ -348,28 +342,25 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	m_ErrorFlag = false;
 
 	// Time to refresh the token
-	std::stringstream sstr;
-	sstr << "grant_type=refresh_token"
-		<< "&refresh_token=" << m_refreshToken
-		<< "&client_id=" << m_clientId
-		<< "&client_secret=" << m_clientSecret;
+	std::string httpData("grant_type=refresh_token");
+	httpData += "&refresh_token=" + m_refreshToken;
+	httpData += "&client_id=" + m_clientId;
+	httpData += "&client_secret=" + m_clientSecret;
 
-	std::string httpData = sstr.str();
 	std::vector<std::string> ExtraHeaders;
 	std::vector<std::string> returnHeaders;
 
 //	ExtraHeaders.push_back("Host: api.netatmo.com");
 	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
-//        std::string httpUrl(NETATMO_API_URI + "oauth2/token?")
-	std::string httpUrl(NETATMO_OAUTH2_TOKEN_URI);
+	std::string httpUrl(m_netatmo_api_uri + "oauth2/token?");
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
 
 	std::string sResult;
-	bool ret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
+	bool bret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
 
 	//Check for returned data
-	if (!ret)
+	if (!bret)
 	{
 		Log(LOG_ERROR, "Error connecting to Server (refresh tokens): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return false;
@@ -377,7 +368,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 	//Check for valid JSON
 	Json::Value root;
-	ret = ParseJSon(sResult, root);
+	bool ret = ParseJSon(sResult, root);
 	if ((!ret) || (!root.isObject()))
 	{
 		Debug(DEBUG_HARDWARE, "Netatmo Invalid ... %s", sResult.c_str());
@@ -397,7 +388,6 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		m_tSetpointUpdateTime = time(nullptr);
 		m_nextRefreshTs = mytime(nullptr);
 
-		StoreRequestTokenFlag(true);
 		return false;
 	}
 
@@ -410,7 +400,6 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		//Force login next time
 		StoreRefreshToken();
 		m_isLogged = false;
-		StoreRequestTokenFlag(true);
 		return false;
 	}
 
@@ -421,7 +410,6 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	//Store the duration of validity of the token
 	m_nextRefreshTs = mytime(nullptr) + expires * 2 / 3;
 
-	StoreRequestTokenFlag(false);
 	StoreRefreshToken();
 	return true;
 }
@@ -433,38 +421,32 @@ bool CNetatmo::RefreshToken(const bool bForce)
 /// <returns>true if token retrieved, store the token in member variables</returns>
 bool CNetatmo::LoadRefreshToken()
 {
-	std::vector<std::vector<std::string> > result;
-	result = m_sql.safe_query("SELECT Extra FROM Hardware WHERE (ID==%d)", m_HwdID);
+	auto result = m_sql.safe_query("SELECT Extra, Address FROM Hardware WHERE (ID==%d)", m_HwdID);
 	if (result.empty())
 	{
 		Debug(DEBUG_HARDWARE, "No refresh_token found in database ... ");
 		return false;
 	}
 	m_refreshToken = result[0][0];
+	//retrieved expiration time from adress field in database
+	if (!result[0][1].empty())
+	{
+		m_nextRefreshTs = std::stol(result[0][1]);
+	}
 	return true;
 }
 
 
 /// <summary>
-/// Store an access token in the database for reuse after domoticz restart
-/// (Note : we should also store token duration)
-/// </summary>
-void CNetatmo::StoreRequestTokenFlag(bool flag)
-{
-	Debug(DEBUG_HARDWARE, "Refresh Token Flag %d ...", flag?1:0);
-	m_sql.safe_query("UPDATE Hardware SET Mode1='%d' WHERE (ID == %d)", flag?1:0, m_HwdID);
-}
-
-
-/// <summary>
-/// Store an access token in the database for reuse after domoticz restart
+/// Store an Refresh token and duration in the database for reuse after domoticz restart
 /// (Note : we should also store token duration)
 /// </summary>
 void CNetatmo::StoreRefreshToken()
 {
 	if (m_refreshToken.empty())
 		return;
-	m_sql.safe_query("UPDATE Hardware SET Extra='%q' WHERE (ID == %d)", m_refreshToken.c_str(), m_HwdID);
+	//Storing expiration time in adress field
+	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q' WHERE (ID == %d)", m_refreshToken.c_str(), std::to_string(m_nextRefreshTs).c_str(), m_HwdID);
 }
 
 
@@ -963,7 +945,8 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 		else if (type_module == "NLG")
 		{
 			std::string SchName = m_ModuleNames["999"];
-			Home_id = module_id;
+			Debug(DEBUG_HARDWARE, "Module scenario %s - %d", module_id.c_str(), uid);
+			Home_id = m_PowerDeviceID[uid];
 			std::map<int, std::string> scenarios_names;
 			scenarios_names = m_Scenarios[Home_id];
 			std::string scenario_Name;
@@ -1378,113 +1361,92 @@ bool CNetatmo::SetSchedule(int uId, int selected)
 /// <returns>API response</returns>
 std::string CNetatmo::MakeRequestURL(const m_eNetatmoType NType, std::string data)
 {
-	std::stringstream sstr;
+	std::string URI = m_netatmo_api_uri;
 
 	switch (NType)
 	{
 	case NETYPE_MEASURE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getmeasure";
+		URI += "api/getmeasure?";
 		//"https://api.netatmo.com/api/getmeasure?";
 		break;
 	case NETYPE_WEATHER_STATION:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getstationsdata";
+		URI += "api/getstationsdata?";
 		//"https://api.netatmo.com/api/getstationsdata?";
 		break;
 	case NETYPE_AIRCARE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/gethomecoachsdata";
+		URI += "api/gethomecoachsdata?";
 		//"https://api.netatmo.com/api/gethomecoachsdata?";
 		break;
 	case NETYPE_THERMOSTAT:        // OLD API
-		sstr << NETATMO_API_URI;
-		sstr << "api/getthermostatsdata";
+		URI += "api/getthermostatsdata?";
 		//"https://api.netatmo.com/api/getthermostatsdata?";
 		break;
 	case NETYPE_HOME:              // OLD API
-		sstr << NETATMO_API_URI;
-		sstr << "api/homedata";
+		URI += "api/homedata?";
 		//"https://api.netatmo.com/api/homedata?";
 		break;
 	case NETYPE_HOMESDATA:         // was NETYPE_ENERGY
-		sstr << NETATMO_API_URI;
-		sstr << "api/homesdata";
+		URI += "api/homesdata?";
 		//"https://api.netatmo.com/api/homesdata?";
 		break;
 	case NETYPE_STATUS:
-		sstr << NETATMO_API_URI;
-		sstr << "api/homestatus";
+		URI += "api/homestatus?";
 		//"https://api.netatmo.com/api/homestatus?home_id=";
 		break;
 	case NETYPE_CAMERAS:           // OLD API
-		sstr << NETATMO_API_URI;
-		sstr << "api/getcamerapicture";
+		URI += "api/getcamerapicture?";
 		//"https://api.netatmo.com/api/getcamerapicture?";
 		break;
 	case NETYPE_EVENTS:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getevents";
+		URI += "api/getevents?";
 		//"https://api.netatmo.com/api/getevents?home_id=";
 		break;
 	case NETYPE_SETSTATE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setstate";
+		URI += "api/setstate?";
 		//"https://api.netatmo.com/api/setstate?";
 		break;
 	case NETYPE_SCENARIOS:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getscenarios";
+		URI += "api/getscenarios?";
 		//"https://api.netatmo.com/api/getscenarios?";
 		break;
 	case NETYPE_SETROOMTHERMPOINT:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setroomthermpoint";
+		URI += "api/setroomthermpoint?";
 		//"https://api.netatmo.com/api/setroomthermpoint?";
 		break;
 	case NETYPE_SETTHERMMODE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setthermmode";
+		URI += "api/setthermmode?";
 		//"https://api.netatmo.com/api/setthermmode?";
 		break;
 	case NETYPE_SETPERSONSAWAY:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setpersonsaway";
+		URI += "api/setpersonsaway?";
 		//"https://api.netatmo.com/api/setpersonsaway?";
 		break;
 	case NETYPE_SETPERSONSHOME:
-		sstr << NETATMO_API_URI;
-		sstr << "api/setpersonshome";
+		URI += "api/setpersonshome?";
 		//"https://api.netatmo.com/api/setpersonshome?";
 		break;
 	case NETYPE_NEWHOMESCHEDULE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/createnewhomeschedule";
+		URI += "api/createnewhomeschedule?";
 		//"https://api.netatmo.com/api/createnewhomeschedule?";
 		break;
 	case NETYPE_SYNCHOMESCHEDULE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/synchomeschedule";
+		URI = "api/synchomeschedule?";
 		//"https://api.netatmo.com/api/synchomeschedule?";
 		break;
 	case NETYPE_SWITCHHOMESCHEDULE:
-		sstr << NETATMO_API_URI;
-		sstr << "api/switchhomeschedule";
+		URI = "api/switchhomeschedule?";
 		//"https://api.netatmo.com/api/switchhomeschedule?";
 		break;
 	case NETYPE_ADDWEBHOOK:
-		sstr << NETATMO_API_URI;
-		sstr << "api/addwebhook";
+		URI = "api/addwebhook?";
 		//"https://api.netatmo.com/api/addwebhook?";
 		break;
 	case NETYPE_DROPWEBHOOK:
-		sstr << NETATMO_API_URI;
-		sstr << "api/dropwebhook";
+		URI = "api/dropwebhook?";
 		//"https://api.netatmo.com/api/dropwebhook?";
 		break;
 	case NETYPE_PUBLICDATA:
-		sstr << NETATMO_API_URI;
-		sstr << "api/getpublicdata";
+		URI = "api/getpublicdata?";
 		//"https://api.netatmo.com/api/getpublicdata?";
 		break;
 
@@ -1492,9 +1454,8 @@ std::string CNetatmo::MakeRequestURL(const m_eNetatmoType NType, std::string dat
 		return "";
 	}
 
-	sstr << "?";
-	sstr << data;
-	return sstr.str();
+	URI += data;
+	return URI;
 }
 
 
@@ -1508,10 +1469,6 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 		return;
 	//Locals
 	std::string httpUrl;                             //URI
-	//
-	std::stringstream sstr;
-	sstr << extra_data.c_str();
-	//
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
 	ExtraHeaders.push_back("accept: application/json;charset=UTF-8");
 	ExtraHeaders.push_back("Content-Type: application/json;charset=UTF-8");
@@ -1528,14 +1485,18 @@ void CNetatmo::Get_Respons_API(const m_eNetatmoType& NType, std::string& sResult
 	//        //"Content-Type: application/json" -d "{\"home\":{\"id\":\"xxxxxxxx\",\"modules\":[{\"id\":\"00:xx:xx:xx:xx:xx\",\"floodlight\":\"auto\"}]}}"
 
 	httpUrl = MakeRequestURL(NType, home_data);
-	std::string sPostData = sstr.str();
-	//Debug(DEBUG_HARDWARE, "Respons URL   %s", httpUrl.c_str()); // URI to be tested
+	std::string sPostData = extra_data;
+
+	Debug(DEBUG_HARDWARE, "Respons URL   %s - POST %s", httpUrl.c_str(), extra_data.c_str()); // URI to be tested
 
 	if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
 	{
 		Log(LOG_ERROR, "Error connecting to Server (Get_Respons_API): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return ;
 	}
+
+	// Following line gives always the return RAW-String from Netatmo server
+	Debug(DEBUG_HARDWARE, "Respons sResult %s", sResult.c_str());
 
 	//Check for error
 	std::string s_Sresult = sResult;
@@ -2053,8 +2014,7 @@ void CNetatmo::Get_Scenarios(std::string home_id, Json::Value& scenarios)
 			//Selected Scenario ?
 			int ChildID = 14;
 			int crcId = Crc32(0, (const unsigned char*)home_id.c_str(), home_id.length());
-			std::vector<std::vector<std::string> > result;
-			result = m_sql.safe_query("SELECT ID, nValue, sValue, LastLevel FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+			auto result = m_sql.safe_query("SELECT ID, nValue, sValue, LastLevel FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 			if (!result.empty())
 			{
@@ -2537,8 +2497,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 
 		if (m_bFirstTimeHomeStatus)
 		{
-			std::vector<std::vector<std::string> > result;
-			result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%d') AND (Unit==%d)", m_HwdID, ID & 0xff, DevIdx);
+			auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%d') AND (Unit==%d)", m_HwdID, ID & 0xff, DevIdx);
 
 			if (!result.empty())
 			{
@@ -3041,8 +3000,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 						std::string setpoint_mode = module["monitoring"].asString();
 
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
 
 						if (!result.empty())
                                                 {
@@ -3278,8 +3236,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						SendAirQualitySensor(crcId, unit, batteryLevel, co2, moduleName);
 						//Debug(DEBUG_HARDWARE, "AirQualitySensor DeviceID = %04X %d unit = %d", crcId & 0xff, crcId & 0xff, unit);
 
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d)  AND (DeviceID=='%d')", m_HwdID, crcId & 0xff);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d)  AND (DeviceID=='%d')", m_HwdID, crcId & 0xff);
 
 						if (m_bFirstTimeHomeStatus)
 						{
@@ -3365,11 +3322,10 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							int ChildID = 9;
 							std::string bName = moduleName + " - Boiler Status";
 							SendGeneralSwitch(crcId, ChildID, batteryLevel, bIsActive, bIsActive, bName, m_Name, mrf_status);
-							m_ModuleNames[home_id] = module_id;
+							m_DeviceBridge[home_id] = module_id;
 
 							// Set option SwitchType to STYPE_Contact
-							std::vector<std::vector<std::string> > result;
-							result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+							auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 							if (!result.empty())
                                                         {
@@ -3377,7 +3333,9 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 								int uId = std::stoi(result[0][0]);
 								int nValue = std::stoi(result[0][1]);
 								std::string sValue = result[0][2];
-								//Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
+								Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
+								m_PowerDeviceID[uId] = home_id;
+
 								if (m_bFirstTimeHomeStatus)
 								{
                                 	                                //m_sql.UpdateDeviceValue("SwitchType", STYPE_Dusk, std::to_string(uId));  //12
@@ -3430,8 +3388,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					{
 						//Debug(DEBUG_HARDWARE, "NRV");
 						int ChildID = NETATMO_PRESET_UNIT;
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 						if (!result.empty())
 						{
@@ -3465,8 +3422,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						if (!module["brightness"].empty())
 						{
 							m_LightDeviceID[crcId] = bName;
-							std::vector<std::vector<std::string> > result;
-							result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+							auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
 							if (!result.empty())
                                                         {
@@ -3522,8 +3478,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						SendKwhMeter(crcId, 5, batteryLevel, powerflag, mTotal, cName, mrf_status);
 
 						m_PowerDeviceID[crcId] = bName;
-						std::vector<std::vector<std::string> > result;
-						result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, NETATMO_PRESET_UNIT);
 
 						if (!result.empty())
 						{
