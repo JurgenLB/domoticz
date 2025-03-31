@@ -92,6 +92,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	}
 
 	m_nextRefreshTs = mytime(nullptr);
+	Debug(DEBUG_HARDWARE, "Next RefreshToken time %s", ctime(& m_nextRefreshTs));
 	m_isLogged = false;
 	m_ErrorFlag = false;
 
@@ -324,6 +325,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 {
 	//Check if we need to refresh the
 	//token (token is valid for a fixed duration)
+	Debug(DEBUG_HARDWARE, "Next RefreshToken time RefreshToken %s", ctime(& m_nextRefreshTs));
 	if ((!bForce) && (!m_accessToken.empty()))
 	{
 		if (!m_isLogged)
@@ -386,7 +388,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 		m_tSetpointUpdateTime = time(nullptr);
 		m_nextRefreshTs = mytime(nullptr);
-
+		Debug(DEBUG_HARDWARE, "Next RefreshToken time Block %s", ctime(& m_nextRefreshTs));
 		return false;
 	}
 
@@ -408,6 +410,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	int expires = root["expires_in"].asInt();
 	//Store the duration of validity of the token
 	m_nextRefreshTs = mytime(nullptr) + expires * 2 / 3;
+	Debug(DEBUG_HARDWARE, "Next RefreshToken time %s = expires * 2 / 3", ctime(& m_nextRefreshTs));
 
 	StoreRefreshToken();
 	return true;
@@ -415,7 +418,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 
 /// <summary>
-/// Load the refresh token from the database
+/// Load the refresh token and token duration from the database
 /// </summary>
 /// <returns>true if token retrieved, store the token in member variables</returns>
 bool CNetatmo::LoadRefreshToken()
@@ -431,6 +434,7 @@ bool CNetatmo::LoadRefreshToken()
 	if (!result[0][1].empty())
 	{
 		m_nextRefreshTs = std::stol(result[0][1]);
+		Debug(DEBUG_HARDWARE, "Next RefreshToken time %s", ctime(& m_nextRefreshTs));
 	}
 	return true;
 }
@@ -438,13 +442,14 @@ bool CNetatmo::LoadRefreshToken()
 
 /// <summary>
 /// Store an Refresh token and duration in the database for reuse after domoticz restart
-/// (Note : we should also store token duration)
+///
 /// </summary>
 void CNetatmo::StoreRefreshToken()
 {
 	if (m_refreshToken.empty())
 		return;
 	//Storing expiration time in adress field
+	Debug(DEBUG_HARDWARE, "Next RefreshToken time %s", ctime(& m_nextRefreshTs));
 	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q' WHERE (ID == %d)", m_refreshToken.c_str(), std::to_string(m_nextRefreshTs).c_str(), m_HwdID);
 }
 
