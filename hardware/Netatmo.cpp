@@ -105,7 +105,6 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 
 	m_bPollThermostat = true;
 	m_bFirstTimeHomeStatus = true;
-	m_bFirstTimeThermostat = true;
 	m_bFirstTimeWeatherData = true;
 	m_tSetpointUpdateTime = time(nullptr);
 
@@ -244,7 +243,7 @@ void CNetatmo::Do_Work()
 		{
 			// Thermostat is accessable through Homestatus / Homesdata in New API
 			//Weather, HomeCoach, and Thermostat data is updated every  NETAMO_POLL_INTERVALL  seconds
-			if ((sec_counter % NETAMO_POLL_INTERVALL == 0) || (bFirstTimeWS) || (bFirstTimeHS) || (bFirstTimeSS))
+			if ((sec_counter % NETAMO_POLL_INTERVALL == 0) || (bFirstTime))
 			{
 				bFirstTime = false;
 
