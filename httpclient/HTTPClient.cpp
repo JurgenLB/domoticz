@@ -712,6 +712,7 @@ bool HTTPClient::POST(const std::string &url, const std::string &postdata, const
 	if (!bIgnoreNoDataReturned && vHTTPResponse.empty())
 		return false;
 	response.insert(response.begin(), vHTTPResponse.begin(), vHTTPResponse.end());
+	HTTPClient::Cleanup();
 	return true;
 }
 
