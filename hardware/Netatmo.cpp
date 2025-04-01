@@ -92,7 +92,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	}
 
 	m_nextRefreshTs = mytime(nullptr);
-	Debug(DEBUG_HARDWARE, "Next RefreshToken time %s", ctime(& m_nextRefreshTs));
+	Debug(DEBUG_HARDWARE, "Next time %s", ctime(& m_nextRefreshTs));
 	m_isLogged = false;
 	m_ErrorFlag = false;
 
