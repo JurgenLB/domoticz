@@ -950,7 +950,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 		{
 			std::string SchName = m_ModuleNames["999"];
 			Debug(DEBUG_HARDWARE, "Module scenario %s - %d", module_id.c_str(), uid);
-			Home_name = m_PowerDeviceID[uid];
+			std::string Home_name = m_PowerDeviceID[uid];
 			Home_id = module_id;
 			std::map<int, std::string> scenarios_names;
 			scenarios_names = m_Scenarios[Home_id];
@@ -973,7 +973,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			Debug(DEBUG_HARDWARE, "Gateway set scenario %s", scenario_Name.c_str());
 			m_selectedScenario[Home_id] = newState;
 			std::string DeviceBridge = m_DeviceBridge[Home_id];
-			Debug(DEBUG_HARDWARE, "Gateway Bridge %s Home_id %s newState %d ", DeviceBridge.c_str(), Home_id.c_str(), newState);
+			Debug(DEBUG_HARDWARE, "Gateway Bridge %s Home_id %s %s newState %d ", DeviceBridge.c_str(), Home_id.c_str(), Home_name.c_str(), newState);
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
 			json_data["home"]["id"] = Home_id;
