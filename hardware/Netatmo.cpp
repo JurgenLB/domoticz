@@ -387,7 +387,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		m_bForceSetpointUpdate = false;
 
 		m_tSetpointUpdateTime = time(nullptr);
-		m_nextRefreshTs = mytime(nullptr);
+		//m_nextRefreshTs = mytime(nullptr);
 		Debug(DEBUG_HARDWARE, "Next RefreshToken time Block %s", ctime(& m_nextRefreshTs));
 		return false;
 	}
@@ -449,7 +449,7 @@ void CNetatmo::StoreRefreshToken()
 	if (m_refreshToken.empty())
 		return;
 	//Storing expiration time in adress field
-	Debug(DEBUG_HARDWARE, "Next RefreshToken time %s", ctime(& m_nextRefreshTs));
+	Debug(DEBUG_HARDWARE, "Next RefreshToken time stored %s", ctime(& m_nextRefreshTs));
 	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q' WHERE (ID == %d)", m_refreshToken.c_str(), std::to_string(m_nextRefreshTs).c_str(), m_HwdID);
 }
 
