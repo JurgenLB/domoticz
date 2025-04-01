@@ -19,6 +19,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
+    #runs-on: ubuntu-latest
     runs-on: ubuntu-22.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -28,14 +29,6 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-      - name: Update Submodules
-        run: git submodule update --init --recursive
-
-      - name: Setup CMake
-        uses: lukka/get-cmake@v3
-        with:
-          cmake-version: '3.5.0' # Ensure this version is 3.5 or higher
-    
 
       # Prepare environment
       - name: prepare environment
@@ -72,7 +65,7 @@ jobs:
       - name: build domoticz
         run: |
           cd $GITHUB_WORKSPACE
-          cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
           make
 
       # Run automated tests (disabled March 2022)
