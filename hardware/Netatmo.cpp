@@ -950,7 +950,8 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 		{
 			std::string SchName = m_ModuleNames["999"];
 			Debug(DEBUG_HARDWARE, "Module scenario %s - %d", module_id.c_str(), uid);
-			Home_id = m_PowerDeviceID[uid];
+			Home_name = m_PowerDeviceID[uid];
+			Home_id = module_id;
 			std::map<int, std::string> scenarios_names;
 			scenarios_names = m_Scenarios[Home_id];
 			std::string scenario_Name;
