@@ -65,7 +65,7 @@ jobs:
       - name: build domoticz
         run: |
           cd $GITHUB_WORKSPACE
-          cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+          cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           make
 
       # Run automated tests (disabled March 2022)
