@@ -31,10 +31,10 @@ jobs:
       - name: Update Submodules
         run: git submodule update --init --recursive
 
-    - name: Setup CMake
-      uses: lukka/get-cmake@v3
-      with:
-        cmake-version: '3.5.0' # Ensure this version is 3.5 or higher
+      - name: Setup CMake
+        uses: lukka/get-cmake@v3
+        with:
+          cmake-version: '3.5.0' # Ensure this version is 3.5 or higher
     
 
       # Prepare environment
