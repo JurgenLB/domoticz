@@ -240,7 +240,7 @@ void CNetatmo::Do_Work()
 		if (m_ErrorFlag)
 			continue;
 
-		if (RefreshToken())
+		if (!m_accessToken.empty())
 		{
 			// Thermostat is accessable through Homestatus / Homesdata in New API
 			//Weather, HomeCoach, and Thermostat data is updated every  NETAMO_POLL_INTERVALL  seconds
