@@ -293,6 +293,7 @@ void CNetatmo::Do_Work()
 /// <returns>true if logged in, false otherwise</returns>
 bool CNetatmo::Login()
 {
+	Debug(DEBUG_HARDWARE, "Login test");
 	//Already logged noting
 	if (m_isLogged)
 		return true;
