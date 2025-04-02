@@ -18,7 +18,7 @@ bool		HTTPClient::m_bVerifyHost = false;
 bool		HTTPClient::m_bVerifyPeer = false;
 long		HTTPClient::m_iConnectionTimeout = 10;
 long		HTTPClient::m_iTimeout = 90; //max, time that a download has to be finished?
-std::string	HTTPClient::m_sUserAgent = "domoticz/1.0";
+std::string	HTTPClient::m_sUserAgent = "J0";
 
 
 /************************************************************************
