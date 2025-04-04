@@ -301,6 +301,7 @@ bool CNetatmo::Login()
 	if (m_refreshToken.empty())
 	{
 		Log(LOG_ERROR, "No refresh token available; please login to retreive a new one from Netatmo");
+		//StoreRefreshToken(true);
 		return false;
 	}
 
@@ -388,6 +389,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 		m_bForceSetpointUpdate = false;
 
 		m_tSetpointUpdateTime = time(nullptr);
+		//StoreRefreshToken(true);
 		//m_nextRefreshTs = mytime(nullptr);
 		Debug(DEBUG_HARDWARE, "Next RefreshToken time Block %s", ctime(& m_nextRefreshTs));
 		return false;
@@ -400,7 +402,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 			sResult = root["error"].asString();
 		Log(LOG_ERROR, "No access granted, forcing login again (Refresh tokens): %s", sResult.c_str());
 		//Force login next time
-		StoreRefreshToken();
+		StoreRefreshToken(true);
 		m_isLogged = false;
 		return false;
 	}
@@ -413,7 +415,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	m_nextRefreshTs = mytime(nullptr) + expires * 2 / 3;
 	Debug(DEBUG_HARDWARE, "Next RefreshToken time %s = expires * 2 / 3", ctime(& m_nextRefreshTs));
 
-	StoreRefreshToken();
+	StoreRefreshToken(false);
 	return true;
 }
 
@@ -424,7 +426,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 /// <returns>true if token retrieved, store the token in member variables</returns>
 bool CNetatmo::LoadRefreshToken()
 {
-	auto result = m_sql.safe_query("SELECT Extra, Address FROM Hardware WHERE (ID==%d)", m_HwdID);
+	auto result = m_sql.safe_query("SELECT Extra, Address, Mode1 FROM Hardware WHERE (ID==%d)", m_HwdID, );
 	if (result.empty())
 	{
 		Debug(DEBUG_HARDWARE, "No refresh_token found in database ... ");
@@ -445,13 +447,13 @@ bool CNetatmo::LoadRefreshToken()
 /// Store an Refresh token and duration in the database for reuse after domoticz restart
 ///
 /// </summary>
-void CNetatmo::StoreRefreshToken()
+void CNetatmo::StoreRefreshToken(bool flag)
 {
 	if (m_refreshToken.empty())
 		return;
 	//Storing expiration time in adress field
 	Debug(DEBUG_HARDWARE, "Next RefreshToken time stored %s", ctime(& m_nextRefreshTs));
-	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q' WHERE (ID == %d)", m_refreshToken.c_str(), std::to_string(m_nextRefreshTs).c_str(), m_HwdID);
+	m_sql.safe_query("UPDATE Hardware SET Extra='%q', Address='%q', Mode1='%d' WHERE (ID == %d)", m_refreshToken.c_str(), std::to_string(m_nextRefreshTs).c_str(), flag?1:0, m_HwdID);
 }
 
 
