@@ -123,7 +123,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	bool Login();
 	bool RefreshToken(bool bForce = false);
 	bool LoadRefreshToken();
-	void StoreRefreshToken();
+	void StoreRefreshToken(bool bFlag = false);
 
 	bool m_isLogged;
 	bool m_ErrorFlag;
