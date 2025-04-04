@@ -1441,6 +1441,7 @@ define(['app'], function (app) {
 				var clientid = $("#hardwarecontent #divnetatmo #clientid").val();
 				var clientsecret = $("#hardwarecontent #divnetatmo #clientsecret").val();
 				var scope = $("#hardwarecontent #divnetatmo #scope").val();
+				var AppName = $("#hardwarecontent #hardwareparamsnetatmo #AppName").val();
 				var refreshtoken = (typeof $scope.refreshToken == 'undefined' ? "" : $scope.refreshToken);
 				var accesstoken = (typeof $scope.refreshToken == 'undefined' ? "" : $scope.refreshToken);
 
@@ -1461,6 +1462,7 @@ define(['app'], function (app) {
 					"&password=" + encodeURIComponent(scope) +
 					"&enabled=" + bEnabled +
 					"&idx=" + idx +
+					"&SerialPort=" + encodeURIComponent(AppName) +
 					"&extra=" + encodeURIComponent(refreshtoken) +
 					"&datatimeout=" + datatimeout +
 					"&Mode1=" + $scope.loginRequired + "&Mode2=" + Mode2 + "&Mode3=" + Mode3 + "&Mode4=" + Mode4 + "&Mode5=" + Mode5 + "&Mode6=" + Mode6,
@@ -2753,6 +2755,7 @@ define(['app'], function (app) {
 				var clientid = $("#hardwarecontent #divnetatmo #clientid").val();
 				var clientsecret = $("#hardwarecontent #divnetatmo #clientsecret").val();
 				var scope = $("#hardwarecontent #divnetatmo #scope").val();
+				var AppName = $("#hardwarecontent #hardwareparamsnetatmo #AppName").val();
 				var refreshtoken = (typeof $scope.refreshToken == 'undefined' ? "" : $scope.refreshToken);
 
 				if (clientid == "" || clientsecret == "") {
@@ -2776,6 +2779,7 @@ define(['app'], function (app) {
 					"&username=" + encodeURIComponent(clientid) + ":" +  encodeURIComponent(clientsecret) +
 					"&password=" + encodeURIComponent(scope) +
 					"&enabled=" + bEnabled +
+					"&SerialPort=" + encodeURIComponent(AppName) +
 					"&extra=" + encodeURIComponent($scope.refreshToken) +
 					"&datatimeout=" + datatimeout +
 					"&Mode1=" + $scope.loginRequired,
@@ -4626,6 +4630,7 @@ define(['app'], function (app) {
 
 							var splittedUserName = data["Username"].split(":");
 							var scopes = data["Password"];
+							var AppName = data["SerialPort"];
 
 							if (scopes.indexOf("_") > 0) 	// Old or new format?
 								scopes = scopes.split(",");	// New format: This field contains one or more scopes
@@ -4636,7 +4641,7 @@ define(['app'], function (app) {
 							$("#hardwarecontent #hardwareparamsnetatmo #clientid").val(splittedUserName[0]);
 							$("#hardwarecontent #hardwareparamsnetatmo #clientsecret").val(splittedUserName[1]);
 							$("#hardwarecontent #hardwareparamsnetatmo #scope").val(scopes);
-
+							$("#hardwarecontent #hardwareparamsnetatmo #AppName").val(AppName);
 							$("#hardwarecontent #hardwareparamsnetatmo #netatmologin").off("click");
 							$("#hardwarecontent #hardwareparamsnetatmo #netatmologin").on("click", function(){javascript:OnNetatmoLogin(idx)});
 							EnableNetatmoLoginButton (false);
@@ -4819,6 +4824,7 @@ define(['app'], function (app) {
 			var scope = $("#hardwarecontent #hardwareparamsnetatmo #scope").val();
 			var clientId = $("#hardwarecontent #hardwareparamsnetatmo #clientid").val();
 			var clientSecret = $("#hardwarecontent #hardwareparamsnetatmo #clientsecret").val();
+			var AppName = $("#hardwarecontent #hardwareparamsnetatmo #AppName").val();
 			var date = new Date();
 			var state = date.getTime() + '_' + idx;
 
