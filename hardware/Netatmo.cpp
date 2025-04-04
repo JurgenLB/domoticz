@@ -352,8 +352,8 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	std::vector<std::string> ExtraHeaders;
 	std::vector<std::string> returnHeaders;
 
-//	ExtraHeaders.push_back("Host: api.netatmo.com");
-	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+	//ExtraHeaders.push_back("Host: api.netatmo.com");
+	//ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
 	std::string httpUrl(m_netatmo_api_uri + "oauth2/token?");
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
