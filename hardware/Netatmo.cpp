@@ -426,7 +426,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 /// <returns>true if token retrieved, store the token in member variables</returns>
 bool CNetatmo::LoadRefreshToken()
 {
-	auto result = m_sql.safe_query("SELECT Extra, Address, Mode1 FROM Hardware WHERE (ID==%d)", m_HwdID, );
+	auto result = m_sql.safe_query("SELECT Extra, Address, Mode1 FROM Hardware WHERE (ID==%d)", m_HwdID);
 	if (result.empty())
 	{
 		Debug(DEBUG_HARDWARE, "No refresh_token found in database ... ");
