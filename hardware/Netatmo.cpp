@@ -326,7 +326,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 {
 	//Check if we need to refresh the
 	//token (token is valid for a fixed duration)
-	Debug(DEBUG_HARDWARE, "Next RefreshToken time RefreshToken %s", ctime(& m_nextRefreshTs));
+	//Debug(DEBUG_HARDWARE, "Next RefreshToken time RefreshToken %s", ctime(& m_nextRefreshTs));
 	if ((!bForce) && (!m_accessToken.empty()))
 	{
 		if (!m_isLogged)
@@ -743,7 +743,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 	std::string Device_bridge = m_DeviceBridge[module_id];
 	std::string roomNetatmoID = m_RoomIDs[module_id];
 	std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
-	Debug(DEBUG_HARDWARE, "SetProgramState - Device MAC %s - Type %s State: %d", module_id.c_str(), type_module.c_str(), newState);
+	Debug(DEBUG_HARDWARE, "SetProgramState - Device MAC %s - Type %s Bridge %s State: %d", module_id.c_str(), type_module.c_str(), Device_bridge.c_str(), newState);
 
 	//Log(LOG_STATUS, "SetProgramState - Device MAC %s - Type %s State: %d", module_id.c_str(), type_module.c_str(), newState);
 
@@ -2802,6 +2802,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					{
 						tNetatmoLastUpdate = 0;
 						m_DeviceBridge[home_id] = module_id;
+						Debug(DEBUG_HARDWARE, "DeviceBridge %s in %s", module_id.c_str(), home_id.c_str());
 					}
 					else if (type == "NLT")
 					{
@@ -3339,7 +3340,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 								int uId = std::stoi(result[0][0]);
 								int nValue = std::stoi(result[0][1]);
 								std::string sValue = result[0][2];
-								Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
+								Debug(DEBUG_HARDWARE, "NATherm1 uId %d %", uId, );
 								m_PowerDeviceID[uId] = home_id;
 
 								if (m_bFirstTimeHomeStatus)
