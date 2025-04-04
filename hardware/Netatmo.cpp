@@ -1518,7 +1518,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 		std::size_t found = e_str.find("error");
 		if (found!=std::string::npos)
 		{
-			Log(LOG_ERROR, "Error data ...  url: %s, response: %s", httpUrl.c_str(), sResult.c_str());%s", sResult.c_str());
+			Log(LOG_ERROR, "Error data ...  url: %s, response: %s", httpUrl.c_str(), sResult.c_str());
 			return ;     // This prevents JSON Logic Error in case off Error respons.
 		}
 	}
