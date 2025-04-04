@@ -3340,7 +3340,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 								int uId = std::stoi(result[0][0]);
 								int nValue = std::stoi(result[0][1]);
 								std::string sValue = result[0][2];
-								Debug(DEBUG_HARDWARE, "NATherm1 uId %d %", uId, );
+								Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
 								m_PowerDeviceID[uId] = home_id;
 
 								if (m_bFirstTimeHomeStatus)
