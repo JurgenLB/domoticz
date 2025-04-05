@@ -1441,7 +1441,8 @@ define(['app'], function (app) {
 				var clientid = $("#hardwarecontent #divnetatmo #clientid").val();
 				var clientsecret = $("#hardwarecontent #divnetatmo #clientsecret").val();
 				var scope = $("#hardwarecontent #divnetatmo #scope").val();
-				var AppName = $("#hardwarecontent #hardwareparamsnetatmo #AppName").val();
+				var AppName = $("#hardwarecontent #divnetatmo #AppName").val();
+				var RefreshTime = $("#hardwarecontent #divnetatmo #RefreshTime").val();
 				var refreshtoken = (typeof $scope.refreshToken == 'undefined' ? "" : $scope.refreshToken);
 				var accesstoken = (typeof $scope.refreshToken == 'undefined' ? "" : $scope.refreshToken);
 
@@ -1461,6 +1462,7 @@ define(['app'], function (app) {
 					"&username=" + encodeURIComponent(clientid) + ":" +  encodeURIComponent(clientsecret) +
 					"&password=" + encodeURIComponent(scope) +
 					"&enabled=" + bEnabled +
+					"&address=" + RefreshTime +
 					"&idx=" + idx +
 					"&SerialPort=" + encodeURIComponent(AppName) +
 					"&extra=" + encodeURIComponent(refreshtoken) +
@@ -2755,7 +2757,8 @@ define(['app'], function (app) {
 				var clientid = $("#hardwarecontent #divnetatmo #clientid").val();
 				var clientsecret = $("#hardwarecontent #divnetatmo #clientsecret").val();
 				var scope = $("#hardwarecontent #divnetatmo #scope").val();
-				var AppName = $("#hardwarecontent #hardwareparamsnetatmo #AppName").val();
+				var AppName = $("#hardwarecontent #divnetatmo #AppName").val();
+				var RefreshTime = $("#hardwarecontent #divnetatmo #RefreshTime").val();
 				var refreshtoken = (typeof $scope.refreshToken == 'undefined' ? "" : $scope.refreshToken);
 
 				if (clientid == "" || clientsecret == "") {
@@ -2779,6 +2782,7 @@ define(['app'], function (app) {
 					"&username=" + encodeURIComponent(clientid) + ":" +  encodeURIComponent(clientsecret) +
 					"&password=" + encodeURIComponent(scope) +
 					"&enabled=" + bEnabled +
+					"&address=" + RefreshTime +
 					"&SerialPort=" + encodeURIComponent(AppName) +
 					"&extra=" + encodeURIComponent($scope.refreshToken) +
 					"&datatimeout=" + datatimeout +
@@ -4631,6 +4635,7 @@ define(['app'], function (app) {
 							var splittedUserName = data["Username"].split(":");
 							var scopes = data["Password"];
 							var AppName = data["SerialPort"];
+							var RefreshTime = data["Address"];
 
 							if (scopes.indexOf("_") > 0) 	// Old or new format?
 								scopes = scopes.split(",");	// New format: This field contains one or more scopes
@@ -4825,6 +4830,7 @@ define(['app'], function (app) {
 			var clientId = $("#hardwarecontent #hardwareparamsnetatmo #clientid").val();
 			var clientSecret = $("#hardwarecontent #hardwareparamsnetatmo #clientsecret").val();
 			var AppName = $("#hardwarecontent #hardwareparamsnetatmo #AppName").val();
+			var RefreshTime = $("#hardwarecontent #hardwareparamsnetatmo #RefreshTime").val();
 			var date = new Date();
 			var state = date.getTime() + '_' + idx;
 
@@ -4888,6 +4894,7 @@ define(['app'], function (app) {
 								const parsedJsonData = JSON.parse(data);
 								$scope.refreshToken = parsedJsonData.refresh_token;
 								$scope.accessToken  = parsedJsonData.access_token;
+								$scope.RefreshTime  = parsedJsonData.expires_in;
 								if ($scope.refreshToken == "") {
 									alert('Access denied: Failed to receive a valid token from server: ' + decodeJsonValues(xhr.responseText), ', ');
 									console.log('Error: Access denied: Failed to receive a valid token from server: ' + data);
