@@ -368,7 +368,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
 
 	std::string sResult;
-	bool bret = HTTPClient->POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
+	bool bret = httpClient->POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
 
 	//Check for returned data
 	if (!bret)
