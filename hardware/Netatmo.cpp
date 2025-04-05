@@ -349,7 +349,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 	Log (LOG_STATUS, "Requesting new access_token");
 
-	HTTPClient* httpClient = new HttpClient();
+	HTTPClient* httpClient = new HTTPClient();
 	m_ErrorFlag = false;
 
 	// Time to refresh the token
@@ -1484,7 +1484,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 	//Check if connected to the API
 	if (!m_isLogged)
 		return;
-	HTTPClient* httpClient = new HttpClient();
+	HTTPClient* httpClient = new HTTPClient();
 	//Locals
 	std::string httpUrl;                             //URI
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
