@@ -75,6 +75,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	std::string m_accessToken;
 	std::string m_refreshToken;
 	std::string m_netatmo_api_uri;
+	std::string m_App_Name;
 	std::vector<m_tNetatmoDevice> m_known_thermotats;
 	std::map<int, std::string> m_thermostatModuleID;
 	bool m_bPollThermostat;
