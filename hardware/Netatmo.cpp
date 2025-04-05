@@ -349,6 +349,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 	Log (LOG_STATUS, "Requesting new access_token");
 
+	HttpClient* httpClient = new HttpClient();
 	m_ErrorFlag = false;
 
 	// Time to refresh the token
@@ -367,7 +368,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
 
 	std::string sResult;
-	bool bret = HTTPClient::POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
+	bool bret = HTTPClient->POST(httpUrl, httpData, ExtraHeaders, sResult, returnHeaders);
 
 	//Check for returned data
 	if (!bret)
@@ -423,6 +424,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	Debug(DEBUG_HARDWARE, "Next RefreshToken time %s = expires * 2 / 3", ctime(& m_nextRefreshTs));
 
 	StoreRefreshToken(false);
+	delete httpClient;
 	return true;
 }
 
@@ -1482,7 +1484,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 	//Check if connected to the API
 	if (!m_isLogged)
 		return;
-	HttpClient httpClient = new HttpClient();
+	HttpClient* httpClient = new HttpClient();
 	//Locals
 	std::string httpUrl;                             //URI
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
@@ -1506,7 +1508,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 
 	Debug(DEBUG_HARDWARE, "Respons URL   %s - POST %s", httpUrl.c_str(), extra_data.c_str()); // URI to be tested
 
-	if (!httpClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
+	if (!httpClient->POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
 	{
 		Log(LOG_ERROR, "Error connecting to Server (Get_Response_API): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return ;
@@ -1548,6 +1550,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 		m_isLogged = false;
 		return ;
 	}
+	delete httpClient;
 }
 
 
