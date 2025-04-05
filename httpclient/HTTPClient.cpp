@@ -326,7 +326,7 @@ bool HTTPClient::POSTBinary(const std::string &url, const std::string &postdata,
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
 		struct curl_slist* curl_headers = NULL;
-		for (const auto& header : write_curl_headerdata)
+		for (const auto& header : std::begin(write_curl_headerdata), std::end(write_curl_headerdata))
 		{
         		curl_headers = curl_slist_append(curl_headers, header.c_str());
         		// Log the header
