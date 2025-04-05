@@ -72,6 +72,7 @@ std::string ReadFile(std::string filename)
 }
 #endif
 
+
 CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string& password)
 	: m_username(CURLEncode::URLDecode(username))
 	, m_password(CURLEncode::URLDecode(password))
@@ -1481,6 +1482,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 	//Check if connected to the API
 	if (!m_isLogged)
 		return;
+	HttpClient httpClient = new HttpClient();
 	//Locals
 	std::string httpUrl;                             //URI
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
@@ -1488,6 +1490,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 	ExtraHeaders.push_back("Content-Type: application/json;charset=UTF-8");
 	ExtraHeaders.push_back("Authorization: Bearer " + m_accessToken);
 	//             //extra_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"floodlight\":\"" + State + "\"}]}}" ;
+	ExtraHeaders.push_back("User-Agent: " + m_App_Name);
 	std::vector<std::string> returnHeaders;         // HTTP returned headers
 	//https://api.netatmo.com/api/homestatus?home_id=
 	//https://api.netatmo.com/api/getevents?home_id=
@@ -1503,7 +1506,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 
 	Debug(DEBUG_HARDWARE, "Respons URL   %s - POST %s", httpUrl.c_str(), extra_data.c_str()); // URI to be tested
 
-	if (!HTTPClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
+	if (!httpClient::POST(httpUrl, sPostData, ExtraHeaders, sResult, returnHeaders))
 	{
 		Log(LOG_ERROR, "Error connecting to Server (Get_Response_API): %s", ExtractHtmlStatusCode(returnHeaders).c_str());
 		return ;
@@ -1525,7 +1528,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 		if (found!=std::string::npos)
 		{
 			Log(LOG_ERROR, "Error data ...  url: %s, response: %s", httpUrl.c_str(), sResult.c_str());
-			return ;     // This prevents JSON Logic Error in case off Error respons.
+			return ;     // This prevents JSON Logic Error in case off Error response.
 		}
 	}
 
