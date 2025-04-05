@@ -32,8 +32,9 @@ size_t write_curl_headerdata(void *contents, size_t size, size_t nmemb, void *us
 	size_t realsize = size * nmemb;
 	std::vector<std::string>* pvHeaderData = (std::vector<std::string>*)userp;
 	pvHeaderData->push_back(std::string((unsigned char*)contents, (std::find((unsigned char*)contents, (unsigned char*)contents + realsize, '\r'))));
+	const auto& headerData = *pvHeaderData;
 	struct curl_slist* curl_headers = NULL;
-	for (const auto& header : pvHeaderData)
+	for (const auto& header : headerData)
 	{
 		curl_headers = curl_slist_append(curl_headers, header.c_str());
 		// Log the header
