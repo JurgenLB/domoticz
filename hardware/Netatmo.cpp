@@ -92,11 +92,17 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	}
 
 	m_nextRefreshTs = mytime(nullptr);
+	auto result = m_sql.safe_query("SELECT SerialPort FROM Hardware WHERE (ID==%d)", m_HwdID);
+	//retrieved Netatmo App Name from SerialPort field in database
+	if (!result[0][0].empty())
+	{
+		m_App_Name = result[0][O];
+	}
 	Debug(DEBUG_HARDWARE, "Next time %s", ctime(& m_nextRefreshTs));
 	m_isLogged = false;
 	m_ErrorFlag = false;
 
-	Debug(DEBUG_HARDWARE, "%s Netatmo Actif Scopes %s ", m_Name.c_str(), m_scopes.c_str());
+	Debug(DEBUG_HARDWARE, "%s Netatmo Actif Scopes %s ", m_App_Name.c_str(), m_scopes.c_str());
 
 	m_bPollWeatherData = (m_scopes.find("station_R") != std::string::npos);      //read_station
 	m_bPollHomecoachData = (m_scopes.find("homecoach_R") != std::string::npos);  //read_homecoach
