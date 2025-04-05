@@ -96,7 +96,7 @@ CNetatmo::CNetatmo(const int ID, const std::string& username, const std::string&
 	//retrieved Netatmo App Name from SerialPort field in database
 	if (!result[0][0].empty())
 	{
-		m_App_Name = result[0][O];
+		m_App_Name = result[0][0];
 	}
 	Debug(DEBUG_HARDWARE, "Next time %s", ctime(& m_nextRefreshTs));
 	m_isLogged = false;
