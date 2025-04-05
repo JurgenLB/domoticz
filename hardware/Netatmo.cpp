@@ -349,7 +349,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 
 	Log (LOG_STATUS, "Requesting new access_token");
 
-	HttpClient* httpClient = new HttpClient();
+	HTTPClient* httpClient = new HttpClient();
 	m_ErrorFlag = false;
 
 	// Time to refresh the token
@@ -362,7 +362,7 @@ bool CNetatmo::RefreshToken(const bool bForce)
 	std::vector<std::string> returnHeaders;
 
 	//ExtraHeaders.push_back("Host: api.netatmo.com");
-	//ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
+	ExtraHeaders.push_back("Content-Type: application/x-www-form-urlencoded;charset=UTF-8");
 
 	std::string httpUrl(m_netatmo_api_uri + "oauth2/token?");
 	Debug(DEBUG_HARDWARE, "Netatmo URL %s with %s", httpUrl.c_str(), httpData.c_str());
@@ -1484,7 +1484,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 	//Check if connected to the API
 	if (!m_isLogged)
 		return;
-	HttpClient* httpClient = new HttpClient();
+	HTTPClient* httpClient = new HttpClient();
 	//Locals
 	std::string httpUrl;                             //URI
 	std::vector<std::string> ExtraHeaders;           // HTTP Headers
