@@ -32,6 +32,13 @@ size_t write_curl_headerdata(void *contents, size_t size, size_t nmemb, void *us
 	size_t realsize = size * nmemb;
 	std::vector<std::string>* pvHeaderData = (std::vector<std::string>*)userp;
 	pvHeaderData->push_back(std::string((unsigned char*)contents, (std::find((unsigned char*)contents, (unsigned char*)contents + realsize, '\r'))));
+	struct curl_slist* curl_headers = NULL;
+	for (const auto& header : pvHeaderData)
+	{
+		curl_headers = curl_slist_append(curl_headers, header.c_str());
+		// Log the header
+		_log.Debug(DEBUG_HARDWARE, "cUrl pv Headers: %s", header.c_str());
+	}
 	return realsize;
 }
 
@@ -325,13 +332,7 @@ bool HTTPClient::POSTBinary(const std::string &url, const std::string &postdata,
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response);
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
-		struct curl_slist* curl_headers = NULL;
-		for (const auto& header : std::begin(write_curl_headerdata), std::end(write_curl_headerdata))
-		{
-        		curl_headers = curl_slist_append(curl_headers, header.c_str());
-        		// Log the header
-        		_log.Debug(DEBUG_HARDWARE, "cUrl Headers: %s", header.c_str());
-		}
+
 		struct curl_slist* curl_eheaders = NULL;
 		for (const auto& eheader : ExtraHeaders)
 		{
