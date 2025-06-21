@@ -2477,11 +2477,11 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		}
 	}
 
-	///Debug(DEBUG_HARDWARE, "bHave Temp %d : Hum %d : Baro %d : CO2 %d : Rain %d : Sound %d :  wind %d : setpoint %d", bHaveTemp, bHaveHum, bHaveBaro, bHaveCO2, bHaveRain, bHaveSound, bHaveWind, bHaveSetpoint);
+	Debug(DEBUG_HARDWARE, "bHave Temp %d : Hum %d : Baro %d : CO2 %d : Rain %d : Sound %d :  wind %d : setpoint %d", bHaveTemp, bHaveHum, bHaveBaro, bHaveCO2, bHaveRain, bHaveSound, bHaveWind, bHaveSetpoint);
 	//Data retrieved create / update appropriate domoticz devices
 	std::string sValue;
 	std::string roomNetatmoID = m_RoomIDs[Hardware_ID];
-	//Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s [%s] %s", Hardware_int, Hardware_int, str_ID.c_str(), name.c_str(), Hardware_ID.c_str());
+	Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s [%s] %s", Hardware_int, Hardware_int, str_ID.c_str(), name.c_str(), Hardware_ID.c_str());
 
 	std::stringstream RF_level;
 	RF_level << rssiLevel;
@@ -2518,6 +2518,8 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		const uint8_t Unit = 7;
 		sp_temp = static_cast<int>(SP_temp);
 		std::string sValue = sp_str.str();
+
+		Debug(DEBUG_HARDWARE, "Thermostat Setpoint");
 		//Debug(DEBUG_HARDWARE, "(%d) %s (%s) [%s] parsedashboard  %s %s %d %d", Hardware_int, str_ID.c_str(), pchar_ID, name.c_str(), sValue.c_str(), m_Name.c_str(), rssiLevel, batValue);
 		SendSetPointSensor(ID, (uint8_t)((ID & 0x00FF0000) >> 16), (ID & 0XFF00) >> 8, ID & 0XFF, Unit, batValue, SP_temp, sName);    // No RF-level
 	}
@@ -3307,6 +3309,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 					if ((type == "NATherm1") || (type == "NRV"))
 					{
+						Debug(DEBUG_HARDWARE, "Thermostat");
 						int ChildID = 0;
 						int roomIndex = 0;
 						//Find the room info
