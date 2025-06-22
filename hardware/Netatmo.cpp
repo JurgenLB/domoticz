@@ -2711,6 +2711,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 			if (!module["id"].empty())
 			{
 				std::string module_id = module["id"].asString();
+				std::string moduleName = m_ModuleNames[module_id];
+				Debug(DEBUG_HARDWARE, "Name Module  %s", moduleName);
 				std::string bat_percentage;
 				std::string batName;
 				int batteryLevel;
@@ -2766,13 +2768,12 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 				//uint64_t DeviceRowIdx;
 				iModuleIndex ++;
+				Debug(DEBUG_HARDWARE, "Hardware convert  %s", module_id);
 				// Hardware_ID hex to int
 				uint64_t Hardware_convert = convert_mac(module_id);
 				int Hardware_int = (int)Hardware_convert;
 				//converting ID to char const
 				char const* pchar_ID = module_id.c_str();
-				std::string moduleName = m_ModuleNames[module_id];
-				Debug(DEBUG_HARDWARE, "Name Module  %s", moduleName);
 				crcId = Crc32(0, (const unsigned char*)module_id.c_str(), module_id.length());
 				m_ModuleIDs[Hardware_int] = crcId;
 				std::string type = module["type"].asString();
