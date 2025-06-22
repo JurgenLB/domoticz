@@ -2772,6 +2772,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				//converting ID to char const
 				char const* pchar_ID = module_id.c_str();
 				std::string moduleName = m_ModuleNames[module_id];
+				Debug(DEBUG_HARDWARE, "Name Module  %s", moduleName);
 				crcId = Crc32(0, (const unsigned char*)module_id.c_str(), module_id.length());
 				m_ModuleIDs[Hardware_int] = crcId;
 				std::string type = module["type"].asString();
@@ -3542,6 +3543,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						m_bPollGetEvents = true;
 					}
 					Debug(DEBUG_HARDWARE, "Poll Get Events (%d)", m_bPollGetEvents);
+					Debug(DEBUG_HARDWARE, "Type = %s", type);
 					//m_bPollGetEvents = false;  // Possible to Block GetEvents
 				}
 			m_netatmo_devices.push_back(nDevice);
