@@ -1529,7 +1529,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 	// Shows content of the request and headers
 	//*****************************************************************************
 	Debug(DEBUG_HARDWARE, "HttpUrl: %s", httpUrl.c_str());
-	Debug(DEBUG_HARDWARE, "HttpData: %s", httpData.c_str());
+	Debug(DEBUG_HARDWARE, "HttpData: %s", sPostData.c_str());
 	for (const std::string& header : ExtraHeaders) {
 		Debug(DEBUG_HARDWARE, "ExtraHeaders: %s", header.c_str());
 	}
