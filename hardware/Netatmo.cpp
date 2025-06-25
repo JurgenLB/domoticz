@@ -1528,13 +1528,13 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 	//*****************************************************************************
 	// Shows content of the request and headers
 	//*****************************************************************************
-	Debug(DEBUG_HARDWARE, "HttpUrl: %s", httpUrl.c_str());
-	Debug(DEBUG_HARDWARE, "HttpData: %s", sPostData.c_str());
+	Debug(DEBUG_HARDWARE, "Response HttpUrl: %s", httpUrl.c_str());
+	Debug(DEBUG_HARDWARE, "Response HttpData: %s", sPostData.c_str());
 	for (const std::string& header : ExtraHeaders) {
-		Debug(DEBUG_HARDWARE, "ExtraHeaders: %s", header.c_str());
+		Debug(DEBUG_HARDWARE, "Response ExtraHeaders: %s", header.c_str());
 	}
 	for (const std::string& returnheader : returnHeaders) {
-		Debug(DEBUG_HARDWARE, "returnHeader: %s", returnheader.c_str());
+		Debug(DEBUG_HARDWARE, "Response returnHeader: %s", returnheader.c_str());
 	}
 	
 	// Following line gives always the return RAW-String from Netatmo server
