@@ -1525,9 +1525,22 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 		return ;
 	}
 
+	//*****************************************************************************
+	// Shows content of the request and headers
+	//*****************************************************************************
+	Debug(DEBUG_HARDWARE, "HttpUrl: %s", httpUrl.c_str());
+	Debug(DEBUG_HARDWARE, "HttpData: %s", httpData.c_str());
+	for (const std::string& header : ExtraHeaders) {
+		Debug(DEBUG_HARDWARE, "ExtraHeaders: %s", header.c_str());
+	}
+	for (const std::string& returnheader : returnHeaders) {
+		Debug(DEBUG_HARDWARE, "returnHeader: %s", returnheader.c_str());
+	}
+	
 	// Following line gives always the return RAW-String from Netatmo server
 	// uncomment for Debug situation.
-	//Debug(DEBUG_HARDWARE, "Response sResult %s", sResult.c_str());
+	Debug(DEBUG_HARDWARE, "Response sResult %s", sResult.c_str());
+	//*****************************************************************************
 
 	//Check for error
 	std::string s_Sresult = sResult;
@@ -1552,7 +1565,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 		return ;
 	}
 
-	//Log(LOG_STATUS, "Get_Response_API message returned from POST(%s): \n%s", httpUrl.c_str(), JSonToFormatString(root).c_str()); // prettifyJson(root);
+	Log(LOG_STATUS, "Get_Response_API message returned from POST(%s): \n%s", httpUrl.c_str(), JSonToFormatString(root).c_str()); // prettifyJson(root);
 
 	if (!root["error"].empty())
         {
