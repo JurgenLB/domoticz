@@ -1603,7 +1603,7 @@ void CNetatmo::GetHomesDataDetails()
 				homeID = home["id"].asString();
 				m_homeid.push_back(homeID);
 				//Debug(DEBUG_HARDWARE, "Get Home ID %s", homeID.c_str());
-				//SaveJson2Disk(home, std::string("./HomesData_" + m_Name + "-" + homeID + ".txt"));
+				SaveJson2Disk(home, std::string("./HomesData_" + m_Name + "-" + homeID + ".txt")); //Save HOMESDATA
 				std::stringstream stream_homeid;
 				for(size_t i = 0; i < m_homeid.size(); ++i)
 				{
@@ -2622,7 +2622,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 		if (!root["body"]["home"]["rooms"].isArray())
 			return false;
 		Json::Value mRoot = root["body"]["home"]["rooms"];
-		//SaveJson2Disk(root, std::string("./HomeStatus_" + m_Name + "_:_" + home_id + ".txt"));
+		SaveJson2Disk(root, std::string("./HomeStatus_" + m_Name + "_:_" + home_id + ".txt")); //Save HOMESTATUS
 
 		for (auto room : mRoot)
 		{
@@ -3347,8 +3347,12 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						const uint8_t Unit = 7;
 						Debug(DEBUG_HARDWARE, "Thermostat Variables - room_setpoint %s", room_setpoint.c_str());
 						nDevice.roomNetatmoID = roomNetatmoID;
-						int sp_temp = stoi(room_setpoint);           // string to int
-						float SP_temp = std::stof(room_setpoint);
+						//int sp_temp = stoi(room_setpoint);           // string to int
+						float SP_temp;
+						if (!room_setpoint.empty())
+							SP_temp = std::stof(room_setpoint);
+						else
+							SP_temp = 0;
 
 						SendSetPointSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, moduleName);   // No RF-level
 						// thermostatModuleID
