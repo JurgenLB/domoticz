@@ -2255,7 +2255,7 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 							}
 							std::string mid = module["_id"].asString();
 							std::string mtype = module["type"].asString();
-							std::string mname
+							std::string mname;
 							if (!module["module_name"].empty())
 								mname = module["module_name"].asString();
 							else if (!module["name"].empty())
