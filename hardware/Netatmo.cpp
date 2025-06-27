@@ -2725,7 +2725,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 			{
 				std::string module_id = module["id"].asString();
 				std::string moduleName = m_ModuleNames[module_id];
-				Debug(DEBUG_HARDWARE, "Name Module  %s", moduleName);
+				Debug(DEBUG_HARDWARE, "Name Module  %s", moduleName.c_str());
 				std::string bat_percentage;
 				std::string batName;
 				int batteryLevel;
@@ -2781,7 +2781,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 				//uint64_t DeviceRowIdx;
 				iModuleIndex ++;
-				Debug(DEBUG_HARDWARE, "Hardware convert  %s", module_id);
+				Debug(DEBUG_HARDWARE, "Hardware convert  %s", module_id.c_str());
 				// Hardware_ID hex to int
 				uint64_t Hardware_convert = convert_mac(module_id);
 				int Hardware_int = (int)Hardware_convert;
@@ -3557,7 +3557,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						m_bPollGetEvents = true;
 					}
 					Debug(DEBUG_HARDWARE, "Poll Get Events (%d)", m_bPollGetEvents);
-					Debug(DEBUG_HARDWARE, "Type = %s", type);
+					Debug(DEBUG_HARDWARE, "Type = %s", type.c_str());
 					//m_bPollGetEvents = false;  // Possible to Block GetEvents
 				}
 			m_netatmo_devices.push_back(nDevice);
