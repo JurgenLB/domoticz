@@ -3345,7 +3345,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string room_mode = m_Room_mode[roomNetatmoID];
 						std::string room_temp = m_Room_Temp[roomNetatmoID];
 						const uint8_t Unit = 7;
-						Debug(DEBUG_HARDWARE, "Thermostat Variables");
+						Debug(DEBUG_HARDWARE, "Thermostat Variables - room_setpoint %s", room_setpoint.c_str());
 						nDevice.roomNetatmoID = roomNetatmoID;
 						int sp_temp = stoi(room_setpoint);           // string to int
 						float SP_temp = std::stof(room_setpoint);
