@@ -3425,7 +3425,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						}
 
 						int index = 10;
-						Debug(DEBUG_HARDWARE, "allSchName Data %s", allSchName.c_str());
+						Debug(DEBUG_HARDWARE, "allSchName Data %s - setpoint_mode_str %s", allSchName.c_str(), setpoint_mode_str.c_str());
 
 						//Selected Index for the dropdown list
 						std::stringstream ssv;
