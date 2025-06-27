@@ -1677,7 +1677,11 @@ void CNetatmo::GetHomesDataDetails()
 							uint64_t moduleID = convert_mac(macID);
 							int Hardware_int = (int)moduleID;
 							//Debug(DEBUG_HARDWARE, "Homedata modules %lu -  %s in Home = %s" , moduleID, macID.c_str(), homeID.c_str());
-							m_ModuleNames[macID] = module["name"].asString();
+							if (!module["name"].empty())
+								m_ModuleNames[macID] = module["name"].asString();
+							else
+								m_ModuleNames[macID] = "unknown";
+
 							for (auto device : module["modules_bridged"])
 							{
 								module_id = device.asString();
@@ -2251,7 +2255,13 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 							}
 							std::string mid = module["_id"].asString();
 							std::string mtype = module["type"].asString();
-							std::string mname = module["module_name"].asString();
+							std::string mname
+							if (!module["module_name"].empty())
+								mname = module["module_name"].asString();
+							else if (!module["name"].empty())
+								mname = module["modulename"].asString();
+							else
+								mname = "unknown-" + mid;
 							//SaveJson2Disk(module, std::string("./" + mname + ".txt"));
 							int crcId = Crc32(0, (const unsigned char*)mid.c_str(), mid.length());
 							uint64_t moduleID = convert_mac(mid);
@@ -2260,8 +2270,6 @@ bool CNetatmo::ParseStationData(const std::string& sResult, const bool bIsThermo
 							m_ModuleIDs[moduleID] = crcId;
 							//Debug(DEBUG_HARDWARE, "%d %lu -  %s" , Hardware_int, moduleID, mid.c_str());
 
-							if (mname.empty())
-								mname = "unknown" + mid;
 							if (!module["battery_percent"].empty())
 							{
 								// battery percent %
