@@ -1571,7 +1571,7 @@ void CNetatmo::Get_Response_API(const m_eNetatmoType& NType, std::string& sResul
 		return ;
 	}
 
-	//Log(LOG_STATUS, "Get_Response_API message returned from POST(%s): \n%s", httpUrl.c_str(), JSonToFormatString(root).c_str()); // prettifyJson(root);
+	Log(LOG_STATUS, "Get_Response_API message returned from POST(%s): \n%s", httpUrl.c_str(), JSonToFormatString(root).c_str()); // prettifyJson(root);
 
 	if (!root["error"].empty())
         {
@@ -1609,10 +1609,12 @@ void CNetatmo::GetHomesDataDetails()
 				homeID = home["id"].asString();
 				m_homeid.push_back(homeID);
 				//Debug(DEBUG_HARDWARE, "Get Home ID %s", homeID.c_str());
+
 				//*****************************************************************************//
 				if (NETATMO_SAVE_HOME)
 					SaveJson2Disk(home, std::string("./HomesData_" + m_Name + "-" + homeID + ".txt"));
 				//*****************************************************************************//
+
 				std::stringstream stream_homeid;
 				for(size_t i = 0; i < m_homeid.size(); ++i)
 				{
@@ -1689,6 +1691,7 @@ void CNetatmo::GetHomesDataDetails()
 							if (!module["name"].empty())
 								m_ModuleNames[macID] = module["name"].asString();
 							else
+
 								m_ModuleNames[macID] = "unknown-" + macID;
 
 							for (auto device : module["modules_bridged"])
@@ -1834,7 +1837,7 @@ void CNetatmo::GetHomesDataDetails()
 					}
 					Debug(DEBUG_HARDWARE, "Get HomesData complete %s", Home_Name.c_str());
 				}
-				Debug(DEBUG_HARDWARE, "Get HomeStatus Details");
+				
 			}
 		}
 	}
@@ -2514,11 +2517,11 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		}
 	}
 
-	///Debug(DEBUG_HARDWARE, "bHave Temp %d : Hum %d : Baro %d : CO2 %d : Rain %d : Sound %d :  wind %d : setpoint %d", bHaveTemp, bHaveHum, bHaveBaro, bHaveCO2, bHaveRain, bHaveSound, bHaveWind, bHaveSetpoint);
+	Debug(DEBUG_HARDWARE, "bHave Temp %d : Hum %d : Baro %d : CO2 %d : Rain %d : Sound %d :  wind %d : setpoint %d", bHaveTemp, bHaveHum, bHaveBaro, bHaveCO2, bHaveRain, bHaveSound, bHaveWind, bHaveSetpoint);
 	//Data retrieved create / update appropriate domoticz devices
 	std::string sValue;
 	std::string roomNetatmoID = m_RoomIDs[Hardware_ID];
-	//Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s [%s] %s", Hardware_int, Hardware_int, str_ID.c_str(), name.c_str(), Hardware_ID.c_str());
+	Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s [%s] %s", Hardware_int, Hardware_int, str_ID.c_str(), name.c_str(), Hardware_ID.c_str());
 
 	std::stringstream RF_level;
 	RF_level << rssiLevel;
@@ -2639,6 +2642,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 		if (!root["body"]["home"]["rooms"].isArray())
 			return false;
 		Json::Value mRoot = root["body"]["home"]["rooms"];
+
 		//*****************************************************************************//
 		if (NETATMO_SAVE_HOME)
 			SaveJson2Disk(root, std::string("./HomeStatus_" + m_Name + "_:_" + home_id + ".txt")); //Save HOMESTATUS
@@ -2665,6 +2669,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				// from Homesdata
 				roomName = m_RoomNames[roomNetatmoID];
 				std::string roomType = m_Types[roomNetatmoID];
+
 				if (NETATMO_SAVE_MODULE)
 					SaveJson2Disk(room, std::string("./room_") + roomName.c_str() + ".txt");
 
@@ -3356,6 +3361,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 					if ((type == "NATherm1") || (type == "NRV"))
 					{
+						Debug(DEBUG_HARDWARE, "Thermostat");
 						int ChildID = 0;
 						int roomIndex = 0;
 						//Find the room info
@@ -3368,6 +3374,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string room_mode = m_Room_mode[roomNetatmoID];
 						std::string room_temp = m_Room_Temp[roomNetatmoID];
 						const uint8_t Unit = 7;
+						//Debug(DEBUG_HARDWARE, "Thermostat Variables - room_setpoint %s", room_setpoint.c_str());
 						nDevice.roomNetatmoID = roomNetatmoID;
 						//int sp_temp = stoi(room_setpoint);           // string to int
 						float SP_temp;
@@ -3412,7 +3419,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 								int uId = std::stoi(result[0][0]);
 								int nValue = std::stoi(result[0][1]);
 								std::string sValue = result[0][2];
-								//Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
+								Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
 								m_PowerDeviceID[uId] = home_id;
 
 								if (m_bFirstTimeHomeStatus)
@@ -3597,6 +3604,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						m_bPollGetEvents = true;
 					}
 					Debug(DEBUG_HARDWARE, "Poll Get Events (%d)", m_bPollGetEvents);
+					Debug(DEBUG_HARDWARE, "Type = %s", type.c_str());
 					//m_bPollGetEvents = false;  // Possible to Block GetEvents
 				}
 			m_netatmo_devices.push_back(nDevice);
