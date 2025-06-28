@@ -1823,8 +1823,9 @@ void CNetatmo::GetHomesDataDetails()
 						bool user_wind = user["unit_wind"].asBool();
 						std::string user_id = user["id"].asString();
 					}
+					Debug(DEBUG_HARDWARE, "Get HomesData complete %s", Home_Name.c_str());
 				}
-				Debug(DEBUG_HARDWARE, "Get HomeStatus Details");
+				
 			}
 		}
 	}
