@@ -2520,11 +2520,11 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		}
 	}
 
-	Debug(DEBUG_HARDWARE, "bHave Temp %d : Hum %d : Baro %d : CO2 %d : Rain %d : Sound %d :  wind %d : setpoint %d", bHaveTemp, bHaveHum, bHaveBaro, bHaveCO2, bHaveRain, bHaveSound, bHaveWind, bHaveSetpoint);
+	///Debug(DEBUG_HARDWARE, "bHave Temp %d : Hum %d : Baro %d : CO2 %d : Rain %d : Sound %d :  wind %d : setpoint %d", bHaveTemp, bHaveHum, bHaveBaro, bHaveCO2, bHaveRain, bHaveSound, bHaveWind, bHaveSetpoint);
 	//Data retrieved create / update appropriate domoticz devices
 	std::string sValue;
 	std::string roomNetatmoID = m_RoomIDs[Hardware_ID];
-	Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s [%s] %s", Hardware_int, Hardware_int, str_ID.c_str(), name.c_str(), Hardware_ID.c_str());
+	//Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s [%s] %s", Hardware_int, Hardware_int, str_ID.c_str(), name.c_str(), Hardware_ID.c_str());
 
 	std::stringstream RF_level;
 	RF_level << rssiLevel;
@@ -3377,7 +3377,6 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string room_mode = m_Room_mode[roomNetatmoID];
 						std::string room_temp = m_Room_Temp[roomNetatmoID];
 						const uint8_t Unit = 7;
-						//Debug(DEBUG_HARDWARE, "Thermostat Variables - room_setpoint %s", room_setpoint.c_str());
 						nDevice.roomNetatmoID = roomNetatmoID;
 						//int sp_temp = stoi(room_setpoint);           // string to int
 						float SP_temp;
@@ -3422,7 +3421,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 								int uId = std::stoi(result[0][0]);
 								int nValue = std::stoi(result[0][1]);
 								std::string sValue = result[0][2];
-								Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
+								//Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
 								m_PowerDeviceID[uId] = home_id;
 
 								if (m_bFirstTimeHomeStatus)
