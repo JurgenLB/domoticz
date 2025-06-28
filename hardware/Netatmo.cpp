@@ -2614,6 +2614,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 	int setpoint_mode_i;
 	int iDevIndex = 0;
 	bool setModeSwitch = false;
+	bool roomReachable;
 	std::vector<m_tNetatmoDevice> m_netatmo_devices;
 	m_tNetatmoDevice nDevice;
 	m_bPollGetEvents = false;
@@ -2650,7 +2651,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 				if (!room["reachable"].empty())
 				{
-					// True or False
+					// True or False       Module disconnected or no battery
+					roomReachable = room["reachable"].asBool();
 				}
 				if (!room["anticipating"].empty())
 				{
@@ -2790,7 +2792,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 				//uint64_t DeviceRowIdx;
 				iModuleIndex ++;
-				Debug(DEBUG_HARDWARE, "Hardware convert  %s", module_id.c_str());
+				//Debug(DEBUG_HARDWARE, "Hardware convert  %s", module_id.c_str());
 				// Hardware_ID hex to int
 				uint64_t Hardware_convert = convert_mac(module_id);
 				int Hardware_int = (int)Hardware_convert;
@@ -3346,7 +3348,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string room_mode = m_Room_mode[roomNetatmoID];
 						std::string room_temp = m_Room_Temp[roomNetatmoID];
 						const uint8_t Unit = 7;
-						Debug(DEBUG_HARDWARE, "Thermostat Variables - room_setpoint %s", room_setpoint.c_str());
+						//Debug(DEBUG_HARDWARE, "Thermostat Variables - room_setpoint %s", room_setpoint.c_str());
 						nDevice.roomNetatmoID = roomNetatmoID;
 						//int sp_temp = stoi(room_setpoint);           // string to int
 						float SP_temp;
@@ -3356,12 +3358,12 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							SendSetPointSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, moduleName);   // No RF-level
 						}
 						else
-							Log(LOG_ERROR, "NetatmoThermostat: Error sending setpoint!");
+							Log(LOG_ERROR, "NetatmoThermostat: Error setpoint! - Check Battery/module Connection");
 
 						// thermostatModuleID
 						uint64_t mid = convert_mac(module_id);
 						int Hardware_int = (int)mid;
-						Debug(DEBUG_HARDWARE, "roomNetatmoID %d  %d -  %s %s in Home; %s", crcId , Hardware_int, module_id.c_str(), roomNetatmoID.c_str(), home_id.c_str());
+						//Debug(DEBUG_HARDWARE, "roomNetatmoID %d  %d -  %s %s in Home; %s", crcId , Hardware_int, module_id.c_str(), roomNetatmoID.c_str(), home_id.c_str());
 						m_thermostatModuleID[crcId] = module_id;              // mac-adres
 						//m_RoomIDs[module_id] = roomNetatmoID;                 // Room Netatmo ID
 						//m_DeviceHomeID[roomNetatmoID] = home_id;            // Home_ID
@@ -3414,7 +3416,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::stringstream Hardware_str;
                                                 Hardware_str << Hardware_int;
 						m_ScheduleHomes[Hardware_int] = home_id;
-						Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s", Hardware_int, Hardware_int, home_id.c_str());
+						//Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s", Hardware_int, Hardware_int, home_id.c_str());
 
 						std::map<int, std::string> Schedule_ID = m_ScheduleID_s[home_id];
 
@@ -3428,7 +3430,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						}
 
 						int index = 10;
-						Debug(DEBUG_HARDWARE, "allSchName Data %s - setpoint_mode_str %s", allSchName.c_str(), setpoint_mode_str.c_str());
+						//Debug(DEBUG_HARDWARE, "allSchName Data %s - setpoint_mode_str %s", allSchName.c_str(), setpoint_mode_str.c_str());
 
 						//Selected Index for the dropdown list
 						std::stringstream ssv;
@@ -3441,7 +3443,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						if (setModeSwitch)
 							SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, setpoint_mode_str, sName, 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);   // No RF-level - Battery level visible
 						else
-							Log(LOG_ERROR, "NetatmoThermostat: Error selector not available!");
+							Log(LOG_ERROR, "NetatmoThermostat: Error not available!");
 
 						m_thermostatModuleID[crcId] = module_id;                // mac-adres
 						m_DeviceHomeID[roomNetatmoID] = home_id;              // Home_ID
