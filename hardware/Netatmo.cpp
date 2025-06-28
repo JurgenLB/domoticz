@@ -2646,7 +2646,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				// from Homesdata
 				roomName = m_RoomNames[roomNetatmoID];
 				std::string roomType = m_Types[roomNetatmoID];
-				//SaveJson2Disk(room, std::string("./room_") + roomName.c_str() + ".txt");
+				SaveJson2Disk(room, std::string("./room_") + roomName.c_str() + ".txt");
 
 				if (!room["reachable"].empty())
 				{
@@ -3355,6 +3355,9 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							SP_temp = std::stof(room_setpoint);
 							SendSetPointSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, moduleName);   // No RF-level
 						}
+						else
+							Log(LOG_ERROR, "NetatmoThermostat: Error sending setpoint!");
+
 						// thermostatModuleID
 						uint64_t mid = convert_mac(module_id);
 						int Hardware_int = (int)mid;
@@ -3435,8 +3438,10 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						SendSelectorSwitch(Hardware_int, 2, ssv.str(), moduleName + " - Schedule", 15, true, allSchName, allSchAction, true, m_Name);   // No RF-level - Battery level visible
 
 						std::string sName = moduleName + " - mode";
-						if (!setpoint_mode_str.empty())
+						if (setModeSwitch)
 							SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, setpoint_mode_str, sName, 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);   // No RF-level - Battery level visible
+						else
+							Log(LOG_ERROR, "NetatmoThermostat: Error selector not available!");
 
 						m_thermostatModuleID[crcId] = module_id;                // mac-adres
 						m_DeviceHomeID[roomNetatmoID] = home_id;              // Home_ID
