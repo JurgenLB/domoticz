@@ -17,9 +17,18 @@
 #define NETAMO_POLL_INTERVALL 900
 #define NETAMO_LOGIN_INTERVALL 30
 #define NETAMO_ERROR_INTERVALL 2700
+
+#ifndef NETATMO_CHECK_SERVER
 #define NETATMO_CHECK_SERVER 0
+#endif
+
+#ifndef NETATMO_SAVE_HOME
 #define NETATMO_SAVE_HOME 0
+#endif
+
+#ifndef NETATMO_SAVE_MODULE
 #define NETATMO_SAVE_MODULE 0
+#endif
 
 #ifdef _DEBUG
 //	#define DEBUG_NetatmoWeatherStationR
