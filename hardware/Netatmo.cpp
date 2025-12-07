@@ -124,9 +124,9 @@ void CNetatmo::Init()
 	m_RoomNames.clear();
 	m_RoomIDs.clear();
 	m_Room.clear();
-	m_Room_mode.clear();
+	m_Room_combi.clear();
 	m_Room_setpoint.clear();
-	m_Room_Temp.clear();
+	m_Room_HardwareID.clear();
 	m_ModuleNames.clear();
 	m_ModuleIDs.clear();
 	m_Module_Bat_Level.clear();
@@ -1306,7 +1306,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 	std::string name = m_ModuleNames[module_id];
 	std::string roomNetatmoID = m_RoomIDs[module_id];
 	std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
-	std::string mode = m_Room_mode[roomNetatmoID];
+	std::string mode = m_Room_setpoint[roomNetatmoID]["mode"];
 	std::string Mode_room = m_Device_types[roomNetatmoID];
 	std::string roomName = m_RoomNames[roomNetatmoID];
 	//Debug(DEBUG_HARDWARE, "Netatmo Thermostat MAC; %s in Room ID = %s in Home: %s", module_id.c_str(), roomNetatmoID.c_str(), Home_id.c_str());
@@ -1799,6 +1799,8 @@ void CNetatmo::GetHomesDataDetails()
 							int Hardware_int = (int)moduleId;
 							//Debug(DEBUG_HARDWARE, "List Modules in Room_id  %lu - mac =  %s in room %s in home %s",moduleId, module_id.c_str(), roomNetatmoID.c_str(), homeID.c_str());
 							m_RoomIDs[module_id] = roomNetatmoID;
+							if (m_Room_combi[HardwareID] == module_id)
+								m_Room_HardwareID[roomNetatmoID] = module_id;
 						}
 						//category not in Rooms?
 						if (!room["category"].empty())
@@ -2541,11 +2543,10 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	int hum = 0;
 	int baro = 0;
 	int co2 = 0;
-	int rain = 0;
+	int rain = 0, sum_rain_1 = 0, sum_rain_24 = 0;
 	float rain_1 = 0;
 	float rain_24 = 0;
 	int sound = 0;
-
 	int wind_angle = 0;
 	float wind_strength = 0;
 	float wind_gust = 0;
@@ -2562,6 +2563,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	std::string str_ID4;
 	std::string str_ID2;
 	std::stringstream bt;
+	std::list<int> combi;
 
 	// Hardware_ID mac to int
 	uint64_t Hardware_convert = convert_mac(Hardware_ID);
@@ -2621,6 +2623,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bHaveTemp = true;
 		Temp = root["Temperature"].asFloat();
 		t_str << std::setprecision(2) << Temp;
+		m_Room_combi[Hardware_ID].insert("Temp", Temp)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Type = %s", ModuleType.c_str());
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Temperature [%s]", t_str.str().c_str());
 	}
@@ -2630,6 +2633,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		Temp = root["temperature"].asFloat();
 		t_str << std::setprecision(2) << Temp;
 		temp = static_cast<int>(Temp);
+		m_Room_combi[Hardware_ID].insert("temp", temp)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module int temperature [%s]", t_str.str().c_str());
 	}
 	if (!root["Sp_Temperature"].empty())
@@ -2637,6 +2641,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bHaveSetpoint = true;
 		SP_temp = root["Sp_Temperature"].asFloat();
 		sp_str << std::setprecision(2) << SP_temp;
+		m_Room_combi[Hardware_ID].insert("SP_temp", SP_temp)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Sp [%s]", sp_str.str().c_str());
 	}
 	else if (!root["setpoint_temp"].empty())
@@ -2644,48 +2649,59 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bHaveSetpoint = true;
 		SP_temp = root["setpoint_temp"].asFloat();
 		sp_str << std::setprecision(2) << SP_temp;
+		sp_temp = static_cast<int>(SP_temp);
+		m_Room_combi[Hardware_ID].insert("setpoint", sp_temp)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module setpoint [%s]", sp_str.str().c_str());
 	}
 	if (!root["Humidity"].empty())
 	{
 		bHaveHum = true;
 		hum = root["Humidity"].asInt();
+		m_Room_combi[Hardware_ID].insert("humidity", hum)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module hum [%d]", hum);
 	}
 	if (!root["Pressure"].empty())
 	{
 		bHaveBaro = true;
 		baro = root["Pressure"].asInt();
+		m_Room_combi[Hardware_ID].insert("baro", baro)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Pressure [%d]", baro);
 	}
 	if (!root["Noise"].empty())
 	{
 		bHaveSound = true;
 		sound = root["Noise"].asInt();
+		m_Room_combi[Hardware_ID].insert("sound", sound)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Noise [%d]", sound);
 	}
 	if (!root["CO2"].empty())
 	{
 		bHaveCO2 = true;
 		co2 = root["CO2"].asInt();
+		m_Room_combi[Hardware_ID].insert("co2", co2)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module CO2 [%d]", co2);
 	}
 	if (!root["Rain"].empty())
 	{
 		bHaveRain = true;
 		rain = root["Rain"].asInt();
+		m_Room_combi[Hardware_ID].insert("rain", rain)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Rain [%d]", rain);
 	}
 	if (!root["sum_rain_1"].empty())
 	{
 		bHaveRain = true;
 		rain_1 = root["sum_rain_1"].asFloat();
+		sum_rain_1 = static_cast<int>(rain_1);
+		m_Room_combi[Hardware_ID].insert("sum_rain_1", sum_rain_1)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Rain_1 [%f]", rain_1);
 	}
 	if (!root["sum_rain_24"].empty())
 	{
 		bHaveRain = true;
 		rain_24 = root["sum_rain_24"].asFloat();
+		sum_rain_24 = static_cast<int>(rain_24);
+		m_Room_combi[Hardware_ID].insert("sum_rain_1", sum_rain_24)
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Rain_24 [%f]", rain_24);
 	}
 	if (!root["WindAngle"].empty())
@@ -2695,10 +2711,13 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		{
 			bHaveWind = true;
 			wind_angle = root["WindAngle"].asInt();
+			m_Room_combi[Hardware_ID].insert("WindAngle", wind_angle);
 			float windstrength = root["WindStrength"].asFloat();
 			wind_strength = windstrength / 3.6F;
+			m_Room_combi[Hardware_ID].insert("wind_strength", static_cast<int>(wind_strength));
 			float windgust = root["GustStrength"].asFloat();
 			wind_gust = windgust / 3.6F;
+			m_Room_combi[Hardware_ID].insert("wind_gust", static_cast<int>(wind_gust));
 		}
 	}
 
@@ -2721,7 +2740,8 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	{
 		int nforecast = m_forecast_calculators[ID].CalculateBaroForecast(Temp, baro); //float temp, double pressure
 		//Debug(DEBUG_HARDWARE, "%s name Temp & Hum & Baro %d [%s] %d %d %d - %d / %d ", Hardware_int, Hardware_ID.c_str(), name.c_str(), temp, hum, baro, batValue, rssiLevel);
-
+		m_Room_combi[Hardware_ID].insert(Temp, hum, nforecast, baro);
+		combi.insert(Temp, hum, nforecast, baro);
 		// Humidity status: 0 - Normal, 1 - Comfort, 2 - Dry, 3 - Wet
 		SendTempHumBaroSensorFloat(ID, batValue, Temp, hum, static_cast<float>(baro), (uint8_t)nforecast, name, rssiLevel);
 	}
@@ -2741,12 +2761,23 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	{
 		std::string sName = name + " - SetPoint ";
 		const uint8_t Unit = 7;
-		sp_temp = static_cast<int>(SP_temp);
 		std::string sValue = sp_str.str();
 
 		Debug(DEBUG_HARDWARE, "Thermostat Setpoint ?");
 		//Debug(DEBUG_HARDWARE, "(%d) %s (%s) [%s] parsedashboard  %s %s %d %d", Hardware_int, str_ID.c_str(), pchar_ID, name.c_str(), sValue.c_str(), m_Name.c_str(), rssiLevel, batValue);
 		SendSetPointSensor(ID, (uint8_t)((ID & 0x00FF0000) >> 16), (ID & 0XFF00) >> 8, ID & 0XFF, Unit, batValue, SP_temp, sName);    // No RF-level
+		// pTypeThermostat6, sTypeThermostat6TempHumBaro
+		std::string a_Name = name + " - Combi ";
+		int nValue = 0;
+		bool bUseOnOffAction = 1;
+		//sValue = setpoint;temp;hum;hum_status;baro
+		if (!combi.empty())
+			UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
+		else
+		{
+			combi.insert(Temp, hum);
+			UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHum, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
+		}
 	}
 
 	//Rain meter
@@ -2881,7 +2912,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					std::stringstream room_str;
 					room_str << std::fixed << std::setprecision(2) << room_measured;
 					room_str >> room_temp;
-					m_Room_Temp[roomNetatmoID] = room_temp;
+					m_Room_setpoint[roomNetatmoID]["temp"] = room_temp;
 					//Debug(DEBUG_HARDWARE, "room %s %stemp = %s °C - %f ", roomName.c_str(), roomNetatmoID.c_str(), room_temp.c_str(), room_measured);
 				}
 				if (!room["therm_setpoint_temperature"].empty())
@@ -2892,7 +2923,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					std::stringstream setpoint_str;
 					setpoint_str << std::setprecision(2) << SP_temp;
 					setpoint_str >> room_setpoint_str;
-					m_Room_setpoint[roomNetatmoID] = room_setpoint_str;
+					m_Room_setpoint[roomNetatmoID]["setpoint"] = room_setpoint_str;
 					//Debug(DEBUG_HARDWARE, "room %s %stemp = %s °C - %f ", roomName.c_str(), roomNetatmoID.c_str(), room_setpoint_str.c_str(), SP_temp);
 				}
 				if (!room["therm_setpoint_start_time"].empty())
@@ -2904,7 +2935,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					// create / update the switch for setting away mode
 					// Possible; schedule / away / hg
 					std::string setpoint_mode = room["therm_setpoint_mode"].asString();
-					m_Room_mode[roomNetatmoID] = setpoint_mode;
+					m_Room_setpoint[roomNetatmoID]["mode"] = setpoint_mode;
 
 					if (setpoint_mode == "away")
 					{
@@ -3231,7 +3262,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						// Door sensor & Sirene
 						std::string a_Name = moduleName + " - Status"; //m_[id];
 						std::string sValue = module["status"].asString();
-						//UpdateValueInt(0, ID.c_str(), 6, pTypeGeneral, sTypeAlert, mrf_status, batteryLevel, '0', sValue.c_str(), a_Name, 0, m_Name);
+						//UpdateValueInt(m_HwdID, ID.c_str(), 6, pTypeGeneral, sTypeAlert, mrf_status, batteryLevel, '0', sValue.c_str(), a_Name, 0, m_Name);
 						int bIsActive;
 						if (module["status"].asString() == "closed")
 							bIsActive = 0;
@@ -3558,9 +3589,9 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string roomName = m_RoomNames[roomNetatmoID];
 						std::string roomType = m_Types[roomNetatmoID];
 						std::string module_Category = m_Module_category[module_id];
-						std::string room_setpoint = m_Room_setpoint[roomNetatmoID];
-						std::string room_mode = m_Room_mode[roomNetatmoID];
-						std::string room_temp = m_Room_Temp[roomNetatmoID];
+						std::string room_setpoint = m_Room_setpoint[roomNetatmoID]["setpoint"];
+						std::string room_mode = m_Room_setpoint[roomNetatmoID]["mode"];
+						std::string room_temp = m_Room_setpoint[roomNetatmoID]["temp"];
 						const uint8_t Unit = 7;
 						nDevice.roomNetatmoID = roomNetatmoID;
 						//int sp_temp = stoi(room_setpoint);           // string to int
@@ -3580,6 +3611,29 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						{
 							SP_temp = std::stof(room_setpoint);
 							SendSetPointSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, moduleName);   // No RF-level
+							// pTypeThermostat6, sTypeThermostat6TempHumBaro
+							// Humidity & Barometer from Weatherstation
+							HardwareID = m_Room_HardwareID[roomNetatmoID];
+							//
+							std::string a_Name = name + " - Combi ";
+							int nValue = 0;
+							bool bUseOnOffAction = 1;
+							//sValue = setpoint;temp;hum;hum_status;baro
+							std::map<std::string, int> combi;
+							combi.insert (m_Room_combi[HardwareID]["setpoint"]);
+							combi.insert (m_Room_combi[HardwareID]["temp"]);
+							combi.insert (m_Room_combi[HardwareID]["hum"]);
+							combi.insert (m_Room_combi[HardwareID]["hum_status"]);
+							combi.insert (m_Room_combi[HardwareID]["baro"]);
+
+							if (combi.index == 3)
+								UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHum, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
+							else if (combi.index == 5)
+								UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
+							else
+							{
+								Log(LOG_ERROR, "NetatmoThermostat: Error Combi Thermostat 6 ! ");
+							}
 						}
 						else
 							Log(LOG_ERROR, "NetatmoThermostat: Error setpoint! - Check Battery/module Connection");
@@ -3696,7 +3750,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string sName = moduleName + " - mode";
 						if (setModeSwitch)
 						{
-							Debug(DEBUG_HARDWARE, "Schedule mode %s %s %s", m_Room_mode[roomNetatmoID].c_str(), roomNetatmoID.c_str(), setpoint_mode_str.c_str());
+							Debug(DEBUG_HARDWARE, "Schedule mode %s %s %s", room_mode.c_str(), roomNetatmoID.c_str(), setpoint_mode_str.c_str());
 							SendSelectorSwitch(crcId, NETATMO_PRESET_UNIT, setpoint_mode_str, sName, 15, true, "Off|On|Away|Frost Guard", "", true, m_Name);   // No RF-level - Battery level visible
 						}
 						else
