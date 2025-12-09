@@ -1799,7 +1799,7 @@ void CNetatmo::GetHomesDataDetails()
 							int Hardware_int = (int)moduleId;
 							//Debug(DEBUG_HARDWARE, "List Modules in Room_id  %lu - mac =  %s in room %s in home %s",moduleId, module_id.c_str(), roomNetatmoID.c_str(), homeID.c_str());
 							m_RoomIDs[module_id] = roomNetatmoID;
-							if (m_Room_combi[HardwareID] == module_id)
+							if (!m_Room_combi[module_id].empty())
 								m_Room_HardwareID[roomNetatmoID] = module_id;
 						}
 						//category not in Rooms?
@@ -2623,7 +2623,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bHaveTemp = true;
 		Temp = root["Temperature"].asFloat();
 		t_str << std::setprecision(2) << Temp;
-		m_Room_combi[Hardware_ID].insert("Temp", Temp)
+		m_Room_combi[Hardware_ID]["Temp"] = Temp;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Type = %s", ModuleType.c_str());
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Temperature [%s]", t_str.str().c_str());
 	}
@@ -2633,7 +2633,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		Temp = root["temperature"].asFloat();
 		t_str << std::setprecision(2) << Temp;
 		temp = static_cast<int>(Temp);
-		m_Room_combi[Hardware_ID].insert("temp", temp)
+		m_Room_combi[Hardware_ID]["temp"] = temp;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module int temperature [%s]", t_str.str().c_str());
 	}
 	if (!root["Sp_Temperature"].empty())
@@ -2641,7 +2641,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bHaveSetpoint = true;
 		SP_temp = root["Sp_Temperature"].asFloat();
 		sp_str << std::setprecision(2) << SP_temp;
-		m_Room_combi[Hardware_ID].insert("SP_temp", SP_temp)
+		m_Room_combi[Hardware_ID]["SP_temp"] = SP_temp;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Sp [%s]", sp_str.str().c_str());
 	}
 	else if (!root["setpoint_temp"].empty())
@@ -2650,42 +2650,42 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		SP_temp = root["setpoint_temp"].asFloat();
 		sp_str << std::setprecision(2) << SP_temp;
 		sp_temp = static_cast<int>(SP_temp);
-		m_Room_combi[Hardware_ID].insert("setpoint", sp_temp)
+		m_Room_combi[Hardware_ID]["setpoint"] = sp_temp;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module setpoint [%s]", sp_str.str().c_str());
 	}
 	if (!root["Humidity"].empty())
 	{
 		bHaveHum = true;
 		hum = root["Humidity"].asInt();
-		m_Room_combi[Hardware_ID].insert("humidity", hum)
+		m_Room_combi[Hardware_ID]["humidity"] = hum;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module hum [%d]", hum);
 	}
 	if (!root["Pressure"].empty())
 	{
 		bHaveBaro = true;
 		baro = root["Pressure"].asInt();
-		m_Room_combi[Hardware_ID].insert("baro", baro)
+		m_Room_combi[Hardware_ID]["baro"] = baro;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Pressure [%d]", baro);
 	}
 	if (!root["Noise"].empty())
 	{
 		bHaveSound = true;
 		sound = root["Noise"].asInt();
-		m_Room_combi[Hardware_ID].insert("sound", sound)
+		m_Room_combi[Hardware_ID]["sound"] = sound;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Noise [%d]", sound);
 	}
 	if (!root["CO2"].empty())
 	{
 		bHaveCO2 = true;
 		co2 = root["CO2"].asInt();
-		m_Room_combi[Hardware_ID].insert("co2", co2)
+		m_Room_combi[Hardware_ID]["co2"] = co2;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module CO2 [%d]", co2);
 	}
 	if (!root["Rain"].empty())
 	{
 		bHaveRain = true;
 		rain = root["Rain"].asInt();
-		m_Room_combi[Hardware_ID].insert("rain", rain)
+		m_Room_combi[Hardware_ID]["rain"] = rain;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Rain [%d]", rain);
 	}
 	if (!root["sum_rain_1"].empty())
@@ -2693,7 +2693,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bHaveRain = true;
 		rain_1 = root["sum_rain_1"].asFloat();
 		sum_rain_1 = static_cast<int>(rain_1);
-		m_Room_combi[Hardware_ID].insert("sum_rain_1", sum_rain_1)
+		m_Room_combi[Hardware_ID]["sum_rain_1"] = sum_rain_1;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Rain_1 [%f]", rain_1);
 	}
 	if (!root["sum_rain_24"].empty())
@@ -2701,7 +2701,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bHaveRain = true;
 		rain_24 = root["sum_rain_24"].asFloat();
 		sum_rain_24 = static_cast<int>(rain_24);
-		m_Room_combi[Hardware_ID].insert("sum_rain_1", sum_rain_24)
+		m_Room_combi[Hardware_ID]["sum_rain_1"] = sum_rain_24;
 		//Debug(DEBUG_HARDWARE, "ParseDashBoard Module Rain_24 [%f]", rain_24);
 	}
 	if (!root["WindAngle"].empty())
@@ -2711,13 +2711,13 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		{
 			bHaveWind = true;
 			wind_angle = root["WindAngle"].asInt();
-			m_Room_combi[Hardware_ID].insert("WindAngle", wind_angle);
+			m_Room_combi[Hardware_ID]["WindAngle"] = wind_angle;
 			float windstrength = root["WindStrength"].asFloat();
 			wind_strength = windstrength / 3.6F;
-			m_Room_combi[Hardware_ID].insert("wind_strength", static_cast<int>(wind_strength));
+			m_Room_combi[Hardware_ID]["wind_strength"] = static_cast<int>(wind_strength);
 			float windgust = root["GustStrength"].asFloat();
 			wind_gust = windgust / 3.6F;
-			m_Room_combi[Hardware_ID].insert("wind_gust", static_cast<int>(wind_gust));
+			m_Room_combi[Hardware_ID]["wind_gust"] = static_cast<int>(wind_gust);
 		}
 	}
 
@@ -2740,7 +2740,10 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	{
 		int nforecast = m_forecast_calculators[ID].CalculateBaroForecast(Temp, baro); //float temp, double pressure
 		//Debug(DEBUG_HARDWARE, "%s name Temp & Hum & Baro %d [%s] %d %d %d - %d / %d ", Hardware_int, Hardware_ID.c_str(), name.c_str(), temp, hum, baro, batValue, rssiLevel);
-		m_Room_combi[Hardware_ID].insert(Temp, hum, nforecast, baro);
+		m_Room_combi[Hardware_ID]["temp"] = static_cast<int>(Temp);
+		m_Room_combi[Hardware_ID]["hum"] = static_cast<int>(hum);
+		m_Room_combi[Hardware_ID]["hum_status"] = static_cast<int>(nforecast);
+		m_Room_combi[Hardware_ID]["baro"] = static_cast<int>(baro);
 		combi.insert(Temp, hum, nforecast, baro);
 		// Humidity status: 0 - Normal, 1 - Comfort, 2 - Dry, 3 - Wet
 		SendTempHumBaroSensorFloat(ID, batValue, Temp, hum, static_cast<float>(baro), (uint8_t)nforecast, name, rssiLevel);
