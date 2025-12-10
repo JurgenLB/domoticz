@@ -146,7 +146,7 @@ class CNetatmo : public CDomoticzHardwareBase
 	std::map<std::string, Json::Value> m_Room;
 	std::map<std::string, std::map<std::string, int>> m_Room_combi;
 	std::map<std::string, std::map<std::string, std::string>> m_Room_setpoint;
-	std::map<std::string, std::map<std::string, std::string>> m_Room_HardwareID;
+	std::map<std::string, std::string> m_Room_HardwareID;
 	std::map<std::string, std::string> m_RoomIDs;
 	std::map<std::string, std::string> m_Module_category;
 	std::map<std::string, std::string> m_Device_types;
