@@ -2775,11 +2775,11 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		bool bUseOnOffAction = 1;
 		//sValue = setpoint;temp;hum;hum_status;baro
 		if (!combi.empty())
-			UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
+			UpdateValueInt(m_HwdID, ID, 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, rssiLevel, batteryLevel, nValue, combi.asstring().c_str(), a_Name, bUseOnOffAction, m_Name);
 		else
 		{
 			combi.insert(Temp, hum);
-			UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHum, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
+			UpdateValueInt(m_HwdID, ID, 0, pTypeThermostat6, sTypeThermostat6TempHum, rssiLevel, batteryLevel, nValue, combi.asstring().c_str(), a_Name, bUseOnOffAction, m_Name);
 		}
 	}
 
@@ -3616,23 +3616,56 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							SendSetPointSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, moduleName);   // No RF-level
 							// pTypeThermostat6, sTypeThermostat6TempHumBaro
 							// Humidity & Barometer from Weatherstation
-							HardwareID = m_Room_HardwareID[roomNetatmoID];
+							std::string HardwareID = m_Room_HardwareID[roomNetatmoID];
 							//
 							std::string a_Name = name + " - Combi ";
 							int nValue = 0;
 							bool bUseOnOffAction = 1;
 							//sValue = setpoint;temp;hum;hum_status;baro
-							std::map<std::string, int> combi;
-							combi.insert (m_Room_combi[HardwareID]["setpoint"]);
-							combi.insert (m_Room_combi[HardwareID]["temp"]);
-							combi.insert (m_Room_combi[HardwareID]["hum"]);
-							combi.insert (m_Room_combi[HardwareID]["hum_status"]);
-							combi.insert (m_Room_combi[HardwareID]["baro"]);
+							auto rc_it = m_Room_combi.find(HardwareID);
+							std::map<std::string, int> parts;
+							std::string combined;
+							std::stringstream ss;
 
-							if (combi.index == 3)
+							
+							auto it = rc.find("setpoint");
+							{
+								auto &rc = rc_it->second;
+								if (it != rc.end()) parts.push_back(it->second);
+								it = rc.find("temp");
+
+								if (it != rc.end()) parts.push_back(it->second);
+
+								it = rc.find("hum");
+								if (it != rc.end()) parts.push_back(it->second);
+
+								it = rc.find("hum_status");
+								if (it != rc.end()) parts.push_back(it->second);
+
+								it = rc.find("baro");
+								if (it != rc.end()) parts.push_back(it->second);
+							}
+
+							if (!m_Room_combi[HardwareID].empty())
+							{
+					        	for (size_t i = 0; i < parts.size(); ++i)
+						    	{
+									if (i) ss << ";";
+									ss << parts[i];
+								}
+								combined = ss.str();
+	
+								combi.push_back (m_Room_combi[HardwareID]["setpoint"]);
+								combi.push_back (m_Room_combi[HardwareID]["temp"]);
+								combi.push_back (m_Room_combi[HardwareID]["hum"]);
+								combi.push_back (m_Room_combi[HardwareID]["hum_status"]);
+								combi.push_back (m_Room_combi[HardwareID]["baro"]);
+							}
+
+							if (combi.size() == 3)
 								UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHum, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
-							else if (combi.index == 5)
-								UpdateValueInt(m_HwdID, ID.c_str(), 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
+							else if (combi.size() == 5)
+								UpdateValueInt(m_HwdID, ID.c_Str(), 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, mrf_status, batteryLevel, nValue, combi.c_str(), a_Name, bUseOnOffAction, m_Name);
 							else
 							{
 								Log(LOG_ERROR, "NetatmoThermostat: Error Combi Thermostat 6 ! ");
