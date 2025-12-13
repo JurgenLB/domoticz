@@ -2740,11 +2740,7 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 	{
 		int nforecast = m_forecast_calculators[ID].CalculateBaroForecast(Temp, baro); //float temp, double pressure
 		//Debug(DEBUG_HARDWARE, "%s name Temp & Hum & Baro %d [%s] %d %d %d - %d / %d ", Hardware_int, Hardware_ID.c_str(), name.c_str(), temp, hum, baro, batValue, rssiLevel);
-		m_Room_combi[Hardware_ID]["temp"] = static_cast<int>(Temp);
-		m_Room_combi[Hardware_ID]["hum"] = static_cast<int>(hum);
-		m_Room_combi[Hardware_ID]["hum_status"] = static_cast<int>(nforecast);
-		m_Room_combi[Hardware_ID]["baro"] = static_cast<int>(baro);
-		combi.insert(Temp, hum, nforecast, baro);
+
 		// Humidity status: 0 - Normal, 1 - Comfort, 2 - Dry, 3 - Wet
 		SendTempHumBaroSensorFloat(ID, batValue, Temp, hum, static_cast<float>(baro), (uint8_t)nforecast, name, rssiLevel);
 	}
@@ -2774,12 +2770,28 @@ bool CNetatmo::ParseDashboard(const Json::Value& root, const int DevIdx, const i
 		int nValue = 0;
 		bool bUseOnOffAction = 1;
 		//sValue = setpoint;temp;hum;hum_status;baro
+		std::string combined;
+
+		if (!m_Room_combi[HardwareID].empty())
+		{
+			if (m_Room_combi[HardwareID]["setpoint"].empty())
+				combi.push_back (m_Room_combi[HardwareID]["setpoint"]);
+			if (m_Room_combi[HardwareID]["temp"].empty())
+				combi.push_back (m_Room_combi[HardwareID]["temp"]);
+			if (m_Room_combi[HardwareID]["hum"].empty())
+				combi.push_back (m_Room_combi[HardwareID]["hum"]);
+			if (m_Room_combi[HardwareID]["hum_status"].empty())
+				combi.push_back (m_Room_combi[HardwareID]["hum_status"]);
+			if (m_Room_combi[HardwareID]["baro"].empty())
+				combi.push_back (m_Room_combi[HardwareID]["baro"]);
+		}
+
 		if (!combi.empty())
-			UpdateValueInt(m_HwdID, ID, 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, rssiLevel, batteryLevel, nValue, combi.asstring().c_str(), a_Name, bUseOnOffAction, m_Name);
+			UpdateValueInt(m_HwdID, ID, 0, pTypeThermostat6, sTypeThermostat6TempHumBaro, rssiLevel, batValue, nValue, combined.c_str(), a_Name, bUseOnOffAction, m_Name);
 		else
 		{
 			combi.insert(Temp, hum);
-			UpdateValueInt(m_HwdID, ID, 0, pTypeThermostat6, sTypeThermostat6TempHum, rssiLevel, batteryLevel, nValue, combi.asstring().c_str(), a_Name, bUseOnOffAction, m_Name);
+			UpdateValueInt(m_HwdID, ID, 0, pTypeThermostat6, sTypeThermostat6TempHum, rssiLevel, batteryLevel, nValue, combined.c_str(), a_Name, bUseOnOffAction, m_Name);
 		}
 	}
 
@@ -3618,48 +3630,25 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							// Humidity & Barometer from Weatherstation
 							std::string HardwareID = m_Room_HardwareID[roomNetatmoID];
 							//
-							std::string a_Name = name + " - Combi ";
+							std::string a_Name = moduleName + " - Combi ";
 							int nValue = 0;
 							bool bUseOnOffAction = 1;
 							//sValue = setpoint;temp;hum;hum_status;baro
-							auto rc_it = m_Room_combi.find(HardwareID);
-							std::map<std::string, int> parts;
 							std::string combined;
-							std::stringstream ss;
-
-							
-							auto it = rc.find("setpoint");
-							{
-								auto &rc = rc_it->second;
-								if (it != rc.end()) parts.push_back(it->second);
-								it = rc.find("temp");
-
-								if (it != rc.end()) parts.push_back(it->second);
-
-								it = rc.find("hum");
-								if (it != rc.end()) parts.push_back(it->second);
-
-								it = rc.find("hum_status");
-								if (it != rc.end()) parts.push_back(it->second);
-
-								it = rc.find("baro");
-								if (it != rc.end()) parts.push_back(it->second);
-							}
 
 							if (!m_Room_combi[HardwareID].empty())
 							{
-					        	for (size_t i = 0; i < parts.size(); ++i)
-						    	{
-									if (i) ss << ";";
-									ss << parts[i];
-								}
-								combined = ss.str();
-	
-								combi.push_back (m_Room_combi[HardwareID]["setpoint"]);
-								combi.push_back (m_Room_combi[HardwareID]["temp"]);
-								combi.push_back (m_Room_combi[HardwareID]["hum"]);
-								combi.push_back (m_Room_combi[HardwareID]["hum_status"]);
-								combi.push_back (m_Room_combi[HardwareID]["baro"]);
+
+								if (m_Room_combi[HardwareID]["setpoint"].empty())
+									combi.push_back (m_Room_combi[HardwareID]["setpoint"]);
+								if (m_Room_combi[HardwareID]["temp"].empty())
+									combi.push_back (m_Room_combi[HardwareID]["temp"]);
+								if (m_Room_combi[HardwareID]["hum"].empty())
+									combi.push_back (m_Room_combi[HardwareID]["hum"]);
+								if (m_Room_combi[HardwareID]["hum_status"].empty())
+									combi.push_back (m_Room_combi[HardwareID]["hum_status"]);
+								if (m_Room_combi[HardwareID]["baro"].empty())
+									combi.push_back (m_Room_combi[HardwareID]["baro"]);
 							}
 
 							if (combi.size() == 3)
