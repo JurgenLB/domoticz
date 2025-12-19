@@ -18,6 +18,7 @@ SET(DOMO_MIN_LIBBOOST_VERSION 1.69.0)
 
 ### USER-SETTABLE OPTIONS
 #
+CMAKE_POLICY(SET CMP0167 NEW)
 #
 
 # Bundled libraries
@@ -84,7 +85,6 @@ MACRO(History_GET_REVISION variable)
   IF(EXISTS ${CMAKE_SOURCE_DIR}/History.txt)
     MESSAGE(STATUS "Read ProjectRevision from History.txt")
     CMAKE_POLICY(SET CMP0007 NEW)
-    CMAKE_POLICY(SET CMP0167 NEW)
     FILE(STRINGS ${CMAKE_SOURCE_DIR}/History.txt AppVersionContent)
     LIST(GET AppVersionContent 0 AppVersionContent)
     STRING(REPLACE " " ";" AppVersionContent ${AppVersionContent})
@@ -578,7 +578,7 @@ ELSE(USE_BUILTIN_JSONCPP)
     MESSAGE(FATAL_ERROR "JSONCPP not found on your system! try 'sudo apt-get install jsoncpp-dev'")
   ENDIF(JSONCPP_FOUND)
 ENDIF(USE_BUILTIN_JSONCPP)
- 
+
 # mosquitto
 IF(USE_BUILTIN_MQTT)
   MESSAGE(STATUS "Using builtin Mosquitto library")
@@ -691,7 +691,7 @@ ENDIF(USE_STATIC_BOOST)
 
 find_package(Boost REQUIRED COMPONENTS thread)
 IF(Boost_FOUND)
-    MESSAGE(STATUS "BOOST includes found at: ${Boost_INCLUDE_DIR}")
+    MESSAGE(STATUS "BOOST ${Boost_VERSION} includes found at: ${Boost_INCLUDE_DIR}")
 ELSE(Boost_FOUND)
     MESSAGE(FATAL_ERROR "Boost thread library not found on your system, try to get this installed.")
 ENDIF(Boost_FOUND)
