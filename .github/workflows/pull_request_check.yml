@@ -92,7 +92,7 @@ jobs:
       - name: build domoticz
         run: |
           cd $GITHUB_WORKSPACE
-          cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+          cmake -DCMAKE_BUILD_TYPE=Release -DUSE_BUILTIN_JSONCPP=ON -DUSE_BUILTIN_JWTCPP=ON CMakeLists.txt
           make
 
       # Run automated tests (disabled March 2022)
