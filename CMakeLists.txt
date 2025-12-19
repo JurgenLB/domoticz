@@ -710,7 +710,7 @@ ENDIF(USE_STATIC_BOOST)
 
 find_package(Boost REQUIRED COMPONENTS thread)
 IF(Boost_FOUND)
-    MESSAGE(STATUS "BOOST includes found at: ${Boost_INCLUDE_DIR}")
+    MESSAGE(STATUS "BOOST ${Boost_VERSION} includes found at: ${Boost_INCLUDE_DIR}")
 ELSE(Boost_FOUND)
     MESSAGE(FATAL_ERROR "Boost thread library not found on your system, try to get this installed.")
 ENDIF(Boost_FOUND)
