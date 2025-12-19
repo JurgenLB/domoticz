@@ -1,7 +1,16 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5ab9c52..635e9ab 100644
+index 5ab9c52..4e475fc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
+@@ -42,7 +42,7 @@ endforeach()
+ 
+ # Build the library with C++11 standard support, independent from other including
+ # software which may use a different CXX_STANDARD or CMAKE_CXX_STANDARD.
+-set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
 @@ -69,8 +69,8 @@ project(jsoncpp
  message(STATUS "JsonCpp Version: ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
  set(PROJECT_SOVERSION 27)
