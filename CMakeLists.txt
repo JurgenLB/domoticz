@@ -125,6 +125,14 @@ IF(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
         IF(NOT GIT_SUBMOD_RESULT EQUAL "0")
             message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
         ENDIF()
+        # Apply domoticz patch to jsoncpp to allow in-source builds
+        IF(EXISTS "${PROJECT_SOURCE_DIR}/patches/jsoncpp-domoticz.patch")
+            message(STATUS "Applying jsoncpp patch for domoticz")
+            execute_process(COMMAND ${GIT_EXECUTABLE} apply --directory=extern/jsoncpp ${PROJECT_SOURCE_DIR}/patches/jsoncpp-domoticz.patch
+                            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                            RESULT_VARIABLE PATCH_RESULT
+                            ERROR_QUIET)
+        ENDIF()
     ENDIF()
 ENDIF()
 
