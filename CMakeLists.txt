@@ -127,11 +127,23 @@ IF(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
         ENDIF()
         # Apply domoticz patch to jsoncpp to allow in-source builds
         IF(EXISTS "${PROJECT_SOURCE_DIR}/patches/jsoncpp-domoticz.patch")
-            message(STATUS "Applying jsoncpp patch for domoticz")
-            execute_process(COMMAND ${GIT_EXECUTABLE} apply --directory=extern/jsoncpp ${PROJECT_SOURCE_DIR}/patches/jsoncpp-domoticz.patch
+            # Check if patch needs to be applied
+            execute_process(COMMAND ${GIT_EXECUTABLE} apply --check --directory=extern/jsoncpp ${PROJECT_SOURCE_DIR}/patches/jsoncpp-domoticz.patch
                             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                            RESULT_VARIABLE PATCH_RESULT
-                            ERROR_QUIET)
+                            RESULT_VARIABLE PATCH_CHECK_RESULT
+                            OUTPUT_QUIET ERROR_QUIET)
+            IF(PATCH_CHECK_RESULT EQUAL "0")
+                message(STATUS "Applying jsoncpp patch for domoticz")
+                execute_process(COMMAND ${GIT_EXECUTABLE} apply --directory=extern/jsoncpp ${PROJECT_SOURCE_DIR}/patches/jsoncpp-domoticz.patch
+                                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                                RESULT_VARIABLE PATCH_RESULT
+                                ERROR_VARIABLE PATCH_ERROR)
+                IF(NOT PATCH_RESULT EQUAL "0")
+                    message(WARNING "Failed to apply jsoncpp patch: ${PATCH_ERROR}")
+                ENDIF()
+            ELSE()
+                message(STATUS "jsoncpp patch already applied or not needed")
+            ENDIF()
         ENDIF()
     ENDIF()
 ENDIF()
