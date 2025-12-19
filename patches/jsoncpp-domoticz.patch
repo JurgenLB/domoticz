@@ -2,6 +2,15 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 5ab9c52..4e475fc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
+@@ -12,7 +12,7 @@ set(JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION "3.8.0")
+ # CMake versions greater than the JSONCPP_NEWEST_VALIDATED_POLICIES_VERSION policies will
+ # continue to generate policy warnings "CMake Warning (dev)...Policy CMP0XXX is not set:"
+ #
+-set(JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION "3.8.0")
++set(JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION "3.10.0")
+ set(JSONCPP_NEWEST_VALIDATED_POLICIES_VERSION "3.13.2")
+ cmake_minimum_required(VERSION ${JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION})
+ if("${CMAKE_VERSION}" VERSION_LESS "${JSONCPP_NEWEST_VALIDATED_POLICIES_VERSION}")
 @@ -42,7 +42,7 @@ endforeach()
  
  # Build the library with C++11 standard support, independent from other including
