@@ -5625,6 +5625,11 @@ uint64_t CSQLHelper::UpdateValueInt(
 			ulID);
 		if (!result.empty())
 		{
+			if (stype == sTypeOrcon)
+			{
+				_log.Debug(DEBUG_HARDWARE, "Change Icon for Orcon Device");
+				m_sql.UpdateDeviceValue("CustomImage", 8, std::to_string(ulID));
+			}
 			bool bHaveGroupCmd = false;
 			int maxDimLevel = 0;
 			int llevel = 0;
