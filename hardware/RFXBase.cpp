@@ -50,6 +50,7 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 
 bool CRFXBase::CheckValidRFXData(const uint8_t *pData)
 {
+	Log(LOG_ERROR, "Data received!....%s", pData.c_str());
 	uint8_t pLen = pData[0];
 	uint8_t pType = pData[1];
 	if (pLen < 1)
