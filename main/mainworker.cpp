@@ -5803,6 +5803,71 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			break;
 		case sTypeOrcon:
 			WriteMessage("subtype       = Orcon");
+			sprintf(szTmp, "Sequence nbr  = %d", pResponse->FAN.seqnbr);
+			WriteMessage(szTmp);
+			sprintf(szTmp, "ID            = %02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+			WriteMessage(szTmp);
+			WriteMessage("Command       = ", false);
+			switch (pResponse->FAN.cmnd)
+			{
+			case fan_Orconlow:
+				WriteMessage("Low");
+				break;
+			case fan_Orconmedium:
+				WriteMessage("Medium");
+				break;
+			case fan_Orconhigh:
+				WriteMessage("High");
+				break;
+			case fan_Orcontimer1:
+				WriteMessage("Timer 1");
+				break;
+			case fan_Orcontimer2:
+				WriteMessage("Timer 2");
+				break;
+			case fan_Orcontimer3:
+				WriteMessage("Timer 3");
+				break;
+			case fan_Orconauto:
+				WriteMessage("Auto");
+				break;
+			case fan_Orconaway:
+				WriteMessage("Away");
+				break;
+			case fan_Orconjoin:
+				WriteMessage("Join");
+				break;
+			case fan_Orconleave:
+				WriteMessage("Leave");
+				break;
+			case fan_Orconstate:
+				WriteMessage("State");
+				break;
+			case fan_Orcontemp:
+				WriteMessage("Temperature");
+				break;
+			case fan_Orconco2:
+				WriteMessage("CO2");
+				break;
+			case fan_Orconbattery:
+				WriteMessage("Battery");
+				break;
+			case fan_Orconfilter:
+				WriteMessage("Filter");
+				break;
+			case fan_Orconpresence:
+				WriteMessage("Presence");
+				break;
+			case fan_Orconspeed:
+				WriteMessage("Speed");
+				break;
+			case fan_Orconstatus:
+				WriteMessage("Status");
+				break;
+			default:
+				WriteMessage("UNKNOWN");
+				break;
+			}
 			break;
 		case sTypeIthoHRU400:
 			WriteMessage("subtype       = Itho HRU400");
