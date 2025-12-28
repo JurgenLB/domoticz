@@ -5880,11 +5880,11 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			WriteMessage("subtype       = Itho HRU400");
 			break;
 		default:
-			sprintf(szTmp, "ERROR: Unknown Sub type for Packet type= %02X:%02X", pResponse->LIGHTING6.packettype, pResponse->LIGHTING6.subtype);
+			sprintf(szTmp, "ERROR: Unknown Sub type for Packet type= %02X:%02X", pResponse->FAN.packettype, pResponse->FAN.subtype);
 			WriteMessage(szTmp);
 			break;
 		}
-		sprintf(szTmp, "Signal level  = %d", pResponse->LIGHTING6.rssi);
+		sprintf(szTmp, "Signal level  = %d", pResponse->FAN.rssi);
 		WriteMessage(szTmp);
 		WriteMessageEnd();
 	}
