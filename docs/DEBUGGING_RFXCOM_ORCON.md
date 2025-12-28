@@ -159,6 +159,48 @@ The following commands are supported for Orcon devices:
 | 0x11         | fan_Orconspeed      | 17    | Speed report                   |
 | 0x12         | fan_Orconstatus     | 18    | General status report          |
 
+### Device ID Formatting
+
+In Domoticz, the device ID is created by concatenating the three ID bytes from the RFXcom message into a hexadecimal string. This is done in the `decode_Fan()` function:
+
+```cpp
+sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+std::string ID = szTmp;
+```
+
+**Explanation**:
+- **`sprintf()`**: C function that formats data and writes it to a string buffer
+- **`szTmp`**: Character array buffer to store the formatted string
+- **`"%02X%02X%02X"`**: Format string with three format specifiers:
+  - `%02X`: Format each byte as a 2-digit hexadecimal number (uppercase)
+    - `0`: Pad with leading zeros if needed
+    - `2`: Always output exactly 2 characters
+    - `X`: Use uppercase hexadecimal (A-F)
+- **`pResponse->FAN.id1, id2, id3`**: The three ID bytes from the message
+
+**Example**:
+```
+If the message contains:
+  id1 = 0x12
+  id2 = 0x34
+  id3 = 0x56
+
+The sprintf produces: "123456"
+
+This becomes the unique device identifier in Domoticz's database.
+```
+
+**Why This Matters**:
+- Each Orcon device has a unique 3-byte (24-bit) ID
+- Domoticz uses this ID string to identify and track specific devices
+- Multiple devices with different IDs can coexist in the same system
+- The ID is displayed in debug logs to help identify which device sent a message
+
+**Common ID Values**:
+- New/unpaired devices may have ID `000000`
+- Factory-paired devices typically have random IDs like `A1B2C3`
+- Remote controls and sensors each have unique IDs
+
 ## Enabling Debug Output
 
 ### Method 1: Set Debug Level
@@ -330,6 +372,114 @@ _log.Debug(DEBUG_HARDWARE, "CheckValidRFXData: pLen=0x%02X, pType=0x%02X (%s), p
 This will output messages like:
 ```
 CheckValidRFXData: pLen=0x08, pType=0x17 (FAN), pData=08170C0112345602180
+```
+
+## Code Walkthrough: decode_Fan() for Orcon
+
+Understanding how the `decode_Fan()` function processes Orcon messages can help with debugging. Here's a step-by-step walkthrough:
+
+### Step 1: Extract Device Information
+
+```cpp
+void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF* pResponse, _tRxMessageProcessingResult& procResult)
+{
+    char szTmp[100];
+    uint8_t devType = pTypeFan;                    // Device type = 0x17
+    uint8_t subType = pResponse->FAN.subtype;      // Get subtype (0x0C for Orcon)
+    
+    // Format the 3-byte device ID as a hexadecimal string
+    sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+    std::string ID = szTmp;                        // e.g., "123456"
+    
+    uint8_t Unit = 0;                              // Unit number (0 for fans)
+    uint8_t cmnd = pResponse->FAN.cmnd;            // Command byte
+    uint8_t SignalLevel = pResponse->FAN.rssi;     // Signal strength (0-15)
+```
+
+**Key Points**:
+- `pResponse->FAN` is a structure pointer to the received message
+- The ID is formatted using `sprintf()` with `%02X` format specifiers
+- Each ID byte becomes 2 hexadecimal digits in the resulting string
+- Example: bytes `0x12 0x34 0x56` become string `"123456"`
+
+### Step 2: Update Database
+
+```cpp
+    uint64_t DevRowIdx = m_sql.UpdateValue(
+        pHardware->m_HwdID,    // Hardware ID
+        0,                      // Port number
+        ID.c_str(),            // Device ID string
+        Unit,                   // Unit number
+        devType,               // Device type (pTypeFan)
+        subType,               // Subtype (sTypeOrcon)
+        SignalLevel,           // RSSI value
+        -1,                    // Battery level (-1 = N/A)
+        cmnd,                  // Command code
+        procResult.DeviceName, // Device name
+        true,                  // Allow auto-creation
+        procResult.Username.c_str()  // User who triggered
+    );
+```
+
+**Key Points**:
+- `UpdateValue()` either updates an existing device or creates a new one
+- The ID string uniquely identifies the device in the database
+- Returns the database row index for the device
+
+### Step 3: Debug Output (when enabled)
+
+```cpp
+    if (_log.IsDebugLevelEnabled(DEBUG_RECEIVED))
+    {
+        WriteMessageStart();
+        switch (pResponse->FAN.subtype)
+        {
+        case sTypeOrcon:
+            WriteMessage("subtype       = Orcon");
+            sprintf(szTmp, "Sequence nbr  = %d", pResponse->FAN.seqnbr);
+            WriteMessage(szTmp);
+            sprintf(szTmp, "ID            = %02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+            WriteMessage(szTmp);
+            WriteMessage("Command       = ", false);  // false = no line feed
+            
+            switch (pResponse->FAN.cmnd)
+            {
+            case fan_Orconlow:
+                WriteMessage("Low");
+                break;
+            case fan_Orconmedium:
+                WriteMessage("Medium");
+                break;
+            // ... additional command cases ...
+            }
+            break;
+        }
+        sprintf(szTmp, "Signal level  = %d", pResponse->FAN.rssi);
+        WriteMessage(szTmp);
+        WriteMessageEnd();
+    }
+```
+
+**Key Points**:
+- Debug output only appears when `DEBUG_RECEIVED` level is enabled
+- `WriteMessage()` functions log to the Domoticz log system
+- Command bytes are decoded to human-readable strings
+- Signal level (RSSI) ranges from 0 (weak) to 15 (strong)
+
+### Complete Flow Summary
+
+```
+1. RFXcom receives RF signal from Orcon device
+2. RFXBase::ParseData() extracts message bytes
+3. sDecodeRXMessage signal emits the message
+4. MainWorker::DecodeRXMessage() receives it
+5. Message queued for processing
+6. MainWorker::ProcessRXMessage() dispatches by type
+7. MainWorker::decode_Fan() called for pTypeFan
+8. Device ID extracted and formatted as hex string
+9. Database updated with device state
+10. Debug output generated (if enabled)
+11. Scene/event checks performed
 ```
 
 ## Additional Resources
