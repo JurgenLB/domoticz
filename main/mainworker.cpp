@@ -15,6 +15,7 @@
 #include "../webserver/Base64.h"
 #include <boost/algorithm/string/join.hpp>
 #include "../main/json_helper.h"
+#include "RFXNames.h"
 
 #include <algorithm>
 #include <set>
@@ -2337,6 +2338,27 @@ void MainWorker::ProcessRXMessage(const CDomoticzHardwareBase* pHardware, const 
 		}
 		DeviceRowIdx = procResult.DeviceRowIdx;
 		DeviceName = procResult.DeviceName;
+	}
+
+	// Debug log: Show processing result in human-readable format
+	if (_log.IsDebugLevelEnabled(DEBUG_HARDWARE))
+	{
+		const tRBUF* pResponse = reinterpret_cast<const tRBUF*>(pRXCommand);
+		std::string packetTypeDesc = RFX_Type_Desc(pResponse->ICMND.packettype, 1);
+		std::string subtypeDesc = RFX_Type_SubType_Desc(pResponse->ICMND.packettype, pResponse->ICMND.subtype);
+		
+		_log.Debug(DEBUG_HARDWARE,
+			"Processing Message Complete:\n"
+			"  Packet Info: Type='%s' (0x%02X), SubType='%s' (0x%02X), Length=%u bytes, SeqNum=%u\n"
+			"  Result: DeviceName='%s', DeviceID=%" PRIu64 ", Username='%s', BatteryProcessing=%s",
+			packetTypeDesc.c_str(), pResponse->ICMND.packettype,
+			subtypeDesc.c_str(), pResponse->ICMND.subtype,
+			pResponse->ICMND.packetlength,
+			pResponse->ICMND.seqnbr,
+			procResult.DeviceName.c_str(),
+			procResult.DeviceRowIdx,
+			procResult.Username.c_str(),
+			procResult.bProcessBatteryValue ? "enabled" : "disabled");
 	}
 
 	if (DeviceRowIdx == (uint64_t)-1)
