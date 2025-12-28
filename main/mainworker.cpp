@@ -2347,14 +2347,68 @@ void MainWorker::ProcessRXMessage(const CDomoticzHardwareBase* pHardware, const 
 		std::string packetTypeDesc = RFX_Type_Desc(pResponse->ICMND.packettype, 1);
 		std::string subtypeDesc = RFX_Type_SubType_Desc(pResponse->ICMND.packettype, pResponse->ICMND.subtype);
 		
+		// Build type-specific details based on packet type
+		char typeSpecificInfo[256] = "";
+		switch (pResponse->ICMND.packettype)
+		{
+		case pTypeTEMP:
+		{
+			float temp = float((pResponse->TEMP.temperatureh * 256 + pResponse->TEMP.temperaturel)) / 10.0f;
+			if (pResponse->TEMP.tempsign)
+				temp = -temp;
+			sprintf(typeSpecificInfo, ", Temperature=%.1f°C", temp);
+			break;
+		}
+		case pTypeHUM:
+			sprintf(typeSpecificInfo, ", Humidity=%d%%, Status=%d", pResponse->HUM.humidity, pResponse->HUM.humidity_status);
+			break;
+		case pTypeTEMP_HUM:
+		{
+			float temp = float((pResponse->TEMP_HUM.temperatureh * 256 + pResponse->TEMP_HUM.temperaturel)) / 10.0f;
+			if (pResponse->TEMP_HUM.tempsign)
+				temp = -temp;
+			sprintf(typeSpecificInfo, ", Temperature=%.1f°C, Humidity=%d%%, Status=%d", 
+				temp, pResponse->TEMP_HUM.humidity, pResponse->TEMP_HUM.humidity_status);
+			break;
+		}
+		case pTypeLighting1:
+			sprintf(typeSpecificInfo, ", HouseCode=%d, UnitCode=%d, Command=%d", 
+				pResponse->LIGHTING1.housecode, pResponse->LIGHTING1.unitcode, pResponse->LIGHTING1.cmnd);
+			break;
+		case pTypeLighting2:
+			sprintf(typeSpecificInfo, ", ID=%02X%02X%02X%02X, Unit=%d, Command=%d, Level=%d", 
+				pResponse->LIGHTING2.id1, pResponse->LIGHTING2.id2, pResponse->LIGHTING2.id3, pResponse->LIGHTING2.id4,
+				pResponse->LIGHTING2.unitcode, pResponse->LIGHTING2.cmnd, pResponse->LIGHTING2.level);
+			break;
+		case pTypeRAIN:
+		{
+			int rainrate = (pResponse->RAIN.rainrateh * 256) + pResponse->RAIN.rainratel;
+			unsigned long raintotal = (pResponse->RAIN.raintotal1 * 65536) + (pResponse->RAIN.raintotal2 * 256) + pResponse->RAIN.raintotal3;
+			sprintf(typeSpecificInfo, ", RainRate=%d, RainTotal=%lu", rainrate, raintotal);
+			break;
+		}
+		case pTypeWIND:
+		{
+			int direction = (pResponse->WIND.directionh * 256) + pResponse->WIND.directionl;
+			int avgSpeed = (pResponse->WIND.av_speedh * 256) + pResponse->WIND.av_speedl;
+			int gust = (pResponse->WIND.gusth * 256) + pResponse->WIND.gustl;
+			sprintf(typeSpecificInfo, ", Direction=%d°, AvgSpeed=%d, Gust=%d", direction, avgSpeed, gust);
+			break;
+		}
+		default:
+			// No type-specific info for other types
+			break;
+		}
+		
 		_log.Debug(DEBUG_HARDWARE,
 			"Processing Message Complete:\n"
-			"  Packet Info: Type='%s' (0x%02X), SubType='%s' (0x%02X), Length=%u bytes, SeqNum=%u\n"
+			"  Packet Info: Type='%s' (0x%02X), SubType='%s' (0x%02X), Length=%u bytes, SeqNum=%u%s\n"
 			"  Result: DeviceName='%s', DeviceID=%" PRIu64 ", Username='%s', BatteryProcessing=%s",
 			packetTypeDesc.c_str(), pResponse->ICMND.packettype,
 			subtypeDesc.c_str(), pResponse->ICMND.subtype,
 			pResponse->ICMND.packetlength,
 			pResponse->ICMND.seqnbr,
+			typeSpecificInfo,
 			procResult.DeviceName.empty() ? "(none)" : procResult.DeviceName.c_str(),
 			procResult.DeviceRowIdx,
 			procResult.Username.empty() ? "(none)" : procResult.Username.c_str(),
