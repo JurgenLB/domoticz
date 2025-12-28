@@ -2355,9 +2355,9 @@ void MainWorker::ProcessRXMessage(const CDomoticzHardwareBase* pHardware, const 
 			subtypeDesc.c_str(), pResponse->ICMND.subtype,
 			pResponse->ICMND.packetlength,
 			pResponse->ICMND.seqnbr,
-			procResult.DeviceName.c_str(),
+			procResult.DeviceName.empty() ? "(none)" : procResult.DeviceName.c_str(),
 			procResult.DeviceRowIdx,
-			procResult.Username.c_str(),
+			procResult.Username.empty() ? "(none)" : procResult.Username.c_str(),
 			procResult.bProcessBatteryValue ? "enabled" : "disabled");
 	}
 
