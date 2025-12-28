@@ -225,7 +225,7 @@ Byte 8 (0x80): RSSI = 8 (signal level 8/15), filler = 0
 subtype       = Orcon
 Sequence nbr  = 1
 ID            = 123456
-Command       = 0x02 (medium speed)
+Command       = Medium
 Signal level  = 8
 ```
 
@@ -279,11 +279,11 @@ Byte 12-49: Extended status data (temperature, CO2, etc.)
 **Check**:
 1. Packet type is 0x17 (pTypeFan)
 2. Subtype is 0x0C (sTypeOrcon)
-3. Packet length is correct (0x08 or 0x31)
+3. Packet length is correct (0x08, 0x11, or 0x31)
 4. The message passes `CheckValidRFXData()` validation in `RFXBase.cpp`:
    ```cpp
    case pTypeFan:
-       return (pLen == 0x08 || pLen == 0x11);  // Note: 0x31 may need to be added
+       return (pLen == 0x08 || pLen == 0x11 || pLen == 0x31);
    ```
 
 ### Problem: Unknown Command Code
@@ -312,10 +312,9 @@ bool CRFXBase::CheckValidRFXData(const uint8_t *pData)
     uint8_t pLen = pData[0];
     uint8_t pType = pData[1];
     
-    // For Fan messages
+    // For Fan messages (including Orcon with extended FANEXT support)
     case pTypeFan:
-        return (pLen == 0x08 || pLen == 0x11);
-        // Note: Extended 0x31 length may need to be added
+        return (pLen == 0x08 || pLen == 0x11 || pLen == 0x31);
 }
 ```
 
