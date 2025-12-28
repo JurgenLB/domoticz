@@ -5877,10 +5877,9 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				default:
 					WriteMessage("UNKNOWN");
 					break;
-				}
-
-				break;
 			}
+
+			break;
 		case sTypeIthoHRU400:
 			WriteMessage("subtype       = Itho HRU400");
 			break;
