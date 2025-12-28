@@ -92,13 +92,13 @@ Byte 3: Sequence Number
 
 ## Orcon Message Structure
 
-### Basic FAN Structure
+### Standard Orcon Structure (FAN2)
 
-For standard Orcon commands (packet length 0x08):
+Orcon devices use the **FAN2 structure** (packet length 0x11 / 17 bytes):
 
 ```cpp
-struct FAN {
-    BYTE packetlength;  // 0x08 (8 bytes following)
+struct FAN2 {
+    BYTE packetlength;  // 0x11 (17 bytes following)
     BYTE packettype;    // 0x17 (pTypeFan)
     BYTE subtype;       // 0x0C (sTypeOrcon)
     BYTE seqnbr;        // Sequence number (0-255)
@@ -108,12 +108,26 @@ struct FAN {
     BYTE cmnd;          // Command code
     BYTE rssi:4;        // Signal strength (0-15)
     BYTE filler:4;      // Padding bits
+    BYTE did1;          // Destination ID byte 1
+    BYTE did2;          // Destination ID byte 2
+    BYTE did3;          // Destination ID byte 3
+    BYTE ext1;          // Extended data byte 1
+    BYTE ext2;          // Extended data byte 2
+    BYTE ext3;          // Extended data byte 3
+    BYTE ext4;          // Extended data byte 4
+    BYTE ext5;          // Extended data byte 5
+    BYTE ext6;          // Extended data byte 6
 };
 ```
 
+**Key Differences from Basic FAN Structure**:
+- FAN2 has 6 additional extension bytes (ext1-ext6)
+- FAN2 includes destination ID fields (did1-did3)
+- Used by Orcon, Novy, and some other advanced fan controllers
+
 ### Extended Orcon Structure (FANEXT)
 
-For advanced Orcon status messages (packet length 0x31):
+For advanced Orcon status messages (packet length 0x31 / 49 bytes):
 
 ```cpp
 struct FANEXT {
@@ -161,10 +175,11 @@ The following commands are supported for Orcon devices:
 
 ### Device ID Formatting
 
-In Domoticz, the device ID is created by concatenating the three ID bytes from the RFXcom message into a hexadecimal string. This is done in the `decode_Fan()` function:
+In Domoticz, the device ID is created by concatenating the three ID bytes from the RFXcom message into a hexadecimal string. For Orcon devices using the FAN2 structure, this is done in the `decode_Fan()` function:
 
 ```cpp
-sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+// Note: For Orcon, pResponse->FAN2 is used (not pResponse->FAN)
+sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
 std::string ID = szTmp;
 ```
 
@@ -176,11 +191,11 @@ std::string ID = szTmp;
     - `0`: Pad with leading zeros if needed
     - `2`: Always output exactly 2 characters
     - `X`: Use uppercase hexadecimal (A-F)
-- **`pResponse->FAN.id1, id2, id3`**: The three ID bytes from the message
+- **`pResponse->FAN2.id1, id2, id3`**: The three ID bytes from the FAN2 message structure
 
 **Example**:
 ```
-If the message contains:
+If the FAN2 message contains:
   id1 = 0x12
   id2 = 0x34
   id3 = 0x56
@@ -231,15 +246,17 @@ In `main/Logger.cpp` or via runtime configuration, ensure `DEBUG_RECEIVED` is en
 For development and testing, you can inject test messages:
 
 ```cpp
-// In main/mainworker.cpp - Debug code example
+// In main/mainworker.cpp - Debug code example for Orcon FAN2
 unsigned char test_message[] = {
-    0x08,        // Length
+    0x11,        // Length (FAN2 = 17 bytes)
     0x17,        // pTypeFan
     0x0C,        // sTypeOrcon
     0x01,        // Sequence number
     0x12, 0x34, 0x56,  // Device ID
     0x02,        // Command (fan_Orconmedium)
-    0x80         // RSSI + filler
+    0x80,        // RSSI + filler
+    0xAB, 0xCD, 0xEF,  // Destination ID
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00  // Extended data
 };
 
 pHardware->sDecodeRXMessage(pHardware, test_message, nullptr, -1, nullptr);
@@ -247,19 +264,21 @@ pHardware->sDecodeRXMessage(pHardware, test_message, nullptr, -1, nullptr);
 
 ## Decoding Example Messages
 
-### Example 1: Basic Orcon Medium Speed Command
+### Example 1: Orcon Medium Speed Command (FAN2 Structure)
 
-**Raw Message (Hex)**: `08 17 0C 01 12 34 56 02 80`
+**Raw Message (Hex)**: `11 17 0C 01 12 34 56 02 80 AB CD EF 00 00 00 00 00 00`
 
 **Breakdown**:
 ```
-Byte 0 (0x08): Packet length = 8 bytes following
+Byte 0 (0x11): Packet length = 17 bytes following (FAN2 structure)
 Byte 1 (0x17): Packet type = pTypeFan (0x17)
 Byte 2 (0x0C): Subtype = sTypeOrcon (0x0C)
 Byte 3 (0x01): Sequence number = 1
 Byte 4-6 (0x12 0x34 0x56): Device ID = 0x123456
 Byte 7 (0x02): Command = fan_Orconmedium
 Byte 8 (0x80): RSSI = 8 (signal level 8/15), filler = 0
+Byte 9-11 (0xAB 0xCD 0xEF): Destination ID = 0xABCDEF
+Byte 12-17 (0x00...): Extended data (6 bytes)
 ```
 
 **Expected Debug Output**:
@@ -268,39 +287,43 @@ subtype       = Orcon
 Sequence nbr  = 1
 ID            = 123456
 Command       = Medium
+Dest ID       = ABCDEF
+Ext data      = 00 00 00 00 00 00
 Signal level  = 8
 ```
 
-### Example 2: Orcon High Speed with Strong Signal
+### Example 2: Orcon High Speed with Strong Signal (FAN2 Structure)
 
-**Raw Message (Hex)**: `08 17 0C 05 AB CD EF 03 A0`
+**Raw Message (Hex)**: `11 17 0C 05 AB CD EF 03 A0 00 00 00 11 22 33 44 55 66`
 
 **Breakdown**:
 ```
-Byte 0 (0x08): Length = 8
+Byte 0 (0x11): Length = 17 bytes (FAN2 structure)
 Byte 1 (0x17): Type = pTypeFan
 Byte 2 (0x0C): Subtype = sTypeOrcon
 Byte 3 (0x05): Sequence = 5
 Byte 4-6 (0xAB 0xCD 0xEF): Device ID = 0xABCDEF
 Byte 7 (0x03): Command = fan_Orconhigh (high speed)
 Byte 8 (0xA0): RSSI = 10 (strong signal)
+Byte 9-11 (0x00 0x00 0x00): Destination ID = 0x000000
+Byte 12-17 (0x11 0x22 0x33 0x44 0x55 0x66): Extended data
 ```
 
-### Example 3: Extended Orcon Status Message
+### Example 3: Extended Orcon Status Message (FANEXT Structure)
 
-**Raw Message (Hex)**: `31 17 0C 02 12 34 56 12 80 00 00 00 [28 more ext bytes]...`
+**Raw Message (Hex)**: `31 17 0C 02 12 34 56 12 80 AB CD EF [31 ext bytes]...`
 
 **Breakdown**:
 ```
-Byte 0 (0x31): Length = 49 bytes (extended message)
+Byte 0 (0x31): Length = 49 bytes (FANEXT structure)
 Byte 1 (0x17): Type = pTypeFan
 Byte 2 (0x0C): Subtype = sTypeOrcon
 Byte 3 (0x02): Sequence = 2
 Byte 4-6 (0x12 0x34 0x56): Source Device ID
 Byte 7 (0x12): Command = fan_Orconstatus (status report)
 Byte 8 (0x80): RSSI = 8
-Byte 9-11: Destination device ID (if applicable)
-Byte 12-49: Extended status data (temperature, CO2, etc.)
+Byte 9-11 (0xAB 0xCD 0xEF): Destination device ID
+Byte 12-49: Extended status data (31 bytes: temperature, CO2, etc.)
 ```
 
 ## Troubleshooting
@@ -321,7 +344,9 @@ Byte 12-49: Extended status data (temperature, CO2, etc.)
 **Check**:
 1. Packet type is 0x17 (pTypeFan)
 2. Subtype is 0x0C (sTypeOrcon)
-3. Packet length is correct (0x08, 0x11, or 0x31)
+3. Packet length is 0x11 (FAN2) or 0x31 (FANEXT) for Orcon
+   - Note: 0x08 is the basic FAN structure used by other fan types
+   - **Orcon always uses FAN2 (0x11) or FANEXT (0x31)**
 4. The message passes `CheckValidRFXData()` validation in `RFXBase.cpp`:
    ```cpp
    case pTypeFan:
@@ -428,21 +453,23 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 
 ### Step 3: Debug Output (when enabled)
 
+For Orcon devices, the code uses **FAN2 structure** to access all fields:
+
 ```cpp
     if (_log.IsDebugLevelEnabled(DEBUG_RECEIVED))
     {
         WriteMessageStart();
-        switch (pResponse->FAN.subtype)
+        switch (pResponse->FAN2.subtype)  // Note: FAN2, not FAN
         {
         case sTypeOrcon:
             WriteMessage("subtype       = Orcon");
-            sprintf(szTmp, "Sequence nbr  = %d", pResponse->FAN.seqnbr);
+            sprintf(szTmp, "Sequence nbr  = %d", pResponse->FAN2.seqnbr);
             WriteMessage(szTmp);
-            sprintf(szTmp, "ID            = %02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+            sprintf(szTmp, "ID            = %02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
             WriteMessage(szTmp);
             WriteMessage("Command       = ", false);  // false = no line feed
             
-            switch (pResponse->FAN.cmnd)
+            switch (pResponse->FAN2.cmnd)
             {
             case fan_Orconlow:
                 WriteMessage("Low");
@@ -452,18 +479,28 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
                 break;
             // ... additional command cases ...
             }
+            
+            // Display FAN2 specific fields
+            sprintf(szTmp, "Dest ID       = %02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
+            WriteMessage(szTmp);
+            sprintf(szTmp, "Ext data      = %02X %02X %02X %02X %02X %02X", 
+                pResponse->FAN2.ext1, pResponse->FAN2.ext2, pResponse->FAN2.ext3,
+                pResponse->FAN2.ext4, pResponse->FAN2.ext5, pResponse->FAN2.ext6);
+            WriteMessage(szTmp);
             break;
         }
-        sprintf(szTmp, "Signal level  = %d", pResponse->FAN.rssi);
+        sprintf(szTmp, "Signal level  = %d", pResponse->FAN2.rssi);
         WriteMessage(szTmp);
         WriteMessageEnd();
     }
 ```
 
 **Key Points**:
+- **Orcon uses FAN2 structure**, not the basic FAN structure
 - Debug output only appears when `DEBUG_RECEIVED` level is enabled
 - `WriteMessage()` functions log to the Domoticz log system
 - Command bytes are decoded to human-readable strings
+- FAN2 includes destination ID (did1-3) and extended data (ext1-6)
 - Signal level (RSSI) ranges from 0 (weak) to 15 (strong)
 
 ### Complete Flow Summary

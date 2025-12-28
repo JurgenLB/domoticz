@@ -5803,12 +5803,12 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			break;
 		case sTypeOrcon:
 			WriteMessage("subtype       = Orcon");
-			sprintf(szTmp, "Sequence nbr  = %d", pResponse->FAN.seqnbr);
+			sprintf(szTmp, "Sequence nbr  = %d", pResponse->FAN2.seqnbr);
 			WriteMessage(szTmp);
-			sprintf(szTmp, "ID            = %02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+			sprintf(szTmp, "ID            = %02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
 			WriteMessage(szTmp);
 			WriteMessage("Command       = ", false);
-			switch (pResponse->FAN.cmnd)
+			switch (pResponse->FAN2.cmnd)
 			{
 			case fan_Orconlow:
 				WriteMessage("Low");
@@ -5868,6 +5868,13 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				WriteMessage("UNKNOWN");
 				break;
 			}
+			// Display FAN2 specific fields
+			sprintf(szTmp, "Dest ID       = %02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
+			WriteMessage(szTmp);
+			sprintf(szTmp, "Ext data      = %02X %02X %02X %02X %02X %02X", 
+				pResponse->FAN2.ext1, pResponse->FAN2.ext2, pResponse->FAN2.ext3,
+				pResponse->FAN2.ext4, pResponse->FAN2.ext5, pResponse->FAN2.ext6);
+			WriteMessage(szTmp);
 			break;
 		case sTypeIthoHRU400:
 			WriteMessage("subtype       = Itho HRU400");
