@@ -1974,13 +1974,13 @@ void GetLightStatus(
 			switch (nValue)
 			{
 			case fan_Orcon1:
-				lstatus = "low";
+				lstatus = "1";
 				break;
 			case fan_Orcon2:
-				lstatus = "medium";
+				lstatus = "2";
 				break;
 			case fan_Orcon3:
-				lstatus = "high";
+				lstatus = "3";
 				break;
 			case fan_OrconAway:
 				lstatus = "away";
@@ -3647,13 +3647,12 @@ bool GetLightCommand(
 		}
 		break;
 		case sTypeOrcon:
-
 		{
-			if ((switchcmd == "1") || (switchcmd == "On") || (switchcmd == "low"))
+			if ((switchcmd == "1") || (switchcmd == "On") || (switchcmd == "Off"))
 				cmd = fan_Orcon1;
-			else if (switchcmd == "medium")
+			else if (switchcmd == "2")
 				cmd = fan_Orcon2;
-			else if (switchcmd == "high")
+			else if (switchcmd == "3")
 				cmd = fan_Orcon3;
 			else if (switchcmd == "away")
 				cmd = fan_OrconAway;
