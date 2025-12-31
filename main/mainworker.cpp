@@ -2106,6 +2106,7 @@ void MainWorker::ProcessRXMessage(const CDomoticzHardwareBase* pHardware, const 
 	std::string DeviceName;
 
 	_tRxMessageProcessingResult procResult;
+	procResult.DeviceName = defaultName;
 	procResult.Username = userName;
 	if (DeviceRowIdx == (uint64_t)-1)
 	{
