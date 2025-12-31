@@ -1969,6 +1969,31 @@ void GetLightStatus(
 			}
 		}
 		break;
+		case sTypeOrcon:
+		{
+			switch (nValue)
+			{
+			case fan_Orcon1:
+				lstatus = "low";
+				break;
+			case fan_Orcon2:
+				lstatus = "medium";
+				break;
+			case fan_Orcon3:
+				lstatus = "high";
+				break;
+			case fan_OrconAway:
+				lstatus = "away";
+				break;
+			case fan_OrconAuto:
+				lstatus = "auto";
+				break;
+			case fan_OrconTimer:
+				lstatus = "timer";
+				break;
+			}
+		}
+		break;
 		case sTypeItho:
 		{
 			switch (nValue)
@@ -3619,6 +3644,23 @@ bool GetLightCommand(
 			{
 				cmd = fan_sLight;
 			}
+		}
+		break;
+		case sTypeOrcon:
+
+		{
+			if ((switchcmd == "1") || (switchcmd == "On") || (switchcmd == "low"))
+				cmd = fan_Orcon1;
+			else if (switchcmd == "medium")
+				cmd = fan_Orcon2;
+			else if (switchcmd == "high")
+				cmd = fan_Orcon3;
+			else if (switchcmd == "away")
+				cmd = fan_OrconAway;
+			else if (switchcmd == "auto")
+				cmd = fan_OrconAuto;
+			else if (switchcmd == "Timer")
+				cmd = fan_OrconTimer;
 		}
 		break;
 		case sTypeItho:
