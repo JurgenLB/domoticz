@@ -3667,7 +3667,7 @@ bool GetLightCommand(
 			else if (switchcmd == "timer 1")
 				cmd = fan_Orcontimer1;
 			else if (switchcmd == "timer 2")
-				cmd = fan_Orcontime2;
+				cmd = fan_Orcontimer2;
 			else if (switchcmd == "timer 3")
 				cmd = fan_Orcontimer3;
 		}
