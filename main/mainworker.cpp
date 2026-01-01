@@ -5702,19 +5702,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 
 	std::string ID = szTmp;
 	uint8_t Unit = 0;
-	uint8_t cmnd;
-	uint8_t SignalLevel;
-	
-	if (pResponse->ICMND.subtype == sTypeOrcon)
-	{
-		cmnd = pResponse->FAN2.cmnd;
-		SignalLevel = pResponse->FAN2.rssi;
-	}
-	else
-	{
-		cmnd = pResponse->FAN.cmnd;
-		SignalLevel = pResponse->FAN.rssi;
-	}
+	uint8_t cmnd = pResponse->FAN.cmnd;
+	uint8_t SignalLevel = pResponse->FAN.rssi;
 
 	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d", ID.c_str(), subType, cmnd, SignalLevel);
 
@@ -12263,61 +12252,50 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 	break;
 	case pTypeFan:
 	{
-		tRBUF lcmd;
-		if (dSubType == sTypeOrcon)
+		// Handle selector switch level to command conversion
+		if ((switchtype == STYPE_Selector) && ((switchcmd == "Set Level") || (switchcmd == "Set Group Level")))
 		{
-			// Orcon uses FAN2 structure with destination ID
-			lcmd.FAN2.packetlength = sizeof(lcmd.FAN2) - 1;
-			lcmd.FAN2.packettype = dType;
-			lcmd.FAN2.subtype = dSubType;
-			lcmd.FAN2.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
-			lcmd.FAN2.id1 = ID2;
-			lcmd.FAN2.id2 = ID3;
-			lcmd.FAN2.id3 = ID4;
-			lcmd.FAN2.filler = 0;
-			lcmd.FAN2.rssi = 12;
-			// For Orcon, destination ID is same as source ID (device itself)
-			lcmd.FAN2.did1 = ID2;
-			lcmd.FAN2.did2 = ID3;
-			lcmd.FAN2.did3 = ID4;
-			// Initialize ext fields
-			lcmd.FAN2.ext1 = 0;
-			lcmd.FAN2.ext2 = 0;
-			lcmd.FAN2.ext3 = 0;
-			lcmd.FAN2.ext4 = 0;
-			lcmd.FAN2.ext5 = 0;
-			lcmd.FAN2.ext6 = 0;
+			std::map<std::string, std::string> statuses;
+			GetSelectorSwitchStatuses(options, statuses);
+			int maxLevel = static_cast<int>(statuses.size() - 1) * 10;
 
-			if (!GetLightCommand(dType, dSubType, switchtype, switchcmd, lcmd.FAN2.cmnd, options))
+			if ((level < 0) || (level > maxLevel))
+			{
+				_log.Log(LOG_ERROR, "Setting a wrong level value %d to Fan Selector device %s", level, devid.c_str());
 				return SL_ERROR;
-			if (!WriteToHardware(HardwareID, (const char*)&lcmd, sizeof(lcmd.FAN2)))
-				return SL_ERROR;
-			if (!IsTesting) {
-				//send to internal for now (later we use the ACK)
-				PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
+			}
+
+			// Convert level to command name
+			std::stringstream ss;
+			ss << level;
+			std::string slevel = ss.str();
+			auto itt = statuses.find(slevel);
+			if (itt != statuses.end())
+			{
+				switchcmd = itt->second;
+				_log.Debug(DEBUG_NORM, "Fan Selector: level=%d mapped to command='%s'", level, switchcmd.c_str());
 			}
 		}
-		else
-		{
-			// Standard FAN structure for non-Orcon devices
-			lcmd.FAN.packetlength = sizeof(lcmd.FAN) - 1;
-			lcmd.FAN.packettype = dType;
-			lcmd.FAN.subtype = dSubType;
-			lcmd.FAN.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
-			lcmd.FAN.id1 = ID2;
-			lcmd.FAN.id2 = ID3;
-			lcmd.FAN.id3 = ID4;
-			lcmd.FAN.filler = 0;
-			lcmd.FAN.rssi = 12;
 
-			if (!GetLightCommand(dType, dSubType, switchtype, switchcmd, lcmd.FAN.cmnd, options))
-				return SL_ERROR;
-			if (!WriteToHardware(HardwareID, (const char*)&lcmd, sizeof(lcmd.FAN)))
-				return SL_ERROR;
-			if (!IsTesting) {
-				//send to internal for now (later we use the ACK)
-				PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
-			}
+		tRBUF lcmd;
+		// All fan types use standard FAN structure (8-byte packet)
+		lcmd.FAN.packetlength = sizeof(lcmd.FAN) - 1;
+		lcmd.FAN.packettype = dType;
+		lcmd.FAN.subtype = dSubType;
+		lcmd.FAN.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
+		lcmd.FAN.id1 = ID2;
+		lcmd.FAN.id2 = ID3;
+		lcmd.FAN.id3 = ID4;
+		lcmd.FAN.filler = 0;
+		lcmd.FAN.rssi = 12;
+
+		if (!GetLightCommand(dType, dSubType, switchtype, switchcmd, lcmd.FAN.cmnd, options))
+			return SL_ERROR;
+		if (!WriteToHardware(HardwareID, (const char*)&lcmd, sizeof(lcmd.FAN)))
+			return SL_ERROR;
+		if (!IsTesting) {
+			//send to internal for now (later we use the ACK)
+			PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
 		}
 		return SL_OK;
 	}
