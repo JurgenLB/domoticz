@@ -5690,15 +5690,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t devType = pTypeFan;
 	uint8_t subType = pResponse->FAN.subtype;
 
-	//      Make a selectorswitch for Orcon Device based on Destination ID
-	if (pResponse->ICMND.subtype == sTypeOrcon)
-	{
-		_log.Debug(DEBUG_HARDWARE, "Subtype Orcon detected");
-		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
-		//"CustomImage", 8 FAN
-	}
-	else
-		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+	//      Use device ID from FAN structure (8-byte packet for all fan types)
+	sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 
 	std::string ID = szTmp;
 	uint8_t Unit = 0;
@@ -12274,6 +12267,11 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			{
 				switchcmd = itt->second;
 				_log.Debug(DEBUG_NORM, "Fan Selector: level=%d mapped to command='%s'", level, switchcmd.c_str());
+			}
+			else
+			{
+				_log.Log(LOG_ERROR, "Fan Selector: level=%d not found in configured level names", level);
+				return SL_ERROR;
 			}
 		}
 
