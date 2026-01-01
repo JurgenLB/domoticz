@@ -5702,8 +5702,19 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 
 	std::string ID = szTmp;
 	uint8_t Unit = 0;
-	uint8_t cmnd = pResponse->FAN.cmnd;
-	uint8_t SignalLevel = pResponse->FAN.rssi;
+	uint8_t cmnd;
+	uint8_t SignalLevel;
+	
+	if (pResponse->ICMND.subtype == 0x0C)
+	{
+		cmnd = pResponse->FAN2.cmnd;
+		SignalLevel = pResponse->FAN2.rssi;
+	}
+	else
+	{
+		cmnd = pResponse->FAN.cmnd;
+		SignalLevel = pResponse->FAN.rssi;
+	}
 
 	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d", ID.c_str(), subType, cmnd, SignalLevel);
 
