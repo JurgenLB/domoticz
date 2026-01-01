@@ -5705,6 +5705,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t cmnd = pResponse->FAN.cmnd;
 	uint8_t SignalLevel = pResponse->FAN.rssi;
 
+	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d", ID.c_str(), subType, cmnd, SignalLevel);
+
 	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, cmnd, procResult.DeviceName, true, procResult.Username.c_str());
 	if (DevRowIdx == (uint64_t)-1)
 		return;
