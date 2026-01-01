@@ -5706,7 +5706,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		procResult.bProcessBatteryValue,
 		procResult.Username.c_str());
 
-	//      Make a switch for Orcon Device based on Destination ID
+	//Orcon Device based on Destination ID
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
@@ -5729,6 +5729,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	if (DevRowIdx == (uint64_t)-1)
 		return;
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
+	//Make a selectorswitch for Orcon Device ?
 	if (pResponse->ICMND.subtype == sTypeOrcon){
 		m_sql.UpdateDeviceValue("CustomImage", 8, std::to_string(DevRowIdx));
 	}
