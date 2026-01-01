@@ -5705,7 +5705,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t cmnd;
 	uint8_t SignalLevel;
 	
-	if (pResponse->ICMND.subtype == 0x0C)
+	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
 		cmnd = pResponse->FAN2.cmnd;
 		SignalLevel = pResponse->FAN2.rssi;
