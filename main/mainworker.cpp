@@ -5691,7 +5691,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t subType = pResponse->FAN.subtype;
 
 	//      Make a selectorswitch for Orcon Device based on Destination ID
-	if (pResponse->ICMND.subtype == 0x0C)
+	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
 		_log.Debug(DEBUG_HARDWARE, "Subtype Orcon detected");
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
