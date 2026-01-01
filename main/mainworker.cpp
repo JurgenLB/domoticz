@@ -12263,7 +12263,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 
 			if ((level < 0) || (level > maxLevel))
 			{
-				_log.Log(LOG_ERROR, "Setting a wrong level value %d to Fan Selector device %s", level, devid.c_str());
+				_log.Log(LOG_ERROR, "Setting a wrong level value %d to Fan Selector device %s", level, deviceID.c_str());
 				return SL_ERROR;
 			}
 
