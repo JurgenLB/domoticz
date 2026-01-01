@@ -12264,23 +12264,60 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 	case pTypeFan:
 	{
 		tRBUF lcmd;
-		lcmd.FAN.packetlength = sizeof(lcmd.FAN) - 1;
-		lcmd.FAN.packettype = dType;
-		lcmd.FAN.subtype = dSubType;
-		lcmd.FAN.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
-		lcmd.FAN.id1 = ID2;
-		lcmd.FAN.id2 = ID3;
-		lcmd.FAN.id3 = ID4;
-		lcmd.FAN.filler = 0;
-		lcmd.FAN.rssi = 12;
+		if (dSubType == sTypeOrcon)
+		{
+			// Orcon uses FAN2 structure with destination ID
+			lcmd.FAN2.packetlength = sizeof(lcmd.FAN2) - 1;
+			lcmd.FAN2.packettype = dType;
+			lcmd.FAN2.subtype = dSubType;
+			lcmd.FAN2.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
+			lcmd.FAN2.id1 = ID2;
+			lcmd.FAN2.id2 = ID3;
+			lcmd.FAN2.id3 = ID4;
+			lcmd.FAN2.filler = 0;
+			lcmd.FAN2.rssi = 12;
+			// For Orcon, destination ID is same as source ID (device itself)
+			lcmd.FAN2.did1 = ID2;
+			lcmd.FAN2.did2 = ID3;
+			lcmd.FAN2.did3 = ID4;
+			// Initialize ext fields
+			lcmd.FAN2.ext1 = 0;
+			lcmd.FAN2.ext2 = 0;
+			lcmd.FAN2.ext3 = 0;
+			lcmd.FAN2.ext4 = 0;
+			lcmd.FAN2.ext5 = 0;
+			lcmd.FAN2.ext6 = 0;
 
-		if (!GetLightCommand(dType, dSubType, switchtype, switchcmd, lcmd.FAN.cmnd, options))
-			return SL_ERROR;
-		if (!WriteToHardware(HardwareID, (const char*)&lcmd, sizeof(lcmd.FAN)))
-			return SL_ERROR;
-		if (!IsTesting) {
-			//send to internal for now (later we use the ACK)
-			PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
+			if (!GetLightCommand(dType, dSubType, switchtype, switchcmd, lcmd.FAN2.cmnd, options))
+				return SL_ERROR;
+			if (!WriteToHardware(HardwareID, (const char*)&lcmd, sizeof(lcmd.FAN2)))
+				return SL_ERROR;
+			if (!IsTesting) {
+				//send to internal for now (later we use the ACK)
+				PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
+			}
+		}
+		else
+		{
+			// Standard FAN structure for non-Orcon devices
+			lcmd.FAN.packetlength = sizeof(lcmd.FAN) - 1;
+			lcmd.FAN.packettype = dType;
+			lcmd.FAN.subtype = dSubType;
+			lcmd.FAN.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
+			lcmd.FAN.id1 = ID2;
+			lcmd.FAN.id2 = ID3;
+			lcmd.FAN.id3 = ID4;
+			lcmd.FAN.filler = 0;
+			lcmd.FAN.rssi = 12;
+
+			if (!GetLightCommand(dType, dSubType, switchtype, switchcmd, lcmd.FAN.cmnd, options))
+				return SL_ERROR;
+			if (!WriteToHardware(HardwareID, (const char*)&lcmd, sizeof(lcmd.FAN)))
+				return SL_ERROR;
+			if (!IsTesting) {
+				//send to internal for now (later we use the ACK)
+				PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
+			}
 		}
 		return SL_OK;
 	}
