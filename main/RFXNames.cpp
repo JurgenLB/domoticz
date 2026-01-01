@@ -1997,6 +1997,9 @@ void GetLightStatus(
 			case fan_Orcontimer3:
 				lstatus = "timer 3";
 				break;
+			case fan_Orconspeed:
+				lstatus = "speed";
+				break;
 			}
 		}
 		break;
@@ -3670,8 +3673,8 @@ bool GetLightCommand(
 				cmd = fan_Orcontimer2;
 			else if (switchcmd == "timer 3")
 				cmd = fan_Orcontimer3;
-			else
-				return false; // Unsupported command
+			else if (switchcmd == "speed")
+				cmd =  fan_Orconspeed;
 		}
 		break;
 		case sTypeItho:
