@@ -5690,8 +5690,17 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t devType = pTypeFan;
 	uint8_t subType = pResponse->FAN.subtype;
 
-	//      Use device ID from FAN structure (8-byte packet for all fan types)
-	sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+	//      Make a selectorswitch for Orcon Device based on Destination ID
+	if (pResponse->ICMND.subtype == sTypeOrcon)
+	{
+		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
+		_log.Debug(DEBUG_HARDWARE, "Orcon detected, szTmp = %s", std::string(szTmp).c_str());
+		// If destination ID is not set (0), use source ID instead
+		if (pResponse->FAN2.did1 == 0)
+			sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
+	}
+	else
+		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 
 	std::string ID = szTmp;
 	uint8_t Unit = 0;
