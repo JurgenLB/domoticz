@@ -3663,17 +3663,17 @@ bool GetLightCommand(
 				cmd = fan_Orconmedium;
 			else if ((switchcmd == "3") || (switchcmd == "high") || (switchcmd == "High"))
 				cmd = fan_Orconhigh;
-			else if (switchcmd == "away")
+			else if ((switchcmd == "away") || (switchcmd == "Away"))
 				cmd = fan_Orconaway;
-			else if (switchcmd == "auto")
+			else if ((switchcmd == "auto") || (switchcmd == "Auto"))
 				cmd = fan_Orconauto;
-			else if (switchcmd == "timer 1")
+			else if ((switchcmd == "timer 1") || (switchcmd == "Timer 1") || (switchcmd == "timer") || (switchcmd == "Timer"))
 				cmd = fan_Orcontimer1;
-			else if (switchcmd == "timer 2")
+			else if ((switchcmd == "timer 2") || (switchcmd == "Timer 2"))
 				cmd = fan_Orcontimer2;
-			else if (switchcmd == "timer 3")
+			else if ((switchcmd == "timer 3") || (switchcmd == "Timer 3"))
 				cmd = fan_Orcontimer3;
-			else if (switchcmd == "speed")
+			else if ((switchcmd == "speed") || (switchcmd == "Speed"))
 				cmd =  fan_Orconspeed;
 		}
 		break;
