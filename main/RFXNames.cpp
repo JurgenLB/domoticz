@@ -3654,11 +3654,11 @@ bool GetLightCommand(
 		break;
 		case sTypeOrcon:
 		{
-			if ((switchcmd == "1") || (switchcmd == "On") || (switchcmd == "Off"))
+			if ((switchcmd == "1") || (switchcmd == "low") || (switchcmd == "On") || (switchcmd == "Off"))
 				cmd = fan_Orconlow;
-			else if (switchcmd == "2")
+			else if ((switchcmd == "2") || (switchcmd == "medium") || (switchcmd == "med"))
 				cmd = fan_Orconmedium;
-			else if (switchcmd == "3")
+			else if ((switchcmd == "3") || (switchcmd == "high") || (switchcmd == "hi"))
 				cmd = fan_Orconhigh;
 			else if (switchcmd == "away")
 				cmd = fan_Orconaway;
