@@ -12285,7 +12285,6 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 		}
 
 		tRBUF lcmd;
-		// All fan types use standard FAN structure (8-byte packet)
 		lcmd.FAN.packetlength = sizeof(lcmd.FAN) - 1;
 		lcmd.FAN.packettype = dType;
 		lcmd.FAN.subtype = dSubType;
