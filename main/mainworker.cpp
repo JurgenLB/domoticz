@@ -5712,15 +5712,14 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		procResult.bProcessBatteryValue,
 		procResult.Username.c_str());
 
-	//Orcon Device based on Destination ID
+	//Orcon Device - always use source ID for device lookup, store destination ID separately
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
-		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
+		// Always use source ID for device lookup
+		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
+		// Store destination ID separately for later storage in database
 		sprintf(SzTemp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
-		_log.Debug(DEBUG_HARDWARE, "subtype Orcon detected, szTmp = %s", std::string(szTmp).c_str());
-		// If destination ID is not set (0), use source ID instead
-		if (pResponse->FAN2.did1 == 0)
-			sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
+		_log.Debug(DEBUG_HARDWARE, "subtype Orcon detected, Source ID = %s, Destination ID = %s", std::string(szTmp).c_str(), std::string(SzTemp).c_str());
 	}
 	else
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
@@ -5800,10 +5799,12 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
 	//Update switch for Orcon Device
 	if (pResponse->ICMND.subtype == sTypeOrcon){
-		if (!pResponse->FAN2.did1 == 0){
-			// Store the DestinationID and the Recieved ID in the database
+		// Store the source ID and destination ID in the database
+		// Only update if destination ID is non-zero (valid)
+		if (pResponse->FAN2.did1 != 0){
 			m_sql.UpdateDeviceValue("StrParam1", ID, std::to_string(DevRowIdx));
 			m_sql.UpdateDeviceValue("StrParam2", did, std::to_string(DevRowIdx));
+			_log.Debug(DEBUG_HARDWARE, "Orcon: Stored SourceID=%s, DestinationID=%s for device IDX=%" PRIu64, ID.c_str(), did.c_str(), DevRowIdx);
 		}
 		m_sql.UpdateDeviceValue("CustomImage", 7, std::to_string(DevRowIdx));
 	}
