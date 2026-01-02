@@ -5690,6 +5690,11 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	char SzTemp[100];
 	uint8_t devType = pTypeFan;
 	uint8_t subType = pResponse->FAN.subtype;
+	uint8_t Unit = 0;
+	uint8_t cmnd = pResponse->FAN.cmnd;
+	uint8_t SignalLevel = pResponse->FAN.rssi;
+	std::string switchcmd;
+
 	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %u, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X, Command = %02X }, "
 		"tRxMessageProcessingResult: { Device = %s, IDX = %" PRIu64 ", Battery = %d, UserName = %s }",
 		pResponse->ICMND.packetlength,
@@ -5716,93 +5721,58 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		// If destination ID is not set (0), use source ID instead
 		if (pResponse->FAN2.did1 == 0)
 			sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
+	
+		// Get device row to retrieve options
+		std::vector<std::vector<std::string>> result;
+		result = m_sql.safe_query("SELECT SwitchType, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
+			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
+
+		if (!result.empty())
+		{
+			int switchType = atoi(result[0][0].c_str());
+			std::map<std::string, std::string> options = m_sql.BuildDeviceOptions(result[0][1]);
+			
+			if (switchType == STYPE_Selector && !options.empty())
+			{
+				// Get selector switch configuration
+				// Map Orcon command level to command names
+				std::map<std::string, std::string> statuses; // level → command name
+				GetSelectorSwitchStatuses(options, statuses);
+				
+				// Build lookup maps
+				std::map<int, std::string> LevelToCommand;
+				std::map<std::string, int> commandToLevel;
+				for (const auto& status : statuses)
+				{
+					int levelValue = atoi(status.first.c_str());
+					commandToLevel[status.second] = levelValue;
+					LevelToCommand[levelValue] = status.second;
+				}
+
+				std::stringstream ss;
+				ss << cmnd;
+				std::string slevel = ss.str();
+				auto itt = commandToLevel.find(slevel);
+				if (itt != commandToLevel.end())
+				{
+					switchcmd = itt->second;
+					_log.Debug(DEBUG_NORM, "Fan Selector: level=%d mapped to command='%s' %s", cmnd, switchcmd.c_str(), LevelToCommand[cmnd].c_str());
+				}
+				else
+				{
+					_log.Log(LOG_ERROR, "Fan Selector: level=%d not found in configured level names", cmnd);
+				}
+			}
+		}
 	}
 	else
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 
 	std::string ID = szTmp;
 	std::string did = SzTemp;
-	uint8_t Unit = 0;
-	uint8_t cmnd = pResponse->FAN.cmnd;
-	uint8_t SignalLevel = pResponse->FAN.rssi;
+	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d DestinationID=%s", ID.c_str(), subType, cmnd, SignalLevel, did.c_str());
 
-	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d", ID.c_str(), subType, cmnd, SignalLevel);
-
-	// For Orcon devices with selector switches, convert command code to level
-	int nValue = cmnd;
-	if (pResponse->ICMND.subtype == sTypeOrcon)
-	{
-		// Get device row to retrieve options
-		std::vector<std::vector<std::string>> result;
-		result = m_sql.safe_query("SELECT SwitchType, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
-			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
-		
-		if (!result.empty())
-		{
-			int switchType = atoi(result[0][0].c_str());
-			std::string options = result[0][1];
-			
-			if (switchType == STYPE_Selector && !options.empty())
-			{
-				// Get selector switch configuration
-				std::map<std::string, std::string> statuses; // level → command name
-				GetSelectorSwitchStatuses(options, statuses);
-				
-				// Build reverse map: command name → level
-				std::map<std::string, int> commandToLevel;
-				for (const auto& status : statuses)
-				{
-					int levelValue = atoi(status.first.c_str());
-					commandToLevel[status.second] = levelValue;
-				}
-				
-				// Map Orcon command codes to command names
-				static const std::map<uint8_t, std::string> orconCommandToName = {
-					{fan_Orconlow, "Low"},
-					{fan_Orconmedium, "Medium"},
-					{fan_Orconhigh, "High"},
-					{fan_Orcontimer1, "Timer 1"},
-					{fan_Orcontimer2, "Timer 2"},
-					{fan_Orcontimer3, "Timer 3"},
-					{fan_Orconauto, "Auto"},
-					{fan_Orconaway, "Away"}
-				};
-				
-				// Try to find command name for this command code
-				auto cmdNameIt = orconCommandToName.find(cmnd);
-				if (cmdNameIt != orconCommandToName.end())
-				{
-					// Try to find level for this command name
-					auto levelIt = commandToLevel.find(cmdNameIt->second);
-					if (levelIt != commandToLevel.end())
-					{
-						nValue = levelIt->second;
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (%s) to level %d", cmnd, cmdNameIt->second.c_str(), nValue);
-					}
-					else
-					{
-						// Try case-insensitive match
-						std::string cmdNameLower = cmdNameIt->second;
-						std::transform(cmdNameLower.begin(), cmdNameLower.end(), cmdNameLower.begin(), ::tolower);
-						
-						for (const auto& cl : commandToLevel)
-						{
-							std::string configNameLower = cl.first;
-							std::transform(configNameLower.begin(), configNameLower.end(), configNameLower.begin(), ::tolower);
-							if (configNameLower == cmdNameLower)
-							{
-								nValue = cl.second;
-								_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (%s) to level %d (case-insensitive)", cmnd, cmdNameIt->second.c_str(), nValue);
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, procResult.DeviceName, true, procResult.Username.c_str());
+	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, cmnd, procResult.DeviceName, true, procResult.Username.c_str());
 	if (DevRowIdx == (uint64_t)-1)
 		return;
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
@@ -5813,7 +5783,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			m_sql.UpdateDeviceValue("StrParam1", ID, std::to_string(DevRowIdx));
 			m_sql.UpdateDeviceValue("StrParam2", did, std::to_string(DevRowIdx));
 		}
-		m_sql.UpdateDeviceValue("CustomImage", 8, std::to_string(DevRowIdx));
+		m_sql.UpdateDeviceValue("CustomImage", 7, std::to_string(DevRowIdx));
 	}
 
 	if (_log.IsDebugLevelEnabled(DEBUG_RECEIVED))
@@ -12399,8 +12369,8 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			lcmd.FAN2.id2 = ID3;
 			lcmd.FAN2.id3 = ID4;
 			
-			// Retrieve destination ID from database (stored in StrParam2)
-			std::string destID = m_sql.GetDeviceValue("StrParam2", std::to_string(idx));
+			// Retrieve destination ID from StrParam2 (stored in SD[] )
+			std::string destID = sd[13].c_str();
 			if (!destID.empty() && destID.length() == 6)
 			{
 				// Parse destination ID from hex string
