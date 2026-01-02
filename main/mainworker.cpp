@@ -5687,6 +5687,7 @@ void MainWorker::decode_Lighting6(const CDomoticzHardwareBase* pHardware, const 
 void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF* pResponse, _tRxMessageProcessingResult& procResult)
 {
 	char szTmp[100];
+	char SzTemp[100];
 	uint8_t devType = pTypeFan;
 	uint8_t subType = pResponse->FAN.subtype;
 	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %u, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X, Command = %02X }, "
@@ -5710,6 +5711,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
+		sprintf(SzTemp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
 		_log.Debug(DEBUG_HARDWARE, "subtype Orcon detected, szTmp = %s", std::string(szTmp).c_str());
 		// If destination ID is not set (0), use source ID instead
 		if (pResponse->FAN2.did1 == 0)
@@ -5719,6 +5721,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 
 	std::string ID = szTmp;
+	std::string did = SzTemp;
 	uint8_t Unit = 0;
 	uint8_t cmnd = pResponse->FAN.cmnd;
 	uint8_t SignalLevel = pResponse->FAN.rssi;
@@ -5729,8 +5732,13 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	if (DevRowIdx == (uint64_t)-1)
 		return;
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
-	//Make a selectorswitch for Orcon Device ?
+	//Update switch for Orcon Device
 	if (pResponse->ICMND.subtype == sTypeOrcon){
+		if (!pResponse->FAN2.did1 == 0){
+			// Store the DestinationID and the Recieved ID in the database
+			m_sql.UpdateDeviceValue("StrParam1", ID, std::to_string(DevRowIdx));
+			m_sql.UpdateDeviceValue("StrParam2", did, std::to_string(DevRowIdx));
+		}
 		m_sql.UpdateDeviceValue("CustomImage", 8, std::to_string(DevRowIdx));
 	}
 
@@ -13069,7 +13077,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLight(const uint64_t idx, c
 			"SELECT HardwareID,DeviceID,Unit,Type,SubType,SwitchType,AddjValue2,nValue,sValue,Name,Options,OrgHardwareID FROM DeviceStatus WHERE (ID == %" PRIu64 ")",
 			idx);
 		sd = result[0];
-		sd[7] = std::to_string(level);
+		sd[7] = std::to_string(level); // Change nValue to current level
 	}
 	bool bIsOn = IsLightSwitchOn(switchcmd);
 	if (ooc)//Only on change
