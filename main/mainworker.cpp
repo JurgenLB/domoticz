@@ -5694,6 +5694,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t cmnd = pResponse->FAN.cmnd;
 	uint8_t SignalLevel = pResponse->FAN.rssi;
 	std::string switchcmd;
+	std::string ID;
 
 	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %u, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X, Command = %02X }, "
 		"tRxMessageProcessingResult: { Device = %s, IDX = %" PRIu64 ", Battery = %d, UserName = %s }",
@@ -5712,28 +5713,19 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		procResult.bProcessBatteryValue,
 		procResult.Username.c_str());
 
-	//Orcon Device based on Destination ID
+	// For Orcon devices with selector switches, convert command code to level
+	int nValue = cmnd;
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
+		//Orcon Device based on Destination ID
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
 		sprintf(SzTemp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
 		_log.Debug(DEBUG_HARDWARE, "subtype Orcon detected, DestinationID (DeviceID) = %s, SourceID (RemoteID) = %s", std::string(szTmp).c_str(), std::string(SzTemp).c_str());
 		// If destination ID is not set (0), use source ID instead
 		if (pResponse->FAN2.did1 == 0)
 			sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
-	}
-	else
-		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
-
-	std::string ID = szTmp;
-	std::string sourceID = SzTemp;
-	_log.Debug(DEBUG_HARDWARE, "Fan: DeviceID=%s, subType=%02X, command=%02X, SignalLevel=%d SourceID=%s", ID.c_str(), subType, cmnd, SignalLevel, sourceID.c_str());
-
-	// For Orcon devices with selector switches, convert command code to level
-	int nValue = cmnd;
-	if (pResponse->ICMND.subtype == sTypeOrcon)
-	{
 		// Get device row to retrieve options
+		ID = szTmp;
 		std::vector<std::vector<std::string>> result;
 		result = m_sql.safe_query("SELECT SwitchType, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
 			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
@@ -5793,8 +5785,16 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			}
 		}
 	}
+	else
+	{
+		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+		ID = szTmp;
+	}
+	std::string sourceID = SzTemp;
+	_log.Debug(DEBUG_HARDWARE, "Fan: DeviceID=%s, subType=%02X, command=%02X, SignalLevel=%d SourceID=%s", ID.c_str(), subType, cmnd, SignalLevel, sourceID.c_str());
 
 	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, procResult.DeviceName, true, procResult.Username.c_str());
+	_log.Debug(DEBUG_HARDWARE, "Orcon: IDX = %" PRIu64, DevRowIdx);
 	if (DevRowIdx == (uint64_t)-1)
 		return;
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
