@@ -5727,7 +5727,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		// Get device row to retrieve options
 		ID = szTmp;
 		std::vector<std::vector<std::string>> result;
-		result = m_sql.safe_query("SELECT SwitchType, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
+		result = m_sql.safe_query("SELECT SwitchType, Options, LastLevel FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
 			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
 
 		_log.Debug(DEBUG_HARDWARE, "Orcon: Database query for ID=%s returned %d rows", ID.c_str(), (int)result.size());
@@ -5735,7 +5735,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		{
 			int switchType = atoi(result[0][0].c_str());
 			std::string optionsStr = result[0][1];
-			_log.Debug(DEBUG_HARDWARE, "Orcon: SwitchType=%d, Options='%s'", switchType, optionsStr.c_str());
+			int LastLevel = atoi(result[0][2].c_str());
+			_log.Debug(DEBUG_HARDWARE, "Orcon: SwitchType=%d, Options='%s' LastLevel=%d", switchType, optionsStr.c_str(), LastLevel);
 			std::map<std::string, std::string> options = m_sql.BuildDeviceOptions(optionsStr);
 			
 			if (switchType == STYPE_Selector && !options.empty())
@@ -5773,7 +5774,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				else
 				{
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range (0-%d), using raw command code", statusIndex, (int)levels.size()-1);
+					nValue = LastLevel;
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range (0-%d), using using Lastlevel", statusIndex, (int)levels.size()-1);
 				}
 			}
 			else
