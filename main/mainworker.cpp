@@ -5732,27 +5732,73 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	int nValue = cmnd;
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
-		// Map Orcon command codes to selector switch levels (0, 10, 20, 30...)
-		static const std::map<uint8_t, int> orconCommandToLevel = {
-			{fan_Orconlow, 10},
-			{fan_Orconmedium, 20},
-			{fan_Orconhigh, 30},
-			{fan_Orcontimer1, 40},
-			{fan_Orcontimer2, 50},
-			{fan_Orcontimer3, 60},
-			{fan_Orconauto, 70},
-			{fan_Orconaway, 80}
-		};
+		// Get device row to retrieve options
+		std::vector<std::vector<std::string>> result;
+		result = m_sql.safe_query("SELECT SwitchType, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
+			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
 		
-		auto it = orconCommandToLevel.find(cmnd);
-		if (it != orconCommandToLevel.end())
+		if (!result.empty())
 		{
-			nValue = it->second;
-		}
-		else
-		{
-			// Generic mapping for other commands
-			nValue = cmnd * 10;
+			int switchType = atoi(result[0][0].c_str());
+			std::string options = result[0][1];
+			
+			if (switchType == STYPE_Selector && !options.empty())
+			{
+				// Get selector switch configuration
+				std::map<std::string, std::string> statuses; // level → command name
+				GetSelectorSwitchStatuses(options, statuses);
+				
+				// Build reverse map: command name → level
+				std::map<std::string, int> commandToLevel;
+				for (const auto& status : statuses)
+				{
+					int levelValue = atoi(status.first.c_str());
+					commandToLevel[status.second] = levelValue;
+				}
+				
+				// Map Orcon command codes to command names
+				static const std::map<uint8_t, std::string> orconCommandToName = {
+					{fan_Orconlow, "Low"},
+					{fan_Orconmedium, "Medium"},
+					{fan_Orconhigh, "High"},
+					{fan_Orcontimer1, "Timer 1"},
+					{fan_Orcontimer2, "Timer 2"},
+					{fan_Orcontimer3, "Timer 3"},
+					{fan_Orconauto, "Auto"},
+					{fan_Orconaway, "Away"}
+				};
+				
+				// Try to find command name for this command code
+				auto cmdNameIt = orconCommandToName.find(cmnd);
+				if (cmdNameIt != orconCommandToName.end())
+				{
+					// Try to find level for this command name
+					auto levelIt = commandToLevel.find(cmdNameIt->second);
+					if (levelIt != commandToLevel.end())
+					{
+						nValue = levelIt->second;
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (%s) to level %d", cmnd, cmdNameIt->second.c_str(), nValue);
+					}
+					else
+					{
+						// Try case-insensitive match
+						std::string cmdNameLower = cmdNameIt->second;
+						std::transform(cmdNameLower.begin(), cmdNameLower.end(), cmdNameLower.begin(), ::tolower);
+						
+						for (const auto& cl : commandToLevel)
+						{
+							std::string configNameLower = cl.first;
+							std::transform(configNameLower.begin(), configNameLower.end(), configNameLower.begin(), ::tolower);
+							if (configNameLower == cmdNameLower)
+							{
+								nValue = cl.second;
+								_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (%s) to level %d (case-insensitive)", cmnd, cmdNameIt->second.c_str(), nValue);
+								break;
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
