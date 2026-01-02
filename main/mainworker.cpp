@@ -5754,46 +5754,26 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				GetSelectorSwitchStatuses(options, statuses);
 				_log.Debug(DEBUG_HARDWARE, "Orcon: Selector configuration has %d levels", (int)statuses.size());
 				
-				// Build reverse map: command name → level
-				std::map<std::string, int> commandToLevel;
+				// Build ordered vector of levels
+				std::vector<int> levels;
 				for (const auto& status : statuses)
 				{
 					int levelValue = atoi(status.first.c_str());
-					commandToLevel[status.second] = levelValue;
+					levels.push_back(levelValue);
 					_log.Debug(DEBUG_HARDWARE, "Orcon: Selector level %d = '%s'", levelValue, status.second.c_str());
 				}
+				std::sort(levels.begin(), levels.end());
 				
-				// Look up the level for this command name
-				auto itt = commandToLevel.find(lstatus);
-				if (itt != commandToLevel.end())
+				// lstatus contains a numeric string (e.g., "1", "2", "3") representing position in selector
+				int statusIndex = atoi(lstatus.c_str());
+				if (statusIndex >= 0 && statusIndex < (int)levels.size())
 				{
-					nValue = itt->second;
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s') to level %d", cmnd, lstatus.c_str(), nValue);
+					nValue = levels[statusIndex];
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status index=%d) to level %d", cmnd, statusIndex, nValue);
 				}
 				else
 				{
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Status '%s' not found in selector config, trying case-insensitive", lstatus.c_str());
-					// Try case-insensitive match
-					std::string lstatusLower = lstatus;
-					std::transform(lstatusLower.begin(), lstatusLower.end(), lstatusLower.begin(), ::tolower);
-					
-					bool found = false;
-					for (const auto& cl : commandToLevel)
-					{
-						std::string configNameLower = cl.first;
-						std::transform(configNameLower.begin(), configNameLower.end(), configNameLower.begin(), ::tolower);
-						if (configNameLower == lstatusLower)
-						{
-							nValue = cl.second;
-							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s') to level %d (case-insensitive)", cmnd, lstatus.c_str(), nValue);
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-					{
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Could not map command %02X (status='%s') to any selector level, using raw command code", cmnd, lstatus.c_str());
-					}
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range (0-%d), using raw command code", statusIndex, (int)levels.size()-1);
 				}
 			}
 			else
