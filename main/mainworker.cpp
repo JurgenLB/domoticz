@@ -5728,7 +5728,44 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 
 	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d", ID.c_str(), subType, cmnd, SignalLevel);
 
-	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, cmnd, procResult.DeviceName, true, procResult.Username.c_str());
+	// For Orcon devices with selector switches, convert command code to level
+	int nValue = cmnd;
+	if (pResponse->ICMND.subtype == sTypeOrcon)
+	{
+		// Map Orcon command codes to selector switch levels (0, 10, 20, 30...)
+		switch (cmnd)
+		{
+		case fan_Orconlow:       // 0x01
+			nValue = 10;
+			break;
+		case fan_Orconmedium:    // 0x02
+			nValue = 20;
+			break;
+		case fan_Orconhigh:      // 0x03
+			nValue = 30;
+			break;
+		case fan_Orcontimer1:    // 0x04
+			nValue = 40;
+			break;
+		case fan_Orcontimer2:    // 0x05
+			nValue = 50;
+			break;
+		case fan_Orcontimer3:    // 0x06
+			nValue = 60;
+			break;
+		case fan_Orconauto:      // 0x07
+			nValue = 70;
+			break;
+		case fan_Orconaway:      // 0x08
+			nValue = 80;
+			break;
+		default:
+			nValue = cmnd * 10;  // Generic mapping for other commands
+			break;
+		}
+	}
+
+	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, procResult.DeviceName, true, procResult.Username.c_str());
 	if (DevRowIdx == (uint64_t)-1)
 		return;
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
