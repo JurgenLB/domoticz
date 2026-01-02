@@ -12392,14 +12392,10 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			lcmd.FAN2.id3 = ID4;
 			std::string destID;
 
-			// Retrieve destination ID from StrParam2
-			result = m_sql.safe_query("SELECT SwitchType, Options, StrParam1, StrParam2 FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
-				pHardware->m_HwdID, deviceID.c_str(), Unit, dType, dSubType);
-
-			if (!result.empty())
+			// Retrieve destination ID from StrParam2 (already queried earlier and stored in sd[13])
+			if (sd.size() > 13)
 			{
-				int switchType = atoi(result[0][0].c_str());
-				destID = result[0][3].c_str();
+				destID = sd[13];
 			}
 			if (!destID.empty() && destID.length() == 6)
 			{
