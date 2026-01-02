@@ -5712,21 +5712,22 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		procResult.bProcessBatteryValue,
 		procResult.Username.c_str());
 
-	//Orcon Device - always use source ID for device lookup, store destination ID separately
+	//Orcon Device based on Destination ID
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
-		// Always use source ID for device lookup
-		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
-		// Store destination ID separately for later storage in database
-		sprintf(SzTemp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
-		_log.Debug(DEBUG_HARDWARE, "subtype Orcon detected, Source ID = %s, Destination ID = %s", std::string(szTmp).c_str(), std::string(SzTemp).c_str());
+		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
+		sprintf(SzTemp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
+		_log.Debug(DEBUG_HARDWARE, "subtype Orcon detected, DestinationID (DeviceID) = %s, SourceID (RemoteID) = %s", std::string(szTmp).c_str(), std::string(SzTemp).c_str());
+		// If destination ID is not set (0), use source ID instead
+		if (pResponse->FAN2.did1 == 0)
+			sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
 	}
 	else
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 
 	std::string ID = szTmp;
-	std::string did = SzTemp;
-	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d DestinationID=%s", ID.c_str(), subType, cmnd, SignalLevel, did.c_str());
+	std::string sourceID = SzTemp;
+	_log.Debug(DEBUG_HARDWARE, "Fan: DeviceID=%s, subType=%02X, command=%02X, SignalLevel=%d SourceID=%s", ID.c_str(), subType, cmnd, SignalLevel, sourceID.c_str());
 
 	// For Orcon devices with selector switches, convert command code to level
 	int nValue = cmnd;
@@ -5799,12 +5800,10 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
 	//Update switch for Orcon Device
 	if (pResponse->ICMND.subtype == sTypeOrcon){
-		// Store the source ID and destination ID in the database
-		// Only update if destination ID is non-zero (valid)
+		// Store the source ID (remote) for reference
 		if (pResponse->FAN2.did1 != 0){
-			m_sql.UpdateDeviceValue("StrParam1", ID, std::to_string(DevRowIdx));
-			m_sql.UpdateDeviceValue("StrParam2", did, std::to_string(DevRowIdx));
-			_log.Debug(DEBUG_HARDWARE, "Orcon: Stored SourceID=%s, DestinationID=%s for device IDX=%" PRIu64, ID.c_str(), did.c_str(), DevRowIdx);
+			m_sql.UpdateDeviceValue("StrParam1", sourceID, std::to_string(DevRowIdx));
+			_log.Debug(DEBUG_HARDWARE, "Orcon: Stored SourceID (RemoteID)=%s for device IDX=%" PRIu64, sourceID.c_str(), DevRowIdx);
 		}
 		m_sql.UpdateDeviceValue("CustomImage", 7, std::to_string(DevRowIdx));
 	}
@@ -12388,34 +12387,15 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			lcmd.FAN2.packettype = dType;
 			lcmd.FAN2.subtype = dSubType;
 			lcmd.FAN2.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
+			// Source ID = Device ID (Fan ID)
 			lcmd.FAN2.id1 = ID2;
 			lcmd.FAN2.id2 = ID3;
 			lcmd.FAN2.id3 = ID4;
-			std::string destID;
-
-			// Retrieve destination ID from StrParam2 (already queried earlier and stored in sd[13])
-			if (sd.size() > 13)
-			{
-				destID = sd[13];
-			}
-			if (!destID.empty() && destID.length() == 6)
-			{
-				// Parse destination ID from hex string
-				unsigned int did1, did2, did3;
-				sscanf(destID.c_str(), "%02X%02X%02X", &did1, &did2, &did3);
-				lcmd.FAN2.did1 = (uint8_t)did1;
-				lcmd.FAN2.did2 = (uint8_t)did2;
-				lcmd.FAN2.did3 = (uint8_t)did3;
-				_log.Debug(DEBUG_HARDWARE, "Orcon: Using destination ID from database: %02X%02X%02X", did1, did2, did3);
-			}
-			else
-			{
-				// If no destination ID stored, use source ID as destination
-				lcmd.FAN2.did1 = ID2;
-				lcmd.FAN2.did2 = ID3;
-				lcmd.FAN2.did3 = ID4;
-				_log.Debug(DEBUG_HARDWARE, "Orcon: No destination ID in database, using source ID: %02X%02X%02X", ID2, ID3, ID4);
-			}
+			
+			// Destination ID = same as Source ID (Fan ID) - we're sending TO the fan
+			lcmd.FAN2.did1 = ID2;
+			lcmd.FAN2.did2 = ID3;
+			lcmd.FAN2.did3 = ID4;
 			
 			lcmd.FAN2.filler = 0;
 			lcmd.FAN2.rssi = 12;
@@ -12430,7 +12410,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			if (!GetLightCommand(dType, dSubType, switchtype, switchcmd, lcmd.FAN2.cmnd, options))
 				return SL_ERROR;
 			
-			_log.Debug(DEBUG_HARDWARE, "Orcon: WriteToHardware - ID=%02X%02X%02X, DestID=%02X%02X%02X, Command=%02X", 
+			_log.Debug(DEBUG_HARDWARE, "Orcon: WriteToHardware - FanID=%02X%02X%02X, DestID=%02X%02X%02X, Command=%02X", 
 				lcmd.FAN2.id1, lcmd.FAN2.id2, lcmd.FAN2.id3,
 				lcmd.FAN2.did1, lcmd.FAN2.did2, lcmd.FAN2.did3,
 				lcmd.FAN2.cmnd);
