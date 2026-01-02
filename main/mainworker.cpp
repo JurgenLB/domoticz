@@ -5730,10 +5730,13 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		result = m_sql.safe_query("SELECT SwitchType, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
 			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
 
+		_log.Debug(DEBUG_HARDWARE, "Orcon: Database query for ID=%s returned %d rows", ID.c_str(), (int)result.size());
 		if (!result.empty())
 		{
 			int switchType = atoi(result[0][0].c_str());
-			std::map<std::string, std::string> options = m_sql.BuildDeviceOptions(result[0][1]);
+			std::string optionsStr = result[0][1];
+			_log.Debug(DEBUG_HARDWARE, "Orcon: SwitchType=%d, Options='%s'", switchType, optionsStr.c_str());
+			std::map<std::string, std::string> options = m_sql.BuildDeviceOptions(optionsStr);
 			
 			if (switchType == STYPE_Selector && !options.empty())
 			{
@@ -5744,10 +5747,12 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				int maxDimLevel = 0;
 				bool bHaveGroupCmd = false;
 				GetLightStatus(devType, subType, (const _eSwitchType)switchType, cmnd, "", lstatus, llevel, bHaveDimmer, maxDimLevel, bHaveGroupCmd);
+				_log.Debug(DEBUG_HARDWARE, "Orcon: GetLightStatus for command %02X returned status='%s', level=%d", cmnd, lstatus.c_str(), llevel);
 				
 				// Get selector switch configuration
 				std::map<std::string, std::string> statuses; // level → command name
 				GetSelectorSwitchStatuses(options, statuses);
+				_log.Debug(DEBUG_HARDWARE, "Orcon: Selector configuration has %d levels", (int)statuses.size());
 				
 				// Build reverse map: command name → level
 				std::map<std::string, int> commandToLevel;
@@ -5755,6 +5760,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				{
 					int levelValue = atoi(status.first.c_str());
 					commandToLevel[status.second] = levelValue;
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Selector level %d = '%s'", levelValue, status.second.c_str());
 				}
 				
 				// Look up the level for this command name
@@ -5766,10 +5772,12 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				else
 				{
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Status '%s' not found in selector config, trying case-insensitive", lstatus.c_str());
 					// Try case-insensitive match
 					std::string lstatusLower = lstatus;
 					std::transform(lstatusLower.begin(), lstatusLower.end(), lstatusLower.begin(), ::tolower);
 					
+					bool found = false;
 					for (const auto& cl : commandToLevel)
 					{
 						std::string configNameLower = cl.first;
@@ -5778,11 +5786,24 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 						{
 							nValue = cl.second;
 							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s') to level %d (case-insensitive)", cmnd, lstatus.c_str(), nValue);
+							found = true;
 							break;
 						}
 					}
+					if (!found)
+					{
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Could not map command %02X (status='%s') to any selector level, using raw command code", cmnd, lstatus.c_str());
+					}
 				}
 			}
+			else
+			{
+				_log.Debug(DEBUG_HARDWARE, "Orcon: Not a selector switch (SwitchType=%d) or options empty", switchType);
+			}
+		}
+		else
+		{
+			_log.Debug(DEBUG_HARDWARE, "Orcon: Device not found in database for ID=%s, HwID=%d, Unit=%d", ID.c_str(), pHardware->m_HwdID, Unit);
 		}
 	}
 	else
