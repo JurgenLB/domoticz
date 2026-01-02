@@ -12434,7 +12434,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 				lcmd.FAN2.did1, lcmd.FAN2.did2, lcmd.FAN2.did3,
 				lcmd.FAN2.cmnd);
 			
-			if (!WriteToHardware(HardwareID, (const char*)&lcmd, sizeof(lcmd.FAN2)))
+			if (!WriteToHardware(HardwareID, (const char*)&lcmd, lcmd.FAN2.packetlength + 1))
 				return SL_ERROR;
 			if (!IsTesting) {
 				//send to internal for now (later we use the ACK)
