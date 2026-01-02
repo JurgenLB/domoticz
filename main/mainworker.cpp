@@ -5794,9 +5794,13 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	_log.Debug(DEBUG_HARDWARE, "Fan: DeviceID=%s, subType=%02X, command=%02X, SignalLevel=%d SourceID=%s", ID.c_str(), subType, cmnd, SignalLevel, sourceID.c_str());
 
 	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, procResult.DeviceName, true, procResult.Username.c_str());
-	_log.Debug(DEBUG_HARDWARE, "Orcon: IDX = %" PRIu64, DevRowIdx);
+	_log.Debug(DEBUG_HARDWARE, "Fan: UpdateValue returned IDX = %" PRIu64, DevRowIdx);
 	if (DevRowIdx == (uint64_t)-1)
+	{
+		_log.Log(LOG_ERROR, "Fan: UpdateValue failed - device not found or update error (ID=%s, Type=%d, SubType=%d)", ID.c_str(), devType, subType);
 		return;
+	}
+	procResult.DeviceRowIdx = DevRowIdx;
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
 	//Update switch for Orcon Device
 	if (pResponse->ICMND.subtype == sTypeOrcon){
@@ -5991,7 +5995,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		WriteMessage(szTmp);
 		WriteMessageEnd();
 	}
-	procResult.DeviceRowIdx = DevRowIdx;
+	_log.Debug(DEBUG_HARDWARE, "Fan: decode_Fan completed successfully, DeviceRowIdx=%" PRIu64, procResult.DeviceRowIdx);
 }
 
 void MainWorker::decode_HomeConfort(const CDomoticzHardwareBase* pHardware, const tRBUF* pResponse, _tRxMessageProcessingResult& procResult)
