@@ -5721,7 +5721,18 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		// If destination ID is not set (0), use source ID instead
 		if (pResponse->FAN2.did1 == 0)
 			sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
-	
+	}
+	else
+		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
+
+	std::string ID = szTmp;
+	std::string did = SzTemp;
+	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d DestinationID=%s", ID.c_str(), subType, cmnd, SignalLevel, did.c_str());
+
+	// For Orcon devices with selector switches, convert command code to level
+	int nValue = cmnd;
+	if (pResponse->ICMND.subtype == sTypeOrcon)
+	{
 		// Get device row to retrieve options
 		std::vector<std::vector<std::string>> result;
 		result = m_sql.safe_query("SELECT SwitchType, Options FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
@@ -5734,45 +5745,56 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			
 			if (switchType == STYPE_Selector && !options.empty())
 			{
+				// Use GetLightStatus to get the proper status string for this command code
+				std::string lstatus;
+				int llevel = 0;
+				bool bHaveDimmer = false;
+				int maxDimLevel = 0;
+				bool bHaveGroupCmd = false;
+				GetLightStatus(devType, subType, (const _eSwitchType)switchType, cmnd, "", lstatus, llevel, bHaveDimmer, maxDimLevel, bHaveGroupCmd);
+				
 				// Get selector switch configuration
-				// Map Orcon command level to command names
 				std::map<std::string, std::string> statuses; // level → command name
 				GetSelectorSwitchStatuses(options, statuses);
 				
-				// Build lookup maps
-				std::map<int, std::string> LevelToCommand;
+				// Build reverse map: command name → level
 				std::map<std::string, int> commandToLevel;
 				for (const auto& status : statuses)
 				{
 					int levelValue = atoi(status.first.c_str());
 					commandToLevel[status.second] = levelValue;
-					LevelToCommand[levelValue] = status.second;
 				}
-
-				std::stringstream ss;
-				ss << cmnd;
-				std::string slevel = ss.str();
-				auto itt = commandToLevel.find(slevel);
+				
+				// Look up the level for this command name
+				auto itt = commandToLevel.find(lstatus);
 				if (itt != commandToLevel.end())
 				{
-					switchcmd = itt->second;
-					_log.Debug(DEBUG_NORM, "Fan Selector: level=%d mapped to command='%s' %s", cmnd, switchcmd.c_str(), LevelToCommand[cmnd].c_str());
+					nValue = itt->second;
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s') to level %d", cmnd, lstatus.c_str(), nValue);
 				}
 				else
 				{
-					_log.Log(LOG_ERROR, "Fan Selector: level=%d not found in configured level names", cmnd);
+					// Try case-insensitive match
+					std::string lstatusLower = lstatus;
+					std::transform(lstatusLower.begin(), lstatusLower.end(), lstatusLower.begin(), ::tolower);
+					
+					for (const auto& cl : commandToLevel)
+					{
+						std::string configNameLower = cl.first;
+						std::transform(configNameLower.begin(), configNameLower.end(), configNameLower.begin(), ::tolower);
+						if (configNameLower == lstatusLower)
+						{
+							nValue = cl.second;
+							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s') to level %d (case-insensitive)", cmnd, lstatus.c_str(), nValue);
+							break;
+						}
+					}
 				}
 			}
 		}
 	}
-	else
-		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 
-	std::string ID = szTmp;
-	std::string did = SzTemp;
-	_log.Debug(DEBUG_HARDWARE, "Fan: ID=%s, subType=%02X, command=%02X, SignalLevel=%d DestinationID=%s", ID.c_str(), subType, cmnd, SignalLevel, did.c_str());
-
-	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, cmnd, procResult.DeviceName, true, procResult.Username.c_str());
+	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, procResult.DeviceName, true, procResult.Username.c_str());
 	if (DevRowIdx == (uint64_t)-1)
 		return;
 	CheckSceneCode(DevRowIdx, devType, subType, cmnd, szTmp, procResult.DeviceName);
