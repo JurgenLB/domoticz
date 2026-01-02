@@ -12391,8 +12391,12 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			lcmd.FAN2.id2 = ID3;
 			lcmd.FAN2.id3 = ID4;
 			
-			// Retrieve destination ID from StrParam2 (stored in SD[] )
-			std::string destID = sd[13].c_str();
+			// Retrieve destination ID from StrParam2 (stored in sd[13] for Orcon)
+			std::string destID;
+			if (sd.size() > 13)
+			{
+				destID = sd[13];
+			}
 			if (!destID.empty() && destID.length() == 6)
 			{
 				// Parse destination ID from hex string
@@ -13206,7 +13210,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLight(const uint64_t idx, c
 	if (subtype == sTypeOrcon) {
 		_log.Debug(DEBUG_HARDWARE, "Sub type Orcon detected %d", level);
 		result = m_sql.safe_query(
-			"SELECT HardwareID,DeviceID,Unit,Type,SubType,SwitchType,AddjValue2,nValue,sValue,Name,Options,OrgHardwareID FROM DeviceStatus WHERE (ID == %" PRIu64 ")",
+			"SELECT HardwareID,DeviceID,Unit,Type,SubType,SwitchType,AddjValue2,nValue,sValue,Name,Options,OrgHardwareID,LastLevel,StrParam2 FROM DeviceStatus WHERE (ID == %" PRIu64 ")",
 			idx);
 		sd = result[0];
 		sd[7] = std::to_string(level); // Change nValue to current level
