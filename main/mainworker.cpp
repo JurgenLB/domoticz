@@ -12416,11 +12416,18 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 				lcmd.FAN2.cmnd);
 			
 			if (!WriteToHardware(HardwareID, (const char*)&lcmd, lcmd.FAN2.packetlength + 1))
+			{
+				_log.Debug(DEBUG_HARDWARE, "Orcon: WriteToHardware FAILED");
 				return SL_ERROR;
+			}
+			_log.Debug(DEBUG_HARDWARE, "Orcon: WriteToHardware SUCCESS");
 			if (!IsTesting) {
 				//send to internal for now (later we use the ACK)
+				_log.Debug(DEBUG_HARDWARE, "Orcon: Calling PushAndWaitRxMessage");
 				PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
+				_log.Debug(DEBUG_HARDWARE, "Orcon: PushAndWaitRxMessage completed");
 			}
+			_log.Debug(DEBUG_HARDWARE, "Orcon: About to return SL_OK");
 		}
 		else
 		{
@@ -12448,6 +12455,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 				PushAndWaitRxMessage(m_hardwaredevices[hindex], (const uint8_t*)&lcmd, nullptr, -1, User.c_str());
 			}
 		}
+		_log.Debug(DEBUG_HARDWARE, "Fan: Returning SL_OK from pTypeFan handler");
 		return SL_OK;
 	}
 	break;
