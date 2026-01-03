@@ -5793,14 +5793,42 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 						{
 							nValue = LastLevel;
 							sValue = std::to_string(LastLevel);
-							_log.Debug(DEBUG_HARDWARE, "Orcon: Level %d from index %d not found in selector configuration, using LastLevel=%d", levelValue, statusIndex, LastLevel);
+							// Get human-readable command name
+							const char* cmdName = "Unknown";
+							switch(cmnd) {
+								case fan_Orconlow: cmdName = "Low"; break;
+								case fan_Orconmedium: cmdName = "Medium"; break;
+								case fan_Orconhigh: cmdName = "High"; break;
+								case fan_Orcontimer1: cmdName = "Timer 1"; break;
+								case fan_Orcontimer2: cmdName = "Timer 2"; break;
+								case fan_Orcontimer3: cmdName = "Timer 3"; break;
+								case fan_Orconauto: cmdName = "Auto"; break;
+								case fan_Orconaway: cmdName = "Away"; break;
+								case fan_Orconspeed: cmdName = "Speed"; break;
+								default: break;
+							}
+							_log.Debug(DEBUG_HARDWARE, "Orcon: Status='%s' (%s) level %d from index %d not found in selector configuration, using LastLevel=%d", lstatus.c_str(), cmdName, levelValue, statusIndex, LastLevel);
 						}
 					}
 					else
 					{
 						nValue = LastLevel;
 						sValue = std::to_string(LastLevel);
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range [0, %d), using LastLevel=%d", statusIndex, (int)levels.size(), LastLevel);
+						// Get human-readable command name
+						const char* cmdName = "Unknown";
+						switch(cmnd) {
+							case fan_Orconlow: cmdName = "Low"; break;
+							case fan_Orconmedium: cmdName = "Medium"; break;
+							case fan_Orconhigh: cmdName = "High"; break;
+							case fan_Orcontimer1: cmdName = "Timer 1"; break;
+							case fan_Orcontimer2: cmdName = "Timer 2"; break;
+							case fan_Orcontimer3: cmdName = "Timer 3"; break;
+							case fan_Orconauto: cmdName = "Auto"; break;
+							case fan_Orconaway: cmdName = "Away"; break;
+							case fan_Orconspeed: cmdName = "Speed"; break;
+							default: break;
+						}
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Status='%s' (%s) index %d out of range [0, %d), using LastLevel=%d", lstatus.c_str(), cmdName, statusIndex, (int)levels.size(), LastLevel);
 					}
 				}
 				else
@@ -5809,7 +5837,21 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 					// These are special commands that don't map to selector positions
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Non-numeric status '%s' for command %02X, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);
+					// Get human-readable command name
+					const char* cmdName = "Unknown";
+					switch(cmnd) {
+						case fan_Orconlow: cmdName = "Low"; break;
+						case fan_Orconmedium: cmdName = "Medium"; break;
+						case fan_Orconhigh: cmdName = "High"; break;
+						case fan_Orcontimer1: cmdName = "Timer 1"; break;
+						case fan_Orcontimer2: cmdName = "Timer 2"; break;
+						case fan_Orcontimer3: cmdName = "Timer 3"; break;
+						case fan_Orconauto: cmdName = "Auto"; break;
+						case fan_Orconaway: cmdName = "Away"; break;
+						case fan_Orconspeed: cmdName = "Speed"; break;
+						default: break;
+					}
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Non-numeric status='%s' (%s) for command %02X, using LastLevel=%d", lstatus.c_str(), cmdName, cmnd, LastLevel);
 				}
 			}
 			else
