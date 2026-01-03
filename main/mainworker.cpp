@@ -5785,7 +5785,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				if (commandToLevel.find(lstatus.c_str()) != commandToLevel.end())
 				{
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Status='%s' (%s) index %d out of range [0, %d), using LastLevel=%d", lstatus.c_str(), cmdName, statusIndex, (int)levels.size(), LastLevel);
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Command level %d", commandToLevel[lstatus]);
 				}
 				if (LevelToCommand.find(llevel) != LevelToCommand.end())
 				{
