@@ -5769,20 +5769,13 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				std::sort(levels.begin(), levels.end());
 				
-				// lstatus from GetLightStatus is a position index string for selectors ("0", "1", "2", ...)
-				// Find matching selector level by checking if lstatus matches any status.second value
-				bool found = false;
-				for (const auto& status : statuses)
-				{
-					if (status.second == lstatus)
-					{
-						// Found matching selector level name - this validates lstatus is a valid position
-						found = true;
-						break;
-					}
-				}
+				// lstatus from GetLightStatus:
+				// - For main speed commands (Low/Medium/High): numeric position strings ("1", "2", "3")
+				// - For special commands (Away/Auto/Timer/Speed): text strings ("away", "auto", "timer 1", "speed")
+				// Check if lstatus is numeric to determine if we can use it as a selector index
+				bool isNumeric = !lstatus.empty() && lstatus.find_first_not_of("0123456789") == std::string::npos;
 				
-				if (found)
+				if (isNumeric)
 				{
 					int statusIndex = atoi(lstatus.c_str());
 					if (statusIndex >= 0 && statusIndex < (int)levels.size())
@@ -5812,9 +5805,11 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				else
 				{
+					// Non-numeric status (e.g., "away", "auto", "timer 1", "speed")
+					// These are special commands that don't map to selector positions
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Status '%s' for command %02X not found in selector configuration, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Non-numeric status '%s' for command %02X, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);
 				}
 			}
 			else
