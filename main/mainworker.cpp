@@ -5699,7 +5699,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	std::string sValue;
 	std::string SourceID;
 
-	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %u, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X, Command = %02X }, "
+	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %u, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X, DestinationID = %02X%02X%02X, Command = %02X }, "
 		"tRxMessageProcessingResult: { Device = %s, IDX = %" PRIu64 ", Battery = %d, UserName = %s }",
 		pResponse->ICMND.packetlength,
 		RFX_Type_Desc(pResponse->ICMND.packettype, 1),
@@ -5710,6 +5710,9 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		pResponse->FAN2.id1,
 		pResponse->FAN2.id2,
 		pResponse->FAN2.id3,
+		pResponse->FAN2.did1,
+		pResponse->FAN2.did2,
+		pResponse->FAN2.did3,
 		pResponse->FAN2.cmnd,
 		procResult.DeviceName.c_str(),
 		procResult.DeviceRowIdx,
@@ -5717,7 +5720,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		procResult.Username.c_str());
 
 	// For Orcon devices with selector switches, convert command code to level
-	if (pResponse->ICMND.subtype == sTypeOrcon)
+	if (pResponse->ICMND.subtype == sTypeOrcon) {
 	{
 		//Orcon Device based on Destination ID
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
@@ -5792,6 +5795,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				else
 				{
+					{
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
 					_log.Debug(DEBUG_HARDWARE, "Orcon: Status '%s' for command %02X not found in selector configuration, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);				}
