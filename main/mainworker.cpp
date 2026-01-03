@@ -5769,10 +5769,20 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				std::sort(levels.begin(), levels.end());
 				
-				// lstatus should contain a numeric string (e.g., "1", "2", "3") representing position in selector
-				// Check if lstatus is numeric before parsing
-				bool isNumeric = !lstatus.empty() && lstatus.find_first_not_of("0123456789") == std::string::npos;
-				if (isNumeric)
+				// lstatus from GetLightStatus is a position index string for selectors ("0", "1", "2", ...)
+				// Find matching selector level by checking if lstatus matches any status.second value
+				bool found = false;
+				for (const auto& status : statuses)
+				{
+					if (status.second == lstatus)
+					{
+						// Found matching selector level name - this validates lstatus is a valid position
+						found = true;
+						break;
+					}
+				}
+				
+				if (found)
 				{
 					int statusIndex = atoi(lstatus.c_str());
 					if (statusIndex >= 0 && statusIndex < (int)levels.size())
@@ -5784,7 +5794,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 						{
 							nValue = levelValue;
 							sValue = levelKey;
-							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status index=%d) to level %d", cmnd, statusIndex, nValue);
+							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s' index=%d) to level %d", cmnd, lstatus.c_str(), statusIndex, nValue);
 						}
 						else
 						{
@@ -5804,7 +5814,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				{
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Non-numeric status '%s' for command %02X, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Status '%s' for command %02X not found in selector configuration, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);
 				}
 			}
 			else
