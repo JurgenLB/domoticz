@@ -5787,7 +5787,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 						{
 							nValue = levelValue;
 							sValue = levelKey;
-							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s' index=%d) to level %d", cmnd, lstatus.c_str(), statusIndex, nValue);
+							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s' index=%d) to level %d (%s)", cmnd, lstatus.c_str(), statusIndex, nValue, statuses[levelKey].c_str());
 						}
 						else
 						{
