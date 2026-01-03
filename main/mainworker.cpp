@@ -5759,99 +5759,42 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				GetSelectorSwitchStatuses(options, statuses);
 				_log.Debug(DEBUG_HARDWARE, "Orcon: Selector configuration has %d levels", (int)statuses.size());
 				
-				// Build ordered vector of levels
-				std::vector<int> levels;
+				// Build reverse map: command name → level
+				std::map<std::string, int> commandToLevel;
+				// Build map level → command name
+				std::map<int, std::string> LevelToCommand;
 				for (const auto& status : statuses)
 				{
 					int levelValue = atoi(status.first.c_str());
-					levels.push_back(levelValue);
+					commandToLevel[status.second] = levelValue;
+					LevelToCommand[levelValue] = status.second;
 					_log.Debug(DEBUG_HARDWARE, "Orcon: Selector level %d = '%s'", levelValue, status.second.c_str());
 				}
-				std::sort(levels.begin(), levels.end());
-				
-				// lstatus from GetLightStatus:
-				// - For main speed commands (Low/Medium/High): numeric position strings ("1", "2", "3")
-				// - For special commands (Away/Auto/Timer/Speed): text strings ("away", "auto", "timer 1", "speed")
-				// Check if lstatus is numeric to determine if we can use it as a selector index
+
+				// lstatus from GetLightStatus is a position index string for selectors ("0", "1", "2", ...)
+				// Find matching selector level by checking if lstatus matches a level value
 				bool isNumeric = !lstatus.empty() && lstatus.find_first_not_of("0123456789") == std::string::npos;
 				
 				if (isNumeric)
 				{
-					int statusIndex = atoi(lstatus.c_str());
-					if (statusIndex >= 0 && statusIndex < (int)levels.size())
-					{
-						int levelValue = levels[statusIndex];
-						// Verify the level value actually exists in the selector configuration
-						std::string levelKey = std::to_string(levelValue);
-						if (statuses.find(levelKey) != statuses.end())
-						{
-							nValue = levelValue;
-							sValue = levelKey;
-							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status='%s' index=%d) to level %d (%s)", cmnd, lstatus.c_str(), statusIndex, nValue, statuses[levelKey].c_str());
-						}
-						else
-						{
-							nValue = LastLevel;
-							sValue = std::to_string(LastLevel);
-							// Get human-readable command name
-							const char* cmdName = "Unknown";
-							switch(cmnd) {
-								case fan_Orconlow: cmdName = "Low"; break;
-								case fan_Orconmedium: cmdName = "Medium"; break;
-								case fan_Orconhigh: cmdName = "High"; break;
-								case fan_Orcontimer1: cmdName = "Timer 1"; break;
-								case fan_Orcontimer2: cmdName = "Timer 2"; break;
-								case fan_Orcontimer3: cmdName = "Timer 3"; break;
-								case fan_Orconauto: cmdName = "Auto"; break;
-								case fan_Orconaway: cmdName = "Away"; break;
-								case fan_Orconspeed: cmdName = "Speed"; break;
-								default: break;
-							}
-							_log.Debug(DEBUG_HARDWARE, "Orcon: Status='%s' (%s) level %d from index %d not found in selector configuration, using LastLevel=%d", lstatus.c_str(), cmdName, levelValue, statusIndex, LastLevel);
-						}
-					}
-					else
-					{
-						nValue = LastLevel;
-						sValue = std::to_string(LastLevel);
-						// Get human-readable command name
-						const char* cmdName = "Unknown";
-						switch(cmnd) {
-							case fan_Orconlow: cmdName = "Low"; break;
-							case fan_Orconmedium: cmdName = "Medium"; break;
-							case fan_Orconhigh: cmdName = "High"; break;
-							case fan_Orcontimer1: cmdName = "Timer 1"; break;
-							case fan_Orcontimer2: cmdName = "Timer 2"; break;
-							case fan_Orcontimer3: cmdName = "Timer 3"; break;
-							case fan_Orconauto: cmdName = "Auto"; break;
-							case fan_Orconaway: cmdName = "Away"; break;
-							case fan_Orconspeed: cmdName = "Speed"; break;
-							default: break;
-						}
+					_log.Debug(DEBUG_HARDWARE, "Orcon Number Found %s", lstatus.c_str());
+					llevel = atoi(lstatus.c_str()) * 10;
+				}
+				if (commandToLevel.find(lstatus.c_str()) != commandToLevel.end())
+				{
 						_log.Debug(DEBUG_HARDWARE, "Orcon: Status='%s' (%s) index %d out of range [0, %d), using LastLevel=%d", lstatus.c_str(), cmdName, statusIndex, (int)levels.size(), LastLevel);
-					}
+				}
+				if (LevelToCommand.find(llevel) != LevelToCommand.end())
+				{
+					_log.Debug(DEBUG_HARDWARE, "Orcon Llevel %s for number %d", LevelToCommand[llevel].c_str(), llevel);
+					nValue = llevel;
+					sValue = std::to_string(llevel);
 				}
 				else
 				{
-					// Non-numeric status (e.g., "away", "auto", "timer 1", "speed")
-					// These are special commands that don't map to selector positions
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
-					// Get human-readable command name
-					const char* cmdName = "Unknown";
-					switch(cmnd) {
-						case fan_Orconlow: cmdName = "Low"; break;
-						case fan_Orconmedium: cmdName = "Medium"; break;
-						case fan_Orconhigh: cmdName = "High"; break;
-						case fan_Orcontimer1: cmdName = "Timer 1"; break;
-						case fan_Orcontimer2: cmdName = "Timer 2"; break;
-						case fan_Orcontimer3: cmdName = "Timer 3"; break;
-						case fan_Orconauto: cmdName = "Auto"; break;
-						case fan_Orconaway: cmdName = "Away"; break;
-						case fan_Orconspeed: cmdName = "Speed"; break;
-						default: break;
-					}
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Non-numeric status='%s' (%s) for command %02X, using LastLevel=%d", lstatus.c_str(), cmdName, cmnd, LastLevel);
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Status '%s' for command %02X not found in selector configuration, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);				}
 				}
 			}
 			else
