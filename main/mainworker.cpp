@@ -5769,31 +5769,42 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				std::sort(levels.begin(), levels.end());
 				
-				// lstatus contains a numeric string (e.g., "1", "2", "3") representing position in selector
-				int statusIndex = atoi(lstatus.c_str());
-				if (statusIndex >= 0 && statusIndex < (int)levels.size())
+				// lstatus should contain a numeric string (e.g., "1", "2", "3") representing position in selector
+				// Check if lstatus is numeric before parsing
+				bool isNumeric = !lstatus.empty() && lstatus.find_first_not_of("0123456789") == std::string::npos;
+				if (isNumeric)
 				{
-					int levelValue = levels[statusIndex];
-					// Verify the level value actually exists in the selector configuration
-					std::string levelKey = std::to_string(levelValue);
-					if (statuses.find(levelKey) != statuses.end())
+					int statusIndex = atoi(lstatus.c_str());
+					if (statusIndex >= 0 && statusIndex < (int)levels.size())
 					{
-						nValue = levelValue;
-						sValue = levelKey;
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status index=%d) to level %d", cmnd, statusIndex, nValue);
+						int levelValue = levels[statusIndex];
+						// Verify the level value actually exists in the selector configuration
+						std::string levelKey = std::to_string(levelValue);
+						if (statuses.find(levelKey) != statuses.end())
+						{
+							nValue = levelValue;
+							sValue = levelKey;
+							_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status index=%d) to level %d", cmnd, statusIndex, nValue);
+						}
+						else
+						{
+							nValue = LastLevel;
+							sValue = std::to_string(LastLevel);
+							_log.Debug(DEBUG_HARDWARE, "Orcon: Level %d from index %d not found in selector configuration, using LastLevel=%d", levelValue, statusIndex, LastLevel);
+						}
 					}
 					else
 					{
 						nValue = LastLevel;
 						sValue = std::to_string(LastLevel);
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Level %d from index %d not found in selector configuration, using LastLevel=%d", levelValue, statusIndex, LastLevel);
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range [0, %d), using LastLevel=%d", statusIndex, (int)levels.size(), LastLevel);
 					}
 				}
 				else
 				{
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range (0-%d), using LastLevel=%d", statusIndex, (int)levels.size()-1, LastLevel);
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Non-numeric status '%s' for command %02X, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);
 				}
 			}
 			else
