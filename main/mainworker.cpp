@@ -5695,6 +5695,9 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t SignalLevel = pResponse->FAN.rssi;
 	std::string switchcmd;
 	std::string ID;
+	int nValue = cmnd;
+	std::string sValue;
+	std::string SourceID;
 
 	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %u, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X, Command = %02X }, "
 		"tRxMessageProcessingResult: { Device = %s, IDX = %" PRIu64 ", Battery = %d, UserName = %s }",
@@ -5714,7 +5717,6 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		procResult.Username.c_str());
 
 	// For Orcon devices with selector switches, convert command code to level
-	int nValue = cmnd;
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
 		//Orcon Device based on Destination ID
@@ -5727,15 +5729,17 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		// Get device row to retrieve options
 		ID = szTmp;
 		std::vector<std::vector<std::string>> result;
-		result = m_sql.safe_query("SELECT SwitchType, Options, LastLevel FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
+		result = m_sql.safe_query("SELECT Name, SwitchType, Options, LastLevel, StrParam1 FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
 			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
 
 		_log.Debug(DEBUG_HARDWARE, "Orcon: Database query for ID=%s returned %d rows", ID.c_str(), (int)result.size());
 		if (!result.empty())
 		{
-			int switchType = atoi(result[0][0].c_str());
-			std::string optionsStr = result[0][1];
-			int LastLevel = atoi(result[0][2].c_str());
+			procResult.DeviceName = result[0][0];
+			int switchType = atoi(result[0][1].c_str());
+			std::string optionsStr = result[0][2];
+			int LastLevel = atoi(result[0][3].c_str());
+			SourceID = result[0][4];
 			_log.Debug(DEBUG_HARDWARE, "Orcon: SwitchType=%d, Options='%s' LastLevel=%d", switchType, optionsStr.c_str(), LastLevel);
 			std::map<std::string, std::string> options = m_sql.BuildDeviceOptions(optionsStr);
 			
@@ -5770,11 +5774,13 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				if (statusIndex >= 0 && statusIndex < (int)levels.size())
 				{
 					nValue = levels[statusIndex];
+					sValue = std::to_string(levels[statusIndex]);
 					_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status index=%d) to level %d", cmnd, statusIndex, nValue);
 				}
 				else
 				{
 					nValue = LastLevel;
+					sValue = std::to_string(LastLevel);
 					_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range (0-%d), using using Lastlevel", statusIndex, (int)levels.size()-1);
 				}
 			}
@@ -5796,7 +5802,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	std::string sourceID = SzTemp;
 	_log.Debug(DEBUG_HARDWARE, "Fan: DeviceID=%s, subType=%02X, command=%02X, SignalLevel=%d SourceID=%s", ID.c_str(), subType, cmnd, SignalLevel, sourceID.c_str());
 
-	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, procResult.DeviceName, true, procResult.Username.c_str());
+	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, sValue.c_str(), procResult.DeviceName, true, procResult.Username.c_str());
 	_log.Debug(DEBUG_HARDWARE, "Fan: UpdateValue returned IDX = %" PRIu64, DevRowIdx);
 	if (DevRowIdx == (uint64_t)-1)
 	{
