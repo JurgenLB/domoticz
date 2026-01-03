@@ -5773,15 +5773,27 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				int statusIndex = atoi(lstatus.c_str());
 				if (statusIndex >= 0 && statusIndex < (int)levels.size())
 				{
-					nValue = levels[statusIndex];
-					sValue = std::to_string(levels[statusIndex]);
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status index=%d) to level %d", cmnd, statusIndex, nValue);
+					int levelValue = levels[statusIndex];
+					// Verify the level value actually exists in the selector configuration
+					std::string levelKey = std::to_string(levelValue);
+					if (statuses.find(levelKey) != statuses.end())
+					{
+						nValue = levelValue;
+						sValue = levelKey;
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Mapped command %02X (status index=%d) to level %d", cmnd, statusIndex, nValue);
+					}
+					else
+					{
+						nValue = LastLevel;
+						sValue = std::to_string(LastLevel);
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Level %d from index %d not found in selector configuration, using LastLevel=%d", levelValue, statusIndex, LastLevel);
+					}
 				}
 				else
 				{
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
-					_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range (0-%d), using using Lastlevel", statusIndex, (int)levels.size()-1);
+					_log.Debug(DEBUG_HARDWARE, "Orcon: Status index %d out of range (0-%d), using LastLevel=%d", statusIndex, (int)levels.size()-1, LastLevel);
 				}
 			}
 			else
