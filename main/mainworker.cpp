@@ -5699,26 +5699,6 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	std::string sValue;
 	std::string SourceID;
 
-	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %d, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X DestinationID = %02X%02X%02X, Command = %02X }, "
-		"tRxMessageProcessingResult: { Device = %s, IDX = %" PRIu64, ", Battery = %d, UserName = %s }",
-		pResponse->ICMND.packetlength,
-		RFX_Type_Desc(pResponse->ICMND.packettype, 1),
-		pResponse->ICMND.packettype,
-		RFX_Type_SubType_Desc(pResponse->ICMND.packettype, pResponse->ICMND.subtype),
-		pResponse->ICMND.subtype,
-		pResponse->ICMND.seqnbr,
-		pResponse->FAN2.id1,
-		pResponse->FAN2.id2,
-		pResponse->FAN2.id3,
-		pResponse->FAN2.did1,
-		pResponse->FAN2.did2,
-		pResponse->FAN2.did3,
-		pResponse->FAN2.cmnd,
-		procResult.DeviceName.c_str(),
-		procResult.DeviceRowIdx,
-		procResult.bProcessBatteryValue,
-		procResult.Username.c_str());
-
 	// For Orcon devices with selector switches, convert command code to level
 	if (pResponse->ICMND.subtype == sTypeOrcon) 
 	{
@@ -12432,7 +12412,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			lcmd.FAN2.id1 = ID2;
 			lcmd.FAN2.id1 = ID3;
 			lcmd.FAN2.id1 = ID4;
-			std::string origintID;
+			std::string SourceID;
 			// Source ID = StrParam1 from Database
 			// Retrieve destination ID from StrParam1
 			std::vector<std::vector<std::string> > result;
@@ -12442,7 +12422,7 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 			if (!result.empty())
 			{
 				int switchType = atoi(result[0][0].c_str());
-				origintID = result[0][2].c_str();
+				SourceID = result[0][2].c_str();
 				unsigned long OID;
 				std::stringstream s_strid;
 				s_strid << std::hex << SourceID;
