@@ -5699,8 +5699,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	std::string sValue;
 	std::string SourceID;
 
-	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %u, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X DestinationID = %02X%02X%02X, Command = %02X }, "
-		"tRxMessageProcessingResult: { Device = %s, IDX = %" PRIu64, " Battery = %d, UserName = %s }",
+	_log.Debug(DEBUG_HARDWARE, "Processing Message, tRBUF: { PacketLength = %d, PacketType = %s (0x%02X), SubType = %s (0x%02X), SeqNbr = %02X, ID1 = %02X, ID2 = %02X, ID3 = %02X DestinationID = %02X%02X%02X, Command = %02X }, "
+		"tRxMessageProcessingResult: { Device = %s, IDX = %" PRIu64, ", Battery = %d, UserName = %s }",
 		pResponse->ICMND.packetlength,
 		RFX_Type_Desc(pResponse->ICMND.packettype, 1),
 		pResponse->ICMND.packettype,
@@ -5837,7 +5837,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
 		// Store the source ID (remote) for reference exect when FAN answers
-		if ((pResponse->FAN2.did1 != 0) && (ID != SourceID)) {
+		if ((pResponse->FAN2.did1 != 0) && (ID != SourceID))
 		{
 			m_sql.UpdateDeviceValue("StrParam1", sourceID, std::to_string(DevRowIdx));
 			m_sql.UpdateDeviceValue("LastLevel", sValue, std::to_string(DevRowIdx));
