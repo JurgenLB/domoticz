@@ -5798,8 +5798,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			_log.Debug(DEBUG_HARDWARE, "Orcon: Command %s level %d", lstatus.c_str(), commandToLevel[lstatus]);
 		}
 		std::string answer = "speed";
-		std::string slevel = LevelToCommand[llevel];
-		if (LevelToCommand.find(llevel) != LevelToCommand.end() && slevel != answer)
+		if (LevelToCommand.find(llevel) != LevelToCommand.end() && lstatus != answer)
 		{
 					_log.Debug(DEBUG_HARDWARE, "Orcon Llevel %s for number %d", LevelToCommand[llevel].c_str(), llevel);
 					nValue = llevel;
@@ -5835,7 +5834,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		// Store the source ID (remote) for reference
 		if ((pResponse->FAN2.did1 != 0) && (ID != SourceID))
 		{
-			m_sql.UpdateDeviceValue("StrParam1", sourceID, std::to_string(DevRowIdx));
+			m_sql.UpdateDeviceValue("StrParam1", SourceID, std::to_string(DevRowIdx));
 			m_sql.UpdateDeviceValue("LastLevel", sValue, std::to_string(DevRowIdx));
 			_log.Debug(DEBUG_HARDWARE, "Orcon: Stored SourceID (RemoteID)=%s for device IDX=%" PRIu64, sourceID.c_str(), DevRowIdx);
 		}
