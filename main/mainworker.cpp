@@ -5726,14 +5726,20 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.did1, pResponse->FAN2.did2, pResponse->FAN2.did3);
 		sprintf(SzTemp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
 		_log.Debug(DEBUG_HARDWARE, "subtype Orcon detected, DestinationID (DeviceID) = %s, SourceID (RemoteID) = %s", std::string(szTmp).c_str(), std::string(SzTemp).c_str());
-		// If destination ID is not set (0), use source ID instead
-		if (pResponse->FAN2.did1 == 0)
-			sprintf(szTmp, "%02X%02X%02X", pResponse->FAN2.id1, pResponse->FAN2.id2, pResponse->FAN2.id3);
-		// Get device row to retrieve options
-		ID = szTmp;
+
+		// If destination ID is not set (0), use source ID from StrParam1
 		std::vector<std::vector<std::string>> result;
-		result = m_sql.safe_query("SELECT Name, SwitchType, Options, LastLevel, StrParam1 FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
-			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
+		if (pResponse->FAN2.did1 == 0)
+		{
+			ID = SzTemp;
+			result = m_sql.safe_query("SELECT Name, SwitchType, Options, LastLevel, StrParam1 FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
+				pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
+		}
+		else
+		{
+			ID = szTmp;
+			SourceID = SzTemp;
+		}
 
 		_log.Debug(DEBUG_HARDWARE, "Orcon: Database query for ID=%s returned %d rows", ID.c_str(), (int)result.size());
 		if (!result.empty())
@@ -5785,7 +5791,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 				}
 				if (commandToLevel.find(lstatus.c_str()) != commandToLevel.end())
 				{
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Command level %d", commandToLevel[lstatus]);
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Command %s level %d", lstatus.c_str(), commandToLevel[lstatus]);
 				}
 				if (LevelToCommand.find(llevel) != LevelToCommand.end())
 				{
@@ -5812,10 +5818,10 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	}
 	else
 	{
+		// Standard FAN structure for non-Orcon devices
 		sprintf(szTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 		ID = szTmp;
 	}
-	std::string sourceID = SzTemp;
 	_log.Debug(DEBUG_HARDWARE, "Fan: DeviceID=%s, subType=%02X, command=%02X, SignalLevel=%d SourceID=%s", ID.c_str(), subType, cmnd, SignalLevel, sourceID.c_str());
 
 	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, sValue.c_str(), procResult.DeviceName, true, procResult.Username.c_str());
@@ -5834,6 +5840,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		if (pResponse->FAN2.did1 != 0)
 		{
 			m_sql.UpdateDeviceValue("StrParam1", sourceID, std::to_string(DevRowIdx));
+			m_sql.UpdateDeviceValue("LastLevel", sValue, std::to_string(DevRowIdx));
 			_log.Debug(DEBUG_HARDWARE, "Orcon: Stored SourceID (RemoteID)=%s for device IDX=%" PRIu64, sourceID.c_str(), DevRowIdx);
 		}
 		m_sql.UpdateDeviceValue("CustomImage", 7, std::to_string(DevRowIdx));
@@ -12414,20 +12421,46 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLightInt(const std::vector<
 		// For Orcon devices, use FAN2 structure with destination ID
 		if (dSubType == sTypeOrcon)
 		{
+			uint8_t OID1;
+			uint8_t OID2;
+			uint8_t OID3;
+			uint8_t OID4;
 			lcmd.FAN2.packetlength = sizeof(lcmd.FAN2) - 1;
 			lcmd.FAN2.packettype = dType;
 			lcmd.FAN2.subtype = dSubType;
 			lcmd.FAN2.seqnbr = m_hardwaredevices[hindex]->m_SeqNr++;
-			// Source ID = Device ID (Fan ID)
 			lcmd.FAN2.id1 = ID2;
-			lcmd.FAN2.id2 = ID3;
-			lcmd.FAN2.id3 = ID4;
+			lcmd.FAN2.id1 = ID3;
+			lcmd.FAN2.id1 = ID4;
+			std::string origintID;
+			// Source ID = StrParam1 from Database
+			// Retrieve destination ID from StrParam1
+			std::vector<std::vector<std::string> > result;
+			result = m_sql.safe_query("SELECT SwitchType, Options, StrParam1, StrParam2 FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
+				pHardware->m_HwdID, deviceID.c_str(), Unit, dType, dSubType);
+
+			if (!result.empty())
+			{
+				int switchType = atoi(result[0][0].c_str());
+				origintID = result[0][2].c_str();
+				unsigned long OID;
+				std::stringstream s_strid;
+				s_strid << std::hex << SourceID;
+				s_strid >> OID;
+				OID1 = (uint8_t)((OID & 0xFF000000) >> 24);
+				OID2 = (uint8_t)((OID & 0x00FF0000) >> 16);
+				OID3 = (uint8_t)((OID & 0x0000FF00) >> 8);
+				OID4 = (uint8_t)((OID & 0x000000FF));
+
+				lcmd.FAN2.id1 = OID2;
+				lcmd.FAN2.id2 = OID3;
+				lcmd.FAN2.id3 = OID4;
+			}
 			
-			// Destination ID = same as Source ID (Fan ID) - we're sending TO the fan
+			// Destination ID = Fan ID Domoticz - we're sending TO the fan
 			lcmd.FAN2.did1 = ID2;
 			lcmd.FAN2.did2 = ID3;
 			lcmd.FAN2.did3 = ID4;
-			
 			lcmd.FAN2.filler = 0;
 			lcmd.FAN2.rssi = 12;
 			// Initialize ext fields
