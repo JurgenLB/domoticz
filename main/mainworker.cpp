@@ -5836,8 +5836,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	//Update switch for Orcon Device
 	if (pResponse->ICMND.subtype == sTypeOrcon)
 	{
-		// Store the source ID (remote) for reference
-		if (pResponse->FAN2.did1 != 0)
+		// Store the source ID (remote) for reference exect when FAN answers
+		if ((pResponse->FAN2.did1 != 0) && (ID != SourceID)) {
 		{
 			m_sql.UpdateDeviceValue("StrParam1", sourceID, std::to_string(DevRowIdx));
 			m_sql.UpdateDeviceValue("LastLevel", sValue, std::to_string(DevRowIdx));
