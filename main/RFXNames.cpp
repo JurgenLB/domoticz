@@ -974,6 +974,32 @@ const char* Media_Player_States(const _eMediaStatus Status)
 	return findTableIDSingle1(Table, Status);
 }
 
+const char* RFX_Fan_Orcon_Command_Desc(const unsigned char command)
+{
+	static const STR_TABLE_SINGLE Table[] = {
+		{ fan_Orconlow, "low" },
+		{ fan_Orconmedium, "medium" },
+		{ fan_Orconhigh, "high" },
+		{ fan_Orcontimer1, "timer 1" },
+		{ fan_Orcontimer2, "timer 2" },
+		{ fan_Orcontimer3, "timer 3" },
+		{ fan_Orconauto, "auto" },
+		{ fan_Orconaway, "away" },
+		{ fan_Orconjoin, "join" },
+		{ fan_Orconleave, "leave" },
+		{ fan_Orconstate, "state" },
+		{ fan_Orcontemp, "temp" },
+		{ fan_Orconco2, "co2" },
+		{ fan_Orconbattery, "battery" },
+		{ fan_Orconfilter, "filter" },
+		{ fan_Orconpresence, "presence" },
+		{ fan_Orconspeed, "speed" },
+		{ fan_Orconstatus, "status" },
+		{ 0, nullptr, nullptr },
+	};
+	return findTableIDSingle1(Table, command);
+}
+
 void GetLightStatus(
 	const unsigned char dType,
 	const unsigned char dSubType,

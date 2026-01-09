@@ -281,6 +281,7 @@ const char* Notification_Type_Label(int nType);
 const char* Get_Moisture_Desc(int moisture);
 const char* Get_Alert_Desc(int level);
 const char* Media_Player_States(_eMediaStatus Status);
+const char* RFX_Fan_Orcon_Command_Desc(unsigned char command);
 
 void GetLightStatus(unsigned char dType, unsigned char dSubType, _eSwitchType switchtype, unsigned char nValue, const std::string& sValue, std::string& lstatus, int& llevel, bool& bHaveDimmer,
 	int& maxDimLevel, bool& bHaveGroupCmd);
