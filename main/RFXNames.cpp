@@ -974,7 +974,7 @@ const char* Media_Player_States(const _eMediaStatus Status)
 	return findTableIDSingle1(Table, Status);
 }
 
-const char* RFX_Fan_Orcon_Command_Desc(const unsigned char command)
+const char* RFX_Fan_Orcon_Command_Desc(unsigned char command)
 {
 	static const STR_TABLE_SINGLE Table[] = {
 		{ fan_Orconlow, "low" },
@@ -988,8 +988,8 @@ const char* RFX_Fan_Orcon_Command_Desc(const unsigned char command)
 		{ fan_Orconjoin, "join" },
 		{ fan_Orconleave, "leave" },
 		{ fan_Orconstate, "state" },
-		{ fan_Orcontemp, "temp" },
-		{ fan_Orconco2, "co2" },
+		{ fan_Orcontemp, "Temperature" },
+		{ fan_Orconco2, "CO2" },
 		{ fan_Orconbattery, "battery" },
 		{ fan_Orconfilter, "filter" },
 		{ fan_Orconpresence, "presence" },
