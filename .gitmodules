@@ -20,5 +20,5 @@
 	ignore = dirty
 [submodule "extern/jwtcpp"]
 	path = extern/jwtcpp
-	url = https://github.com/Thalhammer/jwt-cpp
+	url = https://github.com/JurgenLB/jwt-cpp.git
 	ignore = dirty
