@@ -20,14 +20,7 @@
 #include "../main/Logger.h"
 
 #define JWT_DISABLE_BASE64
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4244) // conversion from 'type1' to 'type2', possible loss of data
-#endif
 #include <jwt-cpp/jwt.h>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #define SHORT_SESSION_TIMEOUT 600 // 10 minutes
 #define LONG_SESSION_TIMEOUT (30 * 86400) // 30 days
