@@ -44,6 +44,12 @@
 #include <Node.h>
 #include <Group.h>
 #include <Notification.h>
+
+// OpenZWave's Defs.h defines snprintf as sprintf_s for legacy MSVC compat,
+// which breaks std::snprintf in Boost 1.90+ headers. Modern MSVC has proper
+// snprintf support so the macro is no longer needed.
+#undef snprintf
+
 #include "../../../main/Logger.h"
 
 #include <sys/stat.h>
