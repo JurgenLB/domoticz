@@ -56,7 +56,14 @@ typedef unsigned char       BYTE;
 #include <cmath>
 
 // third-party
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4275) // non dll-interface class used as base for dll-interface class
+#endif
 #include <json/json.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "RFXtrx.h"
 
 // rarely changing project-specific
