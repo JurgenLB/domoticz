@@ -43,6 +43,8 @@ before_build:
     
     7z x WindowsLibraries.7z > NUL:
     
+    rmdir /S /Q "Windows Libraries\include\jwt-cpp" 2>NUL
+    
     cd ..
 
 build:
