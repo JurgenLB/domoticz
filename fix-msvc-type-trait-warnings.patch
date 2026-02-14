@@ -1,0 +1,37 @@
+commit 72772ffe3d38e4f7138dc0fb7ce40952d8de9caf
+Author: Copilot Agent <copilot@github.com>
+Date:   Sat Feb 14 09:53:05 2026 +0000
+
+    Fix MSVC C4244 warnings in type trait checks
+    
+    Add explicit static_cast<size_t> to integer_type parameters in
+    is_substr_start_end_index_signature and is_substr_start_index_signature
+    type traits to eliminate MSVC C4244 implicit conversion warnings.
+    
+    These warnings occur during template instantiation when integer_type
+    (int64_t) is implicitly converted to size_t for substr() calls in
+    SFINAE type trait checks.
+    
+    Fixes compilation warnings on MSVC without affecting functionality.
+
+diff --git a/include/jwt-cpp/jwt.h b/include/jwt-cpp/jwt.h
+index 5ca5b1a..497e385 100644
+--- a/include/jwt-cpp/jwt.h
++++ b/include/jwt-cpp/jwt.h
+@@ -2507,13 +2507,13 @@ namespace jwt {
+ 
+ 		template<typename string_type, typename integer_type>
+ 		using is_substr_start_end_index_signature =
+-			typename std::is_same<decltype(std::declval<string_type>().substr(std::declval<integer_type>(),
+-																			  std::declval<integer_type>())),
++			typename std::is_same<decltype(std::declval<string_type>().substr(static_cast<size_t>(std::declval<integer_type>()),
++																			  static_cast<size_t>(std::declval<integer_type>()))),
+ 								  string_type>;
+ 
+ 		template<typename string_type, typename integer_type>
+ 		using is_substr_start_index_signature =
+-			typename std::is_same<decltype(std::declval<string_type>().substr(std::declval<integer_type>())),
++			typename std::is_same<decltype(std::declval<string_type>().substr(static_cast<size_t>(std::declval<integer_type>()))),
+ 								  string_type>;
+ 
+ 		template<typename string_type>
