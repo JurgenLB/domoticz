@@ -305,7 +305,7 @@ bool reply::set_content_from_file(reply *rep, const std::string &file_path)
 	if (!file.is_open())
 		return false;
 	file.seekg(0, std::ios::end);
-	size_t fileSize = (size_t)file.tellg();
+	size_t fileSize = static_cast<size_t>(static_cast<std::streamoff>(file.tellg()));
 	if (fileSize > 0) {
 		rep->content.resize(fileSize);
 		file.seekg(0, std::ios::beg);
