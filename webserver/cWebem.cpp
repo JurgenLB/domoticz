@@ -1413,13 +1413,14 @@ namespace http {
 						// Client already validated by caller
 						_log.Debug(DEBUG_AUTH, "[JWT] Generate Token for %s using clientid %s (privKey %d)!", user.c_str(), clientid.c_str(), my.ActiveTabs);
 						std::string jwt_issuer = issuer.empty() ? m_DigistRealm : issuer;
+						auto now = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
 						auto JWT = jwt::create()
 							.set_type("JWT")
 							.set_key_id(std::to_string(my.ID))
 							.set_issuer(jwt_issuer)
-							.set_issued_at(std::chrono::system_clock::now())
-							.set_not_before(std::chrono::system_clock::now())
-							.set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{exptime})
+							.set_issued_at(now)
+							.set_not_before(now)
+							.set_expires_at(now + std::chrono::seconds{exptime})
 							.set_audience(clientid)
 							.set_subject(user)
 							.set_id(GenerateUUID());
