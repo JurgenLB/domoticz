@@ -276,7 +276,13 @@ bool fastcgi_parser::handlePHP(const server_settings &settings, const std::strin
 								ii++;
 								//2 empty lines, rest is data
 								std::string szContent;
-								size_t bpos = static_cast<size_t>(static_cast<std::streamoff>(ss.tellg()));
+								std::streamoff streamPos = ss.tellg();
+								if (streamPos < 0)
+								{
+									rep = reply::stock_reply(reply::bad_request);
+									return false;
+								}
+								size_t bpos = static_cast<size_t>(streamPos);
 								szContent = req.content.substr(bpos, ss.rdbuf()->str().size() - bpos - szBoundary.size() - 6);
 								parameters.insert(std::pair< std::string, std::string >(vName, szContent));
 								break;
