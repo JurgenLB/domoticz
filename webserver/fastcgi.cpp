@@ -279,7 +279,7 @@ bool fastcgi_parser::handlePHP(const server_settings &settings, const std::strin
 								std::streamoff streamPos = ss.tellg();
 								if (streamPos < 0)
 								{
-									rep = reply::stock_reply(reply::bad_request);
+									rep = reply::stock_reply(reply::internal_server_error);
 									return false;
 								}
 								size_t bpos = static_cast<size_t>(streamPos);
