@@ -1304,9 +1304,9 @@ namespace http {
 							_log.Debug(DEBUG_AUTH, "[JWT] This token is signed with an unsupported algorithm (%s)!", JWTalgo.c_str());
 							return 0;
 						}
-						JWTverifyer.expires_at_leeway(60);	// 60 seconds leeway time in case clocks are NOT fully (NTP) synced
-						JWTverifyer.not_before_leeway(60);
-						JWTverifyer.issued_at_leeway(60);
+						JWTverifyer.expires_at_leeway(static_cast<size_t>(60));	// 60 seconds leeway time in case clocks are NOT fully (NTP) synced
+						JWTverifyer.not_before_leeway(static_cast<size_t>(60));
+						JWTverifyer.issued_at_leeway(static_cast<size_t>(60));
 						JWTverifyer.verify(decodedJWT, ec);
 						if(ec)
 						{
@@ -1329,9 +1329,9 @@ namespace http {
 								{
 									LegacyVerifyer.allow_algorithm(jwt::algorithm::hs512{ client_password });
 								}
-								LegacyVerifyer.expires_at_leeway(60);
-								LegacyVerifyer.not_before_leeway(60);
-								LegacyVerifyer.issued_at_leeway(60);
+								LegacyVerifyer.expires_at_leeway(static_cast<size_t>(60));
+								LegacyVerifyer.not_before_leeway(static_cast<size_t>(60));
+								LegacyVerifyer.issued_at_leeway(static_cast<size_t>(60));
 								LegacyVerifyer.verify(decodedJWT, legacy_ec);
 								if (!legacy_ec)
 								{
