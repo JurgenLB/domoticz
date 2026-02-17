@@ -1280,8 +1280,7 @@ namespace http {
 						}
 
 						// Create audience set explicitly to avoid template instantiation warnings
-						std::set<std::string> audience_set;
-						audience_set.insert(clientid);
+						std::set<std::string> audience_set{clientid};
 						auto JWTverifyer = jwt::verify().with_issuer(expected_issuer).with_audience(audience_set);
 						if (JWTalgo.compare("HS256") == 0)
 						{
