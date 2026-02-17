@@ -16,21 +16,12 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
+#include <set>
 #include "../main/Helper.h"
 #include "../main/Logger.h"
 
 #define JWT_DISABLE_BASE64
-// Suppress C4244 warning from jwt-cpp library template instantiation
-// The warning occurs at jwt.h:2022 during jwt::verifier template instantiation
-// where internal set operations convert __int64 to unsigned int
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4244)
-#endif
 #include <jwt-cpp/jwt.h>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #define SHORT_SESSION_TIMEOUT 600 // 10 minutes
 #define LONG_SESSION_TIMEOUT (30 * 86400) // 30 days
@@ -1288,7 +1279,10 @@ namespace http {
 							expected_issuer = "https://" + std::string(host_header) + "/";
 						}
 
-						auto JWTverifyer = jwt::verify().with_issuer(expected_issuer).with_audience(clientid);
+						// Create audience set explicitly to avoid template instantiation warnings
+						std::set<std::string> audience_set;
+						audience_set.insert(clientid);
+						auto JWTverifyer = jwt::verify().with_issuer(expected_issuer).with_audience(audience_set);
 						if (JWTalgo.compare("HS256") == 0)
 						{
 							JWTverifyer.allow_algorithm(jwt::algorithm::hs256{ signingsecret });
@@ -1326,7 +1320,8 @@ namespace http {
 							{
 								_log.Debug(DEBUG_AUTH, "[JWT] Trying legacy verification with client_password");
 								std::error_code legacy_ec;
-								auto LegacyVerifyer = jwt::verify().with_issuer(expected_issuer).with_audience(clientid);
+								// Reuse audience set for legacy verification
+								auto LegacyVerifyer = jwt::verify().with_issuer(expected_issuer).with_audience(audience_set);
 								if (JWTalgo.compare("HS256") == 0)
 								{
 									LegacyVerifyer.allow_algorithm(jwt::algorithm::hs256{ client_password });
