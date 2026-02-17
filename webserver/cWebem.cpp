@@ -1319,7 +1319,7 @@ namespace http {
 							{
 								_log.Debug(DEBUG_AUTH, "[JWT] Trying legacy verification with client_password");
 								std::error_code legacy_ec;
-								// Reuse audience set for legacy verification
+								// Use the same audience_set from outer scope
 								auto LegacyVerifyer = jwt::verify().with_issuer(expected_issuer).with_audience(audience_set);
 								if (JWTalgo.compare("HS256") == 0)
 								{
