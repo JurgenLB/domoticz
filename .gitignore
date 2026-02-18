@@ -23,6 +23,7 @@ domoticztester
 stdafx.h.gch
 .DS_Store
 .AppleDouble
+_codeql_detected_source_root
 Config/OZW_Log.txt
 Config/zwscene.xml
 backups/
