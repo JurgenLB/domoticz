@@ -7,7 +7,18 @@
 #include <set>
 
 #define JWT_DISABLE_BASE64
+// Suppress C4244 warning from jwt-cpp library's internal template code
+// This warning occurs at jwt.h:2022 during template instantiation in picojson traits
+// It's caused by internal jwt-cpp code, not our usage. All our code uses explicit types.
+// Scoped pragma suppression is standard practice for unavoidable third-party library warnings.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4244)
+#endif
 #include <jwt-cpp/jwt.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "../webserver/Base64.h"
 
 #define GAPI_FCM_POST_URL_BASE "https://fcm.googleapis.com/v1/projects/##PROJECTID##/messages:send"
