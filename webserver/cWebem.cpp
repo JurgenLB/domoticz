@@ -21,7 +21,17 @@
 #include "../main/Logger.h"
 
 #define JWT_DISABLE_BASE64
+// Suppress C4244 warning from jwt-cpp library internal template instantiation
+// This warning occurs in jwt.h during jwt::verifier template instantiation
+// and is not caused by our code but by internal library template code
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4244)
+#endif
 #include <jwt-cpp/jwt.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #define SHORT_SESSION_TIMEOUT 600 // 10 minutes
 #define LONG_SESSION_TIMEOUT (30 * 86400) // 30 days
