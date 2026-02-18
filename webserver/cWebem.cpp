@@ -1428,8 +1428,8 @@ namespace http {
 							.set_not_before(now)
 							.set_expires_at(now + std::chrono::seconds{exptime})
 							.set_audience(audience_set)
-							.set_subject(user)
-							.set_id(GenerateUUID());
+							.set_subject(user);
+						JWT = JWT.set_id(GenerateUUID());
 						if (!jwtpayload.empty())
 						{
 							for (auto const& id : jwtpayload.getMemberNames())
