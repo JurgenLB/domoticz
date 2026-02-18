@@ -21,17 +21,7 @@
 #include "../main/Logger.h"
 
 #define JWT_DISABLE_BASE64
-// Suppress C4244 warning from jwt-cpp library internal code
-// This warning occurs in jwt.h at line 2022 during template instantiation
-// and is not caused by our code but by internal library type conversions
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4244)
-#endif
 #include <jwt-cpp/jwt.h>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 #define SHORT_SESSION_TIMEOUT 600 // 10 minutes
 #define LONG_SESSION_TIMEOUT (30 * 86400) // 30 days
@@ -1438,8 +1428,8 @@ namespace http {
 							.set_not_before(now)
 							.set_expires_at(now + std::chrono::seconds{exptime})
 							.set_audience(audience_set)
-							.set_subject(user);
-						JWT = JWT.set_id(GenerateUUID());
+							.set_subject(user)
+							.set_id(GenerateUUID());
 						if (!jwtpayload.empty())
 						{
 							for (auto const& id : jwtpayload.getMemberNames())
