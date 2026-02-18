@@ -1,59 +1,58 @@
 # Testing with JurgenLB jwt-cpp Fork
 
-This document explains how to test this PR with the JurgenLB fork of jwt-cpp without including the submodule change in the PR.
+This document explains the jwt-cpp submodule configuration for this PR.
 
-## Why?
+## Current Configuration
 
-The PR needs to use the standard Thalhammer/jwt-cpp repository, but for testing purposes, you may want to use the JurgenLB fork which contains specific fixes or changes.
+This PR uses the JurgenLB fork of jwt-cpp for testing purposes.
 
-## Setup for Local Testing
+**Committed .gitmodules**: Points to `https://github.com/JurgenLB/jwt-cpp.git`
 
-### Option 1: Temporarily Change Submodule URL
+## Why the Fork?
+
+The JurgenLB fork contains specific fixes or changes needed for testing this PR. Both local development and CI/CD systems will use this fork.
+
+## Setup
+
+To initialize the submodule with the fork:
 
 ```bash
-# Change the submodule URL to the fork
-git config submodule.extern/jwtcpp.url https://github.com/JurgenLB/jwt-cpp.git
+# Initialize and update submodules
+git submodule update --init --recursive
+```
+
+This will automatically use the JurgenLB fork as specified in `.gitmodules`.
+
+## Using the Original Repository (If Needed)
+
+If you need to temporarily test with the original Thalhammer/jwt-cpp repository:
+
+```bash
+# Override locally to use original repo
+git config submodule.extern/jwtcpp.url https://github.com/Thalhammer/jwt-cpp
 
 # Update the submodule
 git submodule sync
 git submodule update --init --recursive
-
-# Your .gitmodules file remains unchanged, only local git config is modified
 ```
 
-### Option 2: Manual .gitmodules Edit (Not Recommended for PR)
-
-If you manually edit `.gitmodules` to point to the fork, remember to:
-
-1. **DO NOT commit** the .gitmodules change
-2. Add it to .git/info/exclude temporarily:
-   ```bash
-   echo ".gitmodules" >> .git/info/exclude
-   ```
-3. Revert before committing:
-   ```bash
-   git checkout -- .gitmodules
-   ```
-
-## Reverting to Original
-
-To switch back to the original Thalhammer/jwt-cpp:
+To revert back to the fork:
 
 ```bash
-# Remove the local config override
+# Remove the local override
 git config --unset submodule.extern/jwtcpp.url
 
-# Update to use the URL from .gitmodules
+# Update to use the URL from .gitmodules (the fork)
 git submodule sync
 git submodule update --init --recursive
 ```
 
 ## For CI/CD
 
-CI/CD systems will use the URL specified in the committed `.gitmodules` file, which points to the original Thalhammer/jwt-cpp repository. This ensures the PR doesn't change external dependencies.
+CI/CD systems will use the URL specified in the committed `.gitmodules` file, which now points to `https://github.com/JurgenLB/jwt-cpp.git` for testing purposes.
 
 ## Current Status
 
-- **Committed .gitmodules**: Points to `https://github.com/Thalhammer/jwt-cpp`
-- **For testing**: Use the commands above to temporarily use `https://github.com/JurgenLB/jwt-cpp.git`
-- **PR includes**: NO submodule URL changes
+- **Committed .gitmodules**: Points to `https://github.com/JurgenLB/jwt-cpp.git` ✅
+- **CI/CD testing**: Uses the JurgenLB fork ✅
+- **Local development**: Uses the JurgenLB fork by default ✅
