@@ -329,7 +329,7 @@ bool CNotificationFCM::createFCMjwt(const std::string &FCMissuer, std::string &s
 		.set_audience(audience_set)
 		.set_issued_at(now)
 		.set_expires_at(now + std::chrono::seconds{600})
-		.set_payload_claim("scope", jwt::claim(std::string{GAPI_FCM_SCOPE}));
+		.set_payload_claim("scope", picojson::value(std::string{GAPI_FCM_SCOPE}));
 		sFCMjwt = JWT.sign(jwt::algorithm::rs256{"", m_GAPI_FCM_privkey, "", ""}, &base64url_encode);
 	}
 	catch(const std::exception& err)
