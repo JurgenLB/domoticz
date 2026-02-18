@@ -7,9 +7,9 @@
 #include <set>
 
 #define JWT_DISABLE_BASE64
-// Suppress C4244 warning from jwt-cpp library internal template instantiation
-// This warning occurs in jwt.h during jwt::verifier template instantiation
-// and is not caused by our code but by internal library template code
+// Suppress C4244 warning from jwt-cpp library internal code
+// This warning occurs in jwt.h at line 2022 during template instantiation
+// and is not caused by our code but by internal library type conversions
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4244)
