@@ -4,6 +4,7 @@
 #include "../main/Logger.h"
 #include "../main/SQLHelper.h"
 #include "../main/json_helper.h"
+#include <set>
 
 #define JWT_DISABLE_BASE64
 #include <jwt-cpp/jwt.h>
@@ -320,10 +321,12 @@ bool CNotificationFCM::createFCMjwt(const std::string &FCMissuer, std::string &s
 	try
 	{
 	auto now = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
+	// Create audience set explicitly to avoid template instantiation warnings
+	std::set<std::string> audience_set{GAPI_OAUTH2_TOKEN_URL};
 	auto JWT = jwt::create()
 		.set_type("JWT")
 		.set_issuer(FCMissuer)
-		.set_audience(GAPI_OAUTH2_TOKEN_URL)
+		.set_audience(audience_set)
 		.set_issued_at(now)
 		.set_expires_at(now + std::chrono::seconds{600})
 		.set_payload_claim("scope", jwt::claim(std::string{GAPI_FCM_SCOPE}));
