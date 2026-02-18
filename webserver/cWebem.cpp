@@ -1418,7 +1418,7 @@ namespace http {
 						_log.Debug(DEBUG_AUTH, "[JWT] Generate Token for %s using clientid %s (privKey %d)!", user.c_str(), clientid.c_str(), my.ActiveTabs);
 						std::string jwt_issuer = issuer.empty() ? m_DigistRealm : issuer;
 						auto now = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now());
-						// Create audience set explicitly to avoid template instantiation warnings
+						// Create audience set explicitly for verification (with_audience)
 						std::set<std::string> audience_set{clientid};
 						auto JWT = jwt::create()
 							.set_type("JWT")
@@ -1427,7 +1427,7 @@ namespace http {
 							.set_issued_at(now)
 							.set_not_before(now)
 							.set_expires_at(now + std::chrono::seconds{exptime})
-							.set_audience(audience_set)
+							.set_audience(clientid)
 							.set_subject(user)
 							.set_id(GenerateUUID());
 						if (!jwtpayload.empty())
