@@ -6,8 +6,19 @@
 #include "../main/json_helper.h"
 #include <set>
 
+// TEMPORARY: Suppress C4244 warning from jwt-cpp until Windows pre-built libraries are updated
+// See JWT_CPP_FIX_NEEDED.md for details on why this is necessary
+// Windows builds use WindowsLibraries.7z which contains old jwt-cpp headers
+// This pragma will be removed once the pre-built libraries are updated with fixed jwt-cpp
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4244)
+#endif
 #define JWT_DISABLE_BASE64
 #include <jwt-cpp/jwt.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "../webserver/Base64.h"
 
 #define GAPI_FCM_POST_URL_BASE "https://fcm.googleapis.com/v1/projects/##PROJECTID##/messages:send"

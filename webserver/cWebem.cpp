@@ -20,8 +20,19 @@
 #include "../main/Helper.h"
 #include "../main/Logger.h"
 
+// TEMPORARY: Suppress C4244 warning from jwt-cpp until Windows pre-built libraries are updated
+// See JWT_CPP_FIX_NEEDED.md for details on why this is necessary
+// Windows builds use WindowsLibraries.7z which contains old jwt-cpp headers
+// This pragma will be removed once the pre-built libraries are updated with fixed jwt-cpp
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4244)
+#endif
 #define JWT_DISABLE_BASE64
 #include <jwt-cpp/jwt.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #define SHORT_SESSION_TIMEOUT 600 // 10 minutes
 #define LONG_SESSION_TIMEOUT (30 * 86400) // 30 days
