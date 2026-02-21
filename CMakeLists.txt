@@ -1,5 +1,5 @@
 #set to minimum version that supports clean build
-cmake_minimum_required(VERSION 3.16.0)
+cmake_minimum_required(VERSION 3.16.0...3.31)
 
 project(domoticz)
 
@@ -53,7 +53,6 @@ option(GIT_SUBMODULE "Check submodules during build" ON)
 ### COMPILER SETTINGS
 #
 #
-CMAKE_POLICY(SET CMP0167 NEW)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -84,7 +83,6 @@ MACRO(History_GET_REVISION variable)
   IF(EXISTS ${CMAKE_SOURCE_DIR}/History.txt)
     MESSAGE(STATUS "Read ProjectRevision from History.txt")
     CMAKE_POLICY(SET CMP0007 NEW)
-    CMAKE_POLICY(SET CMP0167 NEW)
     FILE(STRINGS ${CMAKE_SOURCE_DIR}/History.txt AppVersionContent)
     LIST(GET AppVersionContent 0 AppVersionContent)
     STRING(REPLACE " " ";" AppVersionContent ${AppVersionContent})
