@@ -585,7 +585,15 @@ ENDIF(USE_BUILTIN_SQLITE)
 
 # minizip
 IF(USE_BUILTIN_MINIZIP)
-  add_subdirectory (extern/minizip EXCLUDE_FROM_ALL)
+  find_package(ZLIB REQUIRED)
+  add_library(minizip STATIC
+    ${CMAKE_SOURCE_DIR}/extern/minizip/ioapi.c
+    ${CMAKE_SOURCE_DIR}/extern/minizip/unzip.c
+    ${CMAKE_SOURCE_DIR}/extern/minizip/zip.c
+  )
+  set_target_properties(minizip PROPERTIES DEBUG_POSTFIX "d")
+  target_include_directories(minizip PUBLIC ${ZLIB_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/extern/minizip)
+  target_link_libraries(minizip ${ZLIB_LIBRARIES})
   target_link_libraries(domoticz minizip)
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/extern/minizip)
 ELSE(USE_BUILTIN_MINIZIP)
