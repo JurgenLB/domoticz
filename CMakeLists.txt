@@ -131,6 +131,27 @@ ENDIF()
 IF(USE_BUILTIN_JSONCPP AND NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/jsoncpp/CMakeLists.txt")
   message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 ENDIF()
+IF(USE_BUILTIN_JSONCPP AND EXISTS "${PROJECT_SOURCE_DIR}/extern/jsoncpp/CMakeLists.txt")
+  # Patch the jsoncpp submodule's cmake minimum policy version variable to 3.10 to avoid
+  # a CMake deprecation warning about cmake_minimum_required VERSION < 3.10.
+  # This locally modifies the submodule file (not committed); the .gitmodules 'ignore = dirty'
+  # setting ensures git ignores this local modification. The patch is idempotent.
+  file(READ "${PROJECT_SOURCE_DIR}/extern/jsoncpp/CMakeLists.txt" _jsoncpp_cmake)
+  if(_jsoncpp_cmake MATCHES "set\\(JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION \"3\\.8\\.0\"\\)")
+    string(REPLACE
+      "set(JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION \"3.8.0\")"
+      "set(JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION \"3.10\")"
+      _jsoncpp_cmake_patched "${_jsoncpp_cmake}")
+    file(WRITE "${PROJECT_SOURCE_DIR}/extern/jsoncpp/CMakeLists.txt" "${_jsoncpp_cmake_patched}")
+    unset(_jsoncpp_cmake_patched)
+  elseif(NOT _jsoncpp_cmake MATCHES "JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION \"3\\.[1-9][0-9]")
+    message(WARNING "jsoncpp: could not find expected JSONCPP_OLDEST_VALIDATED_POLICIES_VERSION "
+                    "\"3.8.0\" in extern/jsoncpp/CMakeLists.txt and version is not already >= 3.10. "
+                    "If jsoncpp was updated, check whether cmake_minimum_required still triggers "
+                    "a deprecation warning and update the patch string if needed.")
+  endif()
+  unset(_jsoncpp_cmake)
+ENDIF()
 IF(USE_BUILTIN_MINIZIP AND NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/minizip/CMakeLists.txt")
   message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
 ENDIF()
@@ -535,10 +556,7 @@ IF(USE_BUILTIN_JSONCPP)
   set(JSONCPP_WITH_TESTS OFF CACHE BOOL "Enable jsoncpp tests" FORCE)
   set(JSONCPP_WITH_POST_BUILD_UNITTEST OFF CACHE BOOL "Enable jsoncpp post build unit tests" FORCE)
   set(JSONCPP_WITH_PKGCONFIG_SUPPORT OFF CACHE BOOL "Enable jsoncpp pkgconfig support" FORCE)
-  set(_cmake_warn_deprecated_saved ${CMAKE_WARN_DEPRECATED})
-  set(CMAKE_WARN_DEPRECATED OFF)
   add_subdirectory (extern/jsoncpp ${CMAKE_CURRENT_BINARY_DIR}/jsoncpp_build EXCLUDE_FROM_ALL)
-  set(CMAKE_WARN_DEPRECATED ${_cmake_warn_deprecated_saved})
   if(NOT MSVC)
     target_compile_options(jsoncpp_static PRIVATE -Wno-deprecated-declarations)
   endif()
