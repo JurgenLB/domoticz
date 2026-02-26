@@ -18,9 +18,7 @@
 #include <cstdlib>
 #include "../main/Helper.h"
 #include "../main/Logger.h"
-
-#define JWT_DISABLE_BASE64
-#include <jwt-cpp/jwt.h>
+#include "../main/JwtHelper.h"
 
 #define SHORT_SESSION_TIMEOUT 600 // 10 minutes
 #define LONG_SESSION_TIMEOUT (30 * 86400) // 30 days
@@ -1231,20 +1229,25 @@ namespace http {
 					{
 						// We found the text JWT, now let's really check if it as a valid JWT Token
 						// Step 1: Check if the JWT has an algorithm in the header AND an issuer (iss) claim in the payload
-						auto decodedJWT = jwt::decode(sToken, &base64url_decode);
-						if(!decodedJWT.has_algorithm())
+						JwtTokenInfo jwtInfo;
+						if (!JwtDecodeToken(sToken, jwtInfo))
+						{
+							_log.Debug(DEBUG_AUTH,"[JWT] Token could not be decoded!");
+							return 0;
+						}
+						if(!jwtInfo.has_algorithm)
 						{
 							_log.Debug(DEBUG_AUTH,"[JWT] Token does not contain an algorithm!");
 							return 0;
 						}
-						if(!(decodedJWT.has_audience() && decodedJWT.has_issuer()))
+						if(!(jwtInfo.has_audience && jwtInfo.has_issuer))
 						{
 							_log.Debug(DEBUG_AUTH,"[JWT] Token does not contain an intended audience and/or issuer!");
 							return 0;
 						}
 						// Step 2: Find the audience = our ClientID (~ the Username of the Domoticz User where the userright = ClientID)
-						std::string clientid = decodedJWT.get_audience().cbegin()->data();	// Assumption: only 1 element in the AUD set!
-						std::string JWTsubject = decodedJWT.get_subject();
+						std::string clientid = jwtInfo.audience.cbegin()->data();	// Assumption: only 1 element in the AUD set!
+						std::string JWTsubject = jwtInfo.subject;
 						_log.Debug(DEBUG_AUTH,"[JWT] Token audience : %s", clientid.c_str());
 
 						std::string signingsecret;
@@ -1276,7 +1279,7 @@ namespace http {
 							return 0;
 						}
 						// Step 3: Using the (hashed :( ) password of the ClientID as our ClientSecret to verify the JWT signature
-						std::string JWTalgo = decodedJWT.get_algorithm();
+						std::string JWTalgo = jwtInfo.algorithm;
 						std::error_code ec;
 						// Build issuer for verification - use Host header
 						std::string expected_issuer = myWebem->m_DigistRealm;
@@ -1286,61 +1289,26 @@ namespace http {
 							expected_issuer = "https://" + std::string(host_header) + "/";
 						}
 
-						auto JWTverifyer = jwt::verify().with_issuer(expected_issuer).with_audience(clientid);
-						if (JWTalgo.compare("HS256") == 0)
-						{
-							JWTverifyer.allow_algorithm(jwt::algorithm::hs256{ signingsecret });
-						}
-						else if (JWTalgo.compare("HS384") == 0)
-						{
-							JWTverifyer.allow_algorithm(jwt::algorithm::hs384{ signingsecret });
-						}
-						else if (JWTalgo.compare("HS512") == 0)
-						{
-							JWTverifyer.allow_algorithm(jwt::algorithm::hs512{ signingsecret });
-						}
-						else if (JWTalgo.compare("RS256") == 0)
-						{
-							JWTverifyer.allow_algorithm(jwt::algorithm::rs256{ clientpubkey });
-						}
-						else if (JWTalgo.compare("PS256") == 0)
-						{
-							JWTverifyer.allow_algorithm(jwt::algorithm::ps256{ clientpubkey });
-						}
-						else
+						bool isHmacAlgo = (JWTalgo == "HS256" || JWTalgo == "HS384" || JWTalgo == "HS512");
+						bool isRsaAlgo = (JWTalgo == "RS256" || JWTalgo == "PS256");
+						if (!isHmacAlgo && !isRsaAlgo)
 						{
 							_log.Debug(DEBUG_AUTH, "[JWT] This token is signed with an unsupported algorithm (%s)!", JWTalgo.c_str());
 							return 0;
 						}
-						JWTverifyer.expires_at_leeway(60);	// 60 seconds leeway time in case clocks are NOT fully (NTP) synced
-						JWTverifyer.not_before_leeway(60);
-						JWTverifyer.issued_at_leeway(60);
-						JWTverifyer.verify(decodedJWT, ec);
+						if (isHmacAlgo)
+							JwtVerifyHmacToken(sToken, JWTalgo, signingsecret, expected_issuer, clientid, ec);
+						else
+							JwtVerifyRsaToken(sToken, JWTalgo, clientpubkey, expected_issuer, clientid, ec);
 						if(ec)
 						{
 							// Try legacy verification with client_password if within acceptance window
 							time_t now = mytime(nullptr);
-							if (accept_legacy_until > 0 && now < accept_legacy_until && !client_password.empty())
+							if (isHmacAlgo && accept_legacy_until > 0 && now < accept_legacy_until && !client_password.empty())
 							{
 								_log.Debug(DEBUG_AUTH, "[JWT] Trying legacy verification with client_password");
 								std::error_code legacy_ec;
-								auto LegacyVerifyer = jwt::verify().with_issuer(expected_issuer).with_audience(clientid);
-								if (JWTalgo.compare("HS256") == 0)
-								{
-									LegacyVerifyer.allow_algorithm(jwt::algorithm::hs256{ client_password });
-								}
-								else if (JWTalgo.compare("HS384") == 0)
-								{
-									LegacyVerifyer.allow_algorithm(jwt::algorithm::hs384{ client_password });
-								}
-								else if (JWTalgo.compare("HS512") == 0)
-								{
-									LegacyVerifyer.allow_algorithm(jwt::algorithm::hs512{ client_password });
-								}
-								LegacyVerifyer.expires_at_leeway(60);
-								LegacyVerifyer.not_before_leeway(60);
-								LegacyVerifyer.issued_at_leeway(60);
-								LegacyVerifyer.verify(decodedJWT, legacy_ec);
+								JwtVerifyHmacToken(sToken, JWTalgo, client_password, expected_issuer, clientid, legacy_ec);
 								if (!legacy_ec)
 								{
 									_log.Debug(DEBUG_AUTH, "[JWT] Legacy token accepted (expires %ld)", (long)accept_legacy_until);
@@ -1355,13 +1323,13 @@ namespace http {
 							return 0;
 						}
 						// Step 4: Now also check if other mandatory claims (nbf, exp, sub) have been provided
-						if(!(decodedJWT.has_expires_at() && decodedJWT.has_not_before() && decodedJWT.has_issued_at() && decodedJWT.has_subject() && decodedJWT.has_key_id()))
+						if(!(jwtInfo.has_expires_at && jwtInfo.has_not_before && jwtInfo.has_issued_at && jwtInfo.has_subject && jwtInfo.has_key_id))
 						{
 							_log.Debug(DEBUG_AUTH, "[JWT] Mandatory claims KID, NBF, EXP, IAT, SUB are missing!");
 							return 0;
 						}
 						// Step 5: See of the subject (intended user) is available and exists in the User table
-						std::string key_id = decodedJWT.get_key_id();
+						std::string key_id = jwtInfo.key_id;
 						for (const auto &my : myWebem->m_userpasswords)
 						{
 							if (my.Username == JWTsubject)
@@ -1421,51 +1389,15 @@ namespace http {
 						// Client already validated by caller
 						_log.Debug(DEBUG_AUTH, "[JWT] Generate Token for %s using clientid %s (privKey %d)!", user.c_str(), clientid.c_str(), my.ActiveTabs);
 						std::string jwt_issuer = issuer.empty() ? m_DigistRealm : issuer;
-						auto JWT = jwt::create()
-							.set_type("JWT")
-							.set_key_id(std::to_string(my.ID))
-							.set_issuer(jwt_issuer)
-							.set_issued_at(std::chrono::system_clock::now())
-							.set_not_before(std::chrono::system_clock::now())
-							.set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{exptime})
-							.set_audience(clientid)
-							.set_subject(user)
-							.set_id(GenerateUUID());
-						if (!jwtpayload.empty())
-						{
-							for (auto const& id : jwtpayload.getMemberNames())
-							{
-								if(!(jwtpayload[id].isNull()))
-								{
-									if(jwtpayload[id].isNumeric())
-									{
-										double dVal(jwtpayload[id].asDouble());
-										JWT.set_payload_claim(id, picojson::value(dVal));
-									}
-									else if(jwtpayload[id].isString())
-									{
-										std::string sVal(jwtpayload[id].asString());
-										JWT.set_payload_claim(id, picojson::value(sVal));
-									}
-									else if(jwtpayload[id].isArray())
-									{
-										std::vector<std::string> aStrList;
-										aStrList.reserve(jwtpayload[id].size());
-										std::transform(jwtpayload[id].begin(), jwtpayload[id].end(), std::back_inserter(aStrList),[](const auto& s) { return s.asString(); });
-										JWT.set_payload_claim(id, jwt::claim(aStrList.begin(), aStrList.end()));
-									}
-								}
-							}
-						}
 						if (my.ActiveTabs)
 						{
-							jwttoken = JWT.sign(jwt::algorithm::ps256{"", my.PrivKey, "", ""}, &base64url_encode);
+							jwttoken = JwtSignRsaToken(std::to_string(my.ID), jwt_issuer, user, clientid, GenerateUUID(), exptime, jwtpayload, my.PrivKey);
 						}
 						else
 						{
-							jwttoken = JWT.sign(jwt::algorithm::hs256{my.SigningSecret}, &base64url_encode);
+							jwttoken = JwtSignHmacToken(std::to_string(my.ID), jwt_issuer, user, clientid, GenerateUUID(), exptime, jwtpayload, my.SigningSecret);
 						}
-						bOk = true;
+						bOk = !jwttoken.empty();
 					}
 				}
 			}

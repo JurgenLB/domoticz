@@ -4,10 +4,7 @@
 #include "../main/Logger.h"
 #include "../main/SQLHelper.h"
 #include "../main/json_helper.h"
-
-#define JWT_DISABLE_BASE64
-#include <jwt-cpp/jwt.h>
-#include "../webserver/Base64.h"
+#include "../main/JwtHelper.h"
 
 #define GAPI_FCM_POST_URL_BASE "https://fcm.googleapis.com/v1/projects/##PROJECTID##/messages:send"
 #define GAPI_FCM_SCOPE "https://www.googleapis.com/auth/firebase.messaging"
@@ -315,23 +312,8 @@ bool CNotificationFCM::getSlAccessToken(const std::string &bearer_token, std::st
 
 bool CNotificationFCM::createFCMjwt(const std::string &FCMissuer, std::string &sFCMjwt)
 {
-	sFCMjwt.clear();
-
-	try
-	{
-	auto JWT = jwt::create()
-		.set_type("JWT")
-		.set_issuer(FCMissuer)
-		.set_audience(GAPI_OAUTH2_TOKEN_URL)
-		.set_issued_at(std::chrono::system_clock::now())
-		.set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{600})
-		.set_payload_claim("scope", jwt::claim(std::string{GAPI_FCM_SCOPE}));
-		sFCMjwt = JWT.sign(jwt::algorithm::rs256{"", m_GAPI_FCM_privkey, "", ""}, &base64url_encode);
-	}
-	catch(const std::exception& err)
-	{
-		_log.Debug(DEBUG_EVENTSYSTEM,"FCM: Exception creating FCM jwt (%s)", err.what());
-	}
-
+	sFCMjwt = JwtCreateFCMToken(FCMissuer, GAPI_OAUTH2_TOKEN_URL, GAPI_FCM_SCOPE, m_GAPI_FCM_privkey);
+	if (sFCMjwt.empty())
+		_log.Debug(DEBUG_EVENTSYSTEM,"FCM: Exception creating FCM jwt");
 	return !sFCMjwt.empty();
 }
