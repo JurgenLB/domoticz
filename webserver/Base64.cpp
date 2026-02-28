@@ -111,7 +111,7 @@ std::string base64_encode(std::string const& s) {
 	return base64_encode_buf((unsigned char const*)s.c_str(), (unsigned int)s.size());
 }
 
-std::string base64url_encode_buf(unsigned char const* bytes_to_encode, unsigned int in_len) {
+std::string base64url_encode_buf(unsigned char const* bytes_to_encode, size_t in_len) {
   std::string ret;
   int i = 0;
   unsigned char char_array_3[3];
@@ -151,7 +151,7 @@ std::string base64url_encode_buf(unsigned char const* bytes_to_encode, unsigned 
 }
 
 std::string base64url_encode(std::string const& s) {
-	return base64url_encode_buf((unsigned char const*)s.c_str(), (unsigned int)s.size());
+	return base64url_encode_buf((unsigned char const*)s.c_str(), s.size());
 }
 
 std::string base64_decode(std::string const& encoded_string) {
