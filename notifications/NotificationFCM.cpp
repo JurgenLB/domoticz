@@ -6,14 +6,7 @@
 #include "../main/json_helper.h"
 
 #define JWT_DISABLE_BASE64
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4244) // suppress C4244: integer_type to size_type conversion in jwt-cpp SFINAE traits
-#endif
 #include <jwt-cpp/jwt.h>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 #include "../webserver/Base64.h"
 
 #define GAPI_FCM_POST_URL_BASE "https://fcm.googleapis.com/v1/projects/##PROJECTID##/messages:send"
