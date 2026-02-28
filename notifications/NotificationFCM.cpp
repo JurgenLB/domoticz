@@ -55,7 +55,7 @@
 
 CNotificationFCM::CNotificationFCM() : CNotificationBase(std::string("fcm"), OPTIONS_NONE)
 {
-	m_slAccessToken_exp_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now()).time_since_epoch()).count();
+	m_slAccessToken_exp_time = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
 	SetupConfig(std::string("FCMEnabled"), &m_IsEnabled);
 	SetupConfig(std::string("FCMClientEmail"), m_FCMClientEmail);
@@ -265,7 +265,7 @@ bool CNotificationFCM::getSlAccessToken(const std::string &bearer_token, std::st
 {
 	if (!m_slAccesToken_cached.empty())
 	{
-		uint64_t cur_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now()).time_since_epoch()).count();
+		uint64_t cur_time = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 		if (cur_time < m_slAccessToken_exp_time)
 		{
 			_log.Debug(DEBUG_EVENTSYSTEM, "FCM: Using Cached Token! (Expires at %ld)", static_cast<unsigned long>(m_slAccessToken_exp_time));
@@ -296,7 +296,7 @@ bool CNotificationFCM::getSlAccessToken(const std::string &bearer_token, std::st
 				if (!root["expires_in"].empty())
 				{
 					slAccessToken_exp_seconds = (root["expires_in"].asInt() - 120);		// 2 minutes before expiration
-					m_slAccessToken_exp_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch()).count();
+					m_slAccessToken_exp_time = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 					m_slAccessToken_exp_time = m_slAccessToken_exp_time + slAccessToken_exp_seconds;
 					m_slAccesToken_cached = slAccessToken;
 				}
