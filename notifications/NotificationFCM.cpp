@@ -6,7 +6,14 @@
 #include "../main/json_helper.h"
 
 #define JWT_DISABLE_BASE64
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
 #include <jwt-cpp/traits/open-source-parsers-jsoncpp/defaults.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "../webserver/Base64.h"
 
 #define GAPI_FCM_POST_URL_BASE "https://fcm.googleapis.com/v1/projects/##PROJECTID##/messages:send"
