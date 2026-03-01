@@ -27,6 +27,7 @@ Config/OZW_Log.txt
 Config/zwscene.xml
 backups/
 build/
+jsoncpp_build/
 domocookie.txt
 domoticz.exe
 nohup.out
