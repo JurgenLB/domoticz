@@ -1087,9 +1087,7 @@
     <ClCompile Include="..\main\WindCalculation.cpp" />
     <ClCompile Include="..\notifications\NotificationBase.cpp" />
     <ClCompile Include="..\notifications\NotificationBrowser.cpp" />
-    <ClCompile Include="..\notifications\NotificationFCM.cpp">
-      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
-    </ClCompile>
+    <ClCompile Include="..\notifications\NotificationFCM.cpp" />
     <ClCompile Include="..\notifications\NotificationHelper.cpp" />
     <ClCompile Include="..\notifications\NotificationEmail.cpp" />
     <ClCompile Include="..\notifications\NotificationHTTP.cpp" />
@@ -1136,9 +1134,7 @@
     <ClCompile Include="..\webserver\Base64.cpp" />
     <ClCompile Include="..\webserver\connection.cpp" />
     <ClCompile Include="..\webserver\connection_manager.cpp" />
-    <ClCompile Include="..\webserver\cWebem.cpp">
-      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
-    </ClCompile>
+    <ClCompile Include="..\webserver\cWebem.cpp" />
     <ClCompile Include="..\webserver\fastcgi.cpp" />
     <ClCompile Include="..\webserver\mime_types.cpp" />
     <ClCompile Include="..\webserver\reply.cpp" />

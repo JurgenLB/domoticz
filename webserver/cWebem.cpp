@@ -20,7 +20,7 @@
 #include "../main/Logger.h"
 
 #define JWT_DISABLE_BASE64
-#include <jwt-cpp/jwt.h>
+#include <jwt-cpp/traits/open-source-parsers-jsoncpp/defaults.h>
 
 #define SHORT_SESSION_TIMEOUT 600 // 10 minutes
 #define LONG_SESSION_TIMEOUT (30 * 86400) // 30 days
@@ -1440,12 +1440,12 @@ namespace http {
 									if(jwtpayload[id].isNumeric())
 									{
 										double dVal(jwtpayload[id].asDouble());
-										JWT.set_payload_claim(id, picojson::value(dVal));
+										JWT.set_payload_claim(id, jwt::claim(dVal));
 									}
 									else if(jwtpayload[id].isString())
 									{
 										std::string sVal(jwtpayload[id].asString());
-										JWT.set_payload_claim(id, picojson::value(sVal));
+										JWT.set_payload_claim(id, jwt::claim(sVal));
 									}
 									else if(jwtpayload[id].isArray())
 									{
