@@ -1,0 +1,29 @@
+version: 1.0.{build}
+
+platform: x86
+
+configuration: Release
+
+build:
+  project: msbuild\domoticz.sln
+  verbosity: minimal
+
+before_build:
+  - ps: |
+      cd msbuild
+      Invoke-WebRequest `
+        -Uri "https://raw.githubusercontent.com/domoticz/win32-libraries/master/WindowsLibraries.7z" `
+        -OutFile "WindowsLibraries.7z"
+      7z x WindowsLibraries.7z | Out-Null
+      cd ..
+  - ps: |
+      $propsContent = @"
+      <Project>
+        <ItemDefinitionGroup>
+          <ClCompile>
+            <AdditionalIncludeDirectories>$env:APPVEYOR_BUILD_FOLDER\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+          </ClCompile>
+        </ItemDefinitionGroup>
+      </Project>
+      "@
+      $propsContent | Out-File -FilePath "extern\libwebem\Directory.Build.props" -Encoding utf8
