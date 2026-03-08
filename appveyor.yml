@@ -32,6 +32,7 @@ platform: x86
 
 before_build:
 - cmd: git submodule update --init --remote extern/jwtcpp
+- cmd: git submodule update --init extern/libwebem
 
 - ps: >-
     nuget install Tools.InnoSetup
