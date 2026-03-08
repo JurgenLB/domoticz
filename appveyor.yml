@@ -51,7 +51,7 @@ before_build:
     <Project>
       <ItemDefinitionGroup>
         <ClCompile>
-          <AdditionalIncludeDirectories>$env:APPVEYOR_BUILD_FOLDER\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+          <AdditionalIncludeDirectories>$env:APPVEYOR_BUILD_FOLDER\extern\jwtcpp\include;$env:APPVEYOR_BUILD_FOLDER\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
         </ClCompile>
       </ItemDefinitionGroup>
     </Project>
