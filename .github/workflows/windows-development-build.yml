@@ -50,6 +50,24 @@ jobs:
           7z x WindowsLibraries.7z | Out-Null
           cd ..
 
+      - name: Fix jwt-cpp MSVC C4244 warnings
+        shell: powershell
+        run: |
+          # Fix traits.h: use Int64 instead of Int to avoid C4244 narrowing conversion warning
+          $traitsFile = "msbuild\Windows Libraries\include\jwt-cpp\traits\open-source-parsers-jsoncpp\traits.h"
+          if (Test-Path $traitsFile) {
+            $content = [System.IO.File]::ReadAllText($traitsFile)
+            $content = $content -replace 'using integer_type = Json::Value::Int;', 'using integer_type = Json::Value::Int64;'
+            [System.IO.File]::WriteAllText($traitsFile, $content)
+          }
+          # Fix jwt.h: explicit cast in as_date() to avoid C4244 double-to-__time64_t conversion warning
+          $jwtFile = "msbuild\Windows Libraries\include\jwt-cpp\jwt.h"
+          if (Test-Path $jwtFile) {
+            $content = [System.IO.File]::ReadAllText($jwtFile)
+            $content = $content -replace 'return system_clock::from_time_t\(std::round\(as_number\(\)\)\);', 'return system_clock::from_time_t(static_cast<std::time_t>(std::round(as_number())));'
+            [System.IO.File]::WriteAllText($jwtFile, $content)
+          }
+
       - name: Configure libwebem build paths
         shell: powershell
         run: |
