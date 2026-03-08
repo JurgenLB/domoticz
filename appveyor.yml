@@ -46,7 +46,7 @@ before_build:
     
     cd ..
 
-ps: |
+- ps: |
     $propsContent = @"
     <Project>
       <ItemDefinitionGroup>
