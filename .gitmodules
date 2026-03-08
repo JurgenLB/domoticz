@@ -15,7 +15,3 @@
 	path = extern/sqlite-amalgamation
 	url = https://github.com/algoritnl/sqlite-amalgamation.git
 	ignore = dirty
-[submodule "extern/libwebem"]
-	path = extern/libwebem
-	url = https://github.com/domoticz/libwebem.git
-	branch = master
