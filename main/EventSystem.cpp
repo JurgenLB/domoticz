@@ -17,7 +17,7 @@
 #include "../notifications/NotificationHelper.h"
 #include "WebServer.h"
 #include "../main/WebServerHelper.h"
-#include "../webserver/cWebem.h"
+#include <libwebem/cWebem.h>
 #include "../main/json_helper.h"
 #include "../main/NotificationSystem.h"
 #include "../main/LuaTable.h"
@@ -144,7 +144,11 @@ CEventSystem::CEventSystem()
 
 CEventSystem::~CEventSystem()
 {
-	StopEventSystem();
+	// Pass false: never call Py_EndInterpreter from the destructor.
+	// Py_EndInterpreter blocks if any Python thread still holds the GIL
+	// (e.g. a plugin callback in flight during shutdown), causing a hang.
+	// The OS releases all Python resources when the process exits.
+	StopEventSystem(false);
 }
 
 void CEventSystem::StartEventSystem()
@@ -339,6 +343,7 @@ void CEventSystem::Do_Work()
 
 	localtime_r(&atime, &ltime);
 	int _LastMinute = ltime.tm_min;
+	m_LastRefreshDay = ltime.tm_mday;
 
 	_log.Log(LOG_STATUS, "EventSystem: Started");
 	while (true)
@@ -357,6 +362,11 @@ void CEventSystem::Do_Work()
 
 		if (ltime.tm_sec % 12 == 0) {
 			m_mainworker.HeartbeatUpdate("EventSystem");
+		}
+		if (ltime.tm_mday != m_LastRefreshDay)
+		{
+			m_LastRefreshDay = ltime.tm_mday;
+			RefreshCounterJsonMaps();
 		}
 		if (ltime.tm_min != _LastMinute)
 		{
@@ -443,6 +453,37 @@ void CEventSystem::UpdateJsonMap(_tDeviceStatus &item, const uint64_t ulDevID)
 				}
 			}
 			index++;
+		}
+	}
+}
+
+void CEventSystem::RefreshCounterJsonMaps()
+{
+	if (m_sql.m_bDisableDzVentsSystem)
+		return;
+
+	// Find the indices of daily counter fields in the JsonMap array
+	std::vector<int> counterTodayIndices;
+	for (int i = 0; JsonMap[i].szOriginal != nullptr; i++)
+	{
+		if (strcmp(JsonMap[i].szOriginal, "CounterToday") == 0 || strcmp(JsonMap[i].szOriginal, "CounterDelivToday") == 0)
+			counterTodayIndices.push_back(i);
+	}
+	if (counterTodayIndices.empty())
+		return;
+
+	_log.Debug(DEBUG_EVENTSYSTEM, "EventSystem: Refreshing counter device JsonMaps for new day");
+
+	boost::unique_lock<boost::shared_mutex> devicestatesMutexLock(m_devicestatesMutex);
+	for (auto& state : m_devicestates)
+	{
+		for (int idx : counterTodayIndices)
+		{
+			if (state.second.JsonMapString.find(idx) != state.second.JsonMapString.end())
+			{
+				UpdateJsonMap(state.second, state.first);
+				break;
+			}
 		}
 	}
 }
@@ -706,6 +747,66 @@ void CEventSystem::GetCurrentMeasurementStates()
 			{
 				temp = static_cast<float>(atof(splitresults[0].c_str()));
 				isTemp = true;
+			}
+			break;
+		case pTypeThermostat6:
+			// Thermostat 6 combines temperature + setpoint (+ optional humidity/baro)
+			// sValue formats:
+			//   sTypeThermostat6Temp (0x00): "temp;setpoint"
+			//   sTypeThermostat6TempHum (0x01): "temp;setpoint;humidity;humidity_status"
+			//   sTypeThermostat6TempBaro (0x02): "temp;setpoint;barometer;forecast"
+			//   sTypeThermostat6TempHumBaro (0x03): "temp;setpoint;humidity;humidity_status;barometer;forecast"
+			if (sitem.subType == sTypeThermostat6Temp)
+			{
+				if (splitresults.size() >= 2)
+				{
+					temp = static_cast<float>(atof(splitresults[0].c_str()));
+					utilityval = static_cast<float>(atof(splitresults[1].c_str())); // setpoint
+					isTemp = true;
+					isUtility = true;
+				}
+			}
+			else if (sitem.subType == sTypeThermostat6TempHum)
+			{
+				if (splitresults.size() >= 4)
+				{
+					temp = static_cast<float>(atof(splitresults[0].c_str()));
+					utilityval = static_cast<float>(atof(splitresults[1].c_str())); // setpoint
+					humidity = ground(atof(splitresults[2].c_str()));
+					dewpoint = (float)CalculateDewPoint(temp, humidity);
+					isTemp = true;
+					isUtility = true;
+					isHum = true;
+					isDew = true;
+				}
+			}
+			else if (sitem.subType == sTypeThermostat6TempBaro)
+			{
+				if (splitresults.size() >= 4)
+				{
+					temp = static_cast<float>(atof(splitresults[0].c_str()));
+					utilityval = static_cast<float>(atof(splitresults[1].c_str())); // setpoint
+					barometer = static_cast<float>(atof(splitresults[2].c_str()));
+					isTemp = true;
+					isUtility = true;
+					isBaro = true;
+				}
+			}
+			else if (sitem.subType == sTypeThermostat6TempHumBaro)
+			{
+				if (splitresults.size() >= 6)
+				{
+					temp = static_cast<float>(atof(splitresults[0].c_str()));
+					utilityval = static_cast<float>(atof(splitresults[1].c_str())); // setpoint
+					humidity = ground(atof(splitresults[2].c_str()));
+					barometer = static_cast<float>(atof(splitresults[4].c_str()));
+					dewpoint = (float)CalculateDewPoint(temp, humidity);
+					isTemp = true;
+					isUtility = true;
+					isHum = true;
+					isBaro = true;
+					isDew = true;
+				}
 			}
 			break;
 		case pTypeHUM:
@@ -4141,6 +4242,7 @@ namespace http {
 		{
 			std::string ID;
 			std::string eventstatus;
+			std::string folderid;
 		};
 
 		void CWebServer::Cmd_Events(WebEmSession & session, const request& req, Json::Value &root)
@@ -4166,7 +4268,7 @@ namespace http {
 				root["interpreters"] = "Blockly:Lua:dzVents";
 #endif
 
-				result = m_sql.safe_query("SELECT ID, Name, XMLStatement, Status FROM EventMaster ORDER BY ID ASC");
+				result = m_sql.safe_query("SELECT ID, Name, XMLStatement, Status, FolderID FROM EventMaster ORDER BY ID ASC");
 				if (!result.empty())
 				{
 					std::map<std::string, _tSortedEventsInt> _levents;
@@ -4175,9 +4277,11 @@ namespace http {
 						std::string ID = sd[0];
 						std::string Name = sd[1];
 						std::string eventStatus = sd[3];
+						std::string folderID = sd[4];
 						_tSortedEventsInt eitem;
 						eitem.ID = ID;
 						eitem.eventstatus = eventStatus;
+						eitem.folderid = folderID;
 						if (_levents.find(Name) != _levents.end())
 						{
 							//Duplicate event name, add the ID
@@ -4194,6 +4298,21 @@ namespace http {
 						root["result"][ii]["name"] = event.first;
 						root["result"][ii]["id"] = event.second.ID;
 						root["result"][ii]["eventstatus"] = event.second.eventstatus;
+						root["result"][ii]["folderid"] = event.second.folderid;
+						ii++;
+					}
+				}
+
+				// Also return folders
+				result = m_sql.safe_query("SELECT ID, Name, [Order] FROM EventFolder ORDER BY [Order] ASC, Name ASC");
+				if (!result.empty())
+				{
+					int ii = 0;
+					for (const auto &sd : result)
+					{
+						root["folders"][ii]["id"] = sd[0];
+						root["folders"][ii]["name"] = sd[1];
+						root["folders"][ii]["order"] = atoi(sd[2].c_str());
 						ii++;
 					}
 				}
@@ -4407,6 +4526,53 @@ namespace http {
 				root["title"] = "StoreRecentEvents";
 				std::string recent_list = request::findValue(&req, "recent_list");
 				m_sql.UpdatePreferencesVar("events_recent_list", recent_list);
+				root["status"] = "OK";
+			}
+			else if (cparam == "create_folder")
+			{
+				root["title"] = "CreateEventFolder";
+				std::string foldername = HTMLSanitizer::Sanitize(request::findValue(&req, "name"));
+				if (foldername.empty())
+					return;
+				m_sql.safe_query("INSERT INTO EventFolder (Name, [Order]) VALUES ('%q', 0)", foldername.c_str());
+				root["status"] = "OK";
+			}
+			else if (cparam == "rename_folder")
+			{
+				root["title"] = "RenameEventFolder";
+				std::string idx = request::findValue(&req, "folder");
+				if (idx.empty())
+					return;
+				std::string foldername = HTMLSanitizer::Sanitize(request::findValue(&req, "name"));
+				if (foldername.empty())
+					return;
+				m_sql.safe_query("UPDATE EventFolder SET Name='%q' WHERE (ID == '%q')", foldername.c_str(), idx.c_str());
+				root["status"] = "OK";
+			}
+			else if (cparam == "delete_folder")
+			{
+				root["title"] = "DeleteEventFolder";
+				std::string idx = request::findValue(&req, "folder");
+				if (idx.empty())
+					return;
+				// Delete all events in the folder
+				result = m_sql.safe_query("SELECT ID FROM EventMaster WHERE (FolderID == '%q')", idx.c_str());
+				for (const auto &sd : result)
+				{
+					m_sql.DeleteEvent(sd[0]);
+				}
+				m_sql.safe_query("DELETE FROM EventFolder WHERE (ID == '%q')", idx.c_str());
+				m_mainworker.m_eventsystem.LoadEvents();
+				root["status"] = "OK";
+			}
+			else if (cparam == "move_event")
+			{
+				root["title"] = "MoveEvent";
+				std::string idx = request::findValue(&req, "event");
+				if (idx.empty())
+					return;
+				std::string folderid = request::findValue(&req, "folder");
+				m_sql.safe_query("UPDATE EventMaster SET FolderID='%q' WHERE (ID == '%q')", folderid.c_str(), idx.c_str());
 				root["status"] = "OK";
 			}
 			else if (cparam == "currentstates")

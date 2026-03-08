@@ -32,7 +32,7 @@ platform: x86
 
 before_build:
 - cmd: git submodule update --init --remote extern/jwtcpp
-- cmd: git clone https://github.com/domoticz/libwebem.git extern/libwebem
+- cmd: git submodule update --init extern/libwebem
 
 - ps: >-
     nuget install Tools.InnoSetup
@@ -79,14 +79,13 @@ artifacts:
 
 test: off
 
-deploy:
-- provider: FTP
-  protocol: sftp
-  host: $(FTP_HOST)
-  username: $(FTP_USER)
-  password: $(FTP_PASSWORD)
-  folder: beta
-  on:
-    APPVEYOR_REPO_NAME: domoticz/domoticz
-    APPVEYOR_REPO_BRANCH: development
-
+#deploy:
+#- provider: FTP
+#  protocol: sftp
+#  host: $(FTP_HOST)
+#  username: $(FTP_USER)
+#  password: $(FTP_PASSWORD)
+#  folder: beta
+#  on:
+#    APPVEYOR_REPO_NAME: domoticz/domoticz
+#    APPVEYOR_REPO_BRANCH: development

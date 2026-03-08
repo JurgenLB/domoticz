@@ -489,6 +489,9 @@
     <Filter Include="Devices\Meteorologisk">
       <UniqueIdentifier>{54d3120a-1deb-4a3c-959d-7f89f33a1fd3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Devices\OpenMeteo">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Plugin Framework">
       <UniqueIdentifier>{343e8e43-c7ac-4839-a9a2-6b5f78f95b6d}</UniqueIdentifier>
     </Filter>
@@ -1453,36 +1456,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\webserver\Base64.h">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\connection.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\connection_manager.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\cWebem.h">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\mime_types.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\reply.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\request.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\request_handler.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\request_parser.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\server.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
     <ClInclude Include="..\tcpserver\TCPClient.h">
       <Filter>TCPServer</Filter>
     </ClInclude>
@@ -1515,15 +1488,6 @@
     </ClInclude>
     <ClInclude Include="..\httpclient\UrlEncode.h">
       <Filter>HTTPClient</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\header.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\server_settings.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\utf.hpp">
-      <Filter>Webserver</Filter>
     </ClInclude>
     <ClInclude Include="..\main\appversion.h">
       <Filter>Header Files</Filter>
@@ -1804,9 +1768,6 @@
     <ClInclude Include="..\hardware\P1MeterTCP.h">
       <Filter>Devices\P1 Smart Meter</Filter>
     </ClInclude>
-    <ClInclude Include="..\webserver\GZipHelper.h">
-      <Filter>Webserver</Filter>
-    </ClInclude>
     <ClInclude Include="..\hardware\Kodi.h">
       <Filter>Devices\Kodi</Filter>
     </ClInclude>
@@ -1887,9 +1848,6 @@
     </ClInclude>
     <ClInclude Include="..\hardware\AtagOne.h">
       <Filter>Devices\AtagOne</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\fastcgi.hpp">
-      <Filter>Webserver</Filter>
     </ClInclude>
     <ClInclude Include="..\hardware\Sterbox.h">
       <Filter>Devices\Sterbox</Filter>
@@ -2014,9 +1972,6 @@
     <ClInclude Include="..\notifications\NotificationBrowser.h">
       <Filter>Notifications</Filter>
     </ClInclude>
-    <ClInclude Include="..\webserver\Websockets.hpp">
-      <Filter>Webserver</Filter>
-    </ClInclude>
     <ClInclude Include="..\hardware\eHouseTCP.h">
       <Filter>Devices\eHouse</Filter>
     </ClInclude>
@@ -2052,9 +2007,6 @@
     </ClInclude>
     <ClInclude Include="..\hardware\DenkoviDevices.h">
       <Filter>Devices\Denkovi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\webserver\WebsocketHandler.h">
-      <Filter>Webserver</Filter>
     </ClInclude>
     <ClInclude Include="..\tinyxpath\xpath_processor.h">
       <Filter>XML</Filter>
@@ -2173,6 +2125,9 @@
     <ClInclude Include="..\hardware\Meteorologisk.h">
       <Filter>Devices\Meteorologisk</Filter>
     </ClInclude>
+    <ClInclude Include="..\hardware\OpenMeteo.h">
+      <Filter>Devices\OpenMeteo</Filter>
+    </ClInclude>
     <ClInclude Include="..\hardware\serial\impl\win.h">
       <Filter>Devices\SerialTCP\Serial\impl</Filter>
     </ClInclude>
@@ -2180,6 +2135,9 @@
       <Filter>Devices\eVehicles</Filter>
     </ClInclude>
     <ClInclude Include="..\hardware\plugins\PythonObjects.h">
+      <Filter>Plugin Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hardware\plugins\PythonPluginUtils.h">
       <Filter>Plugin Framework</Filter>
     </ClInclude>
     <ClInclude Include="..\hardware\plugins\PythonObjectEx.h">
@@ -2272,35 +2230,14 @@
     <ClInclude Include="..\main\Helper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="..\main\DomoticzWebsocketHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\main\WebServerLoggerAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\webserver\Base64.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\connection.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\connection_manager.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\cWebem.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\mime_types.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\reply.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\request_handler.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\request_parser.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\server.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
     <ClCompile Include="..\tcpserver\TCPClient.cpp">
       <Filter>TCPServer</Filter>
     </ClCompile>
@@ -2730,9 +2667,6 @@
     <ClCompile Include="..\hardware\AtagOne.cpp">
       <Filter>Devices\AtagOne</Filter>
     </ClCompile>
-    <ClCompile Include="..\webserver\fastcgi.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
     <ClCompile Include="..\hardware\Sterbox.cpp">
       <Filter>Devices\Sterbox</Filter>
     </ClCompile>
@@ -2853,9 +2787,6 @@
     <ClCompile Include="..\notifications\NotificationBrowser.cpp">
       <Filter>Notifications</Filter>
     </ClCompile>
-    <ClCompile Include="..\webserver\Websockets.cpp">
-      <Filter>Webserver</Filter>
-    </ClCompile>
     <ClCompile Include="..\hardware\eHouseTCP.cpp">
       <Filter>Devices\eHouse</Filter>
     </ClCompile>
@@ -2888,9 +2819,6 @@
     </ClCompile>
     <ClCompile Include="..\hardware\DenkoviDevices.cpp">
       <Filter>Devices\Denkovi</Filter>
-    </ClCompile>
-    <ClCompile Include="..\webserver\WebsocketHandler.cpp">
-      <Filter>Webserver</Filter>
     </ClCompile>
     <ClCompile Include="..\hardware\TTNMQTT.cpp">
       <Filter>Devices\The Things Network</Filter>
@@ -2988,6 +2916,9 @@
     <ClCompile Include="..\hardware\Meteorologisk.cpp">
       <Filter>Devices\Meteorologisk</Filter>
     </ClCompile>
+    <ClCompile Include="..\hardware\OpenMeteo.cpp">
+      <Filter>Devices\OpenMeteo</Filter>
+    </ClCompile>
     <ClCompile Include="..\hardware\eVehicles\TestcarApi.cpp">
       <Filter>Devices\eVehicles</Filter>
     </ClCompile>
@@ -3080,6 +3011,9 @@
     </ClCompile>
     <ClCompile Include="..\main\Helper.cpp">
       <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\DomoticzWebsocketHandler.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

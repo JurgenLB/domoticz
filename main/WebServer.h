@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include "../webserver/cWebem.h"
-#include "../webserver/request.hpp"
-#include "../webserver/session_store.hpp"
+#include <libwebem/cWebem.h>
+#include <libwebem/request.h>
+#include <libwebem/session_store.h>
 #include "../iamserver/iam_settings.hpp"
 
 struct lua_State;
@@ -106,6 +106,7 @@ class CWebServer : public session_store, public std::enable_shared_from_this<CWe
 	// SessionStore interface
 	WebEmStoredSession GetSession(const std::string &sessionId) override;
 	void StoreSession(const WebEmStoredSession & session) override;
+	void RenewSessionExpiration(const std::string & sessionId, time_t expires) override;
 	void RemoveSession(const std::string & sessionId) override;
 	void CleanSessions() override;
 	void RemoveUsersSessions(const std::string& username, const WebEmSession & exceptSession);
@@ -201,6 +202,8 @@ private:
 	void Cmd_ChangePlanDeviceOrder(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_GetVersion(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_GetAuth(WebEmSession & session, const request& req, Json::Value &root);
+	void Cmd_GetSetupRequired(WebEmSession & session, const request& req, Json::Value &root);
+	void Cmd_SetupWizardCreateAdmin(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_GetMyProfile(WebEmSession& session, const request& req, Json::Value& root);
 	void Cmd_UpdateMyProfile(WebEmSession& session, const request& req, Json::Value& root);
 	void Cmd_GetUptime(WebEmSession & session, const request& req, Json::Value &root);

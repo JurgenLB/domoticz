@@ -10,8 +10,8 @@
 #include "../main/RFXtrx.h"
 #include "../main/SQLHelper.h"
 #include "../main/WebServer.h"
-#include "../webserver/Base64.h"
-#include "../webserver/cWebem.h"
+#include <libwebem/Base64.h>
+#include <libwebem/cWebem.h>
 #include <inttypes.h>
 
 CMQTTPush::CMQTTPush() : MQTT(0, "", 0, "", "", "", 2, 0, std::string("Domoticz-MQTT-Push") + GenerateUUID(), true)
@@ -20,6 +20,11 @@ CMQTTPush::CMQTTPush() : MQTT(0, "", 0, "", "", "", 2, 0, std::string("Domoticz-
 	m_Name = "MQTTPush";
 	m_PushType = PushType::PUSHTYPE_MQTT;
 	m_bLinkActive = false;
+}
+
+CMQTTPush::~CMQTTPush()
+{
+	Stop();
 }
 
 bool CMQTTPush::Start()

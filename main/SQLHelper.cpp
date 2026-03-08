@@ -2,6 +2,7 @@
 #include "SQLHelper.h"
 #include <iostream>	 /* standard I/O functions						 */
 #include <string>
+#include <cstdlib>
 #ifdef WIN32
 #include <tchar.h>
 #else
@@ -21,8 +22,8 @@
 #include "../smtpclient/SMTPClient.h"
 #include "../push/InfluxPush.h"
 #include "WebServerHelper.h"
-#include "../webserver/Base64.h"
-#include "../webserver/cWebem.h"
+#include <libwebem/Base64.h>
+#include <libwebem/cWebem.h>
 #include "clx_unzip.h"
 #include "../notifications/NotificationHelper.h"
 #include "IFTTT.h"
@@ -41,7 +42,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-#define DB_VERSION 173
+#define DB_VERSION 175
 
 #define DEFAULT_ADMINUSER "admin"
 #define DEFAULT_ADMINPWD "domoticz"
@@ -277,7 +278,8 @@ constexpr auto sqlCreateUsers =
 "[MFAsecret] VARCHAR(200) NULL, "
 "[Rights] INTEGER DEFAULT 255, "
 "[TabsEnabled] INTEGER DEFAULT 255, "
-"[RemoteSharing] INTEGER DEFAULT 0);";
+"[RemoteSharing] INTEGER DEFAULT 0, "
+"[Passkeys] TEXT DEFAULT NULL);";
 
 constexpr auto sqlCreateMeter =
 "CREATE TABLE IF NOT EXISTS [Meter] ("
@@ -450,7 +452,14 @@ constexpr auto sqlCreateEventMaster =
 "[Interpreter] VARCHAR(10) DEFAULT 'Blockly', "
 "[Type] VARCHAR(10) DEFAULT 'All', "
 "[XMLStatement] TEXT NOT NULL, "
-"[Status] INTEGER DEFAULT 0);";
+"[Status] INTEGER DEFAULT 0, "
+"[FolderID] INTEGER DEFAULT 0);";
+
+constexpr auto sqlCreateEventFolder =
+"CREATE TABLE IF NOT EXISTS [EventFolder] ("
+"[ID] INTEGER PRIMARY KEY, "
+"[Name] VARCHAR(200) NOT NULL, "
+"[Order] INTEGER DEFAULT 0);";
 
 constexpr auto sqlCreateEventRules =
 "CREATE TABLE IF NOT EXISTS [EventRules] ("
@@ -737,6 +746,7 @@ bool CSQLHelper::OpenDatabase()
 	query(sqlCreateSharedDevicesTrigger);
 	query(sqlCreateEventMaster);
 	query(sqlCreateEventRules);
+	query(sqlCreateEventFolder);
 	query(sqlCreateWOLNodes);
 	query(sqlCreatePercentage);
 	query(sqlCreatePercentage_Calendar);
@@ -3292,6 +3302,41 @@ bool CSQLHelper::OpenDatabase()
 		{
 			// Add Passkeys column to Users table for WebAuthn/passkey support
 			query("ALTER TABLE Users ADD COLUMN [Passkeys] TEXT DEFAULT NULL");
+
+			// Add forecast field to existing Thermostat 6 devices with barometer
+			// Since this is a new field being added in this version, all existing devices
+			// are guaranteed not to have it yet, so we can simply append it
+
+			result = safe_query("SELECT ID, sValue FROM DeviceStatus WHERE (Type=%d) AND (SubType IN (%d, %d))",
+				pTypeThermostat6, sTypeThermostat6TempBaro, sTypeThermostat6TempHumBaro);
+
+			if (!result.empty())
+			{
+				for (const auto& sd : result)
+				{
+					std::string deviceID = sd[0];
+					std::string sValue = sd[1];
+
+					// Append forecast field with default value 0
+					std::string newSValue = sValue + ";0";
+					safe_query("UPDATE DeviceStatus SET sValue='%q' WHERE (ID=%q)", newSValue.c_str(), deviceID.c_str());
+				}
+			}
+		}
+		if (dbversion < 174)
+		{
+			if (!DoesColumnExistsInTable("FolderID", "EventMaster"))
+			{
+				query("ALTER TABLE EventMaster ADD COLUMN [FolderID] INTEGER DEFAULT 0");
+			}
+		}
+		if (dbversion < 175)
+		{
+			// Fix for fresh installs that were missing the Passkeys column (GitHub #6601)
+			if (!DoesColumnExistsInTable("Passkeys", "Users"))
+			{
+				query("ALTER TABLE Users ADD COLUMN [Passkeys] TEXT DEFAULT NULL");
+			}
 		}
 	}
 	else if (bNewInstall)
@@ -3300,11 +3345,41 @@ bool CSQLHelper::OpenDatabase()
 		query("INSERT INTO Plans (Name) VALUES ('$Hidden Devices')");
 		// Add hardware for internal use
 		safe_query("INSERT INTO Hardware (Name, Enabled, Type, Address, Port, Username, Password, Mode1, Mode2, Mode3, Mode4, Mode5, Mode6) VALUES ('Domoticz Internal',1, %d,'',1,'','',0,0,0,0,0,0)", HTYPE_DomoticzInternal);
-		safe_query("INSERT INTO Users (Active, Username, Password, Rights, TabsEnabled) VALUES (1, '%s', '%s', %d, 0x1F)", base64_encode(DEFAULT_ADMINUSER).c_str(), GenerateMD5Hash(DEFAULT_ADMINPWD).c_str(), http::server::URIGHTS_ADMIN);
+		// Admin user is no longer created here - created via setup wizard or Docker env vars
 		safe_query("INSERT INTO Applications (Active, Public, Applicationname) VALUES (1, 1, 'domoticzUI')");
 		safe_query("INSERT INTO Applications (Active, Public, Applicationname) VALUES (0, 0, 'domoticzMobileApp')");
 	}
 	UpdatePreferencesVar("DB_Version", DB_VERSION);
+
+	// Check for Docker environment variable provisioning
+	// Only applies when no admin user exists (fresh install or admin was deleted)
+	{
+		auto adminResult = safe_query("SELECT ID FROM Users WHERE Rights=%d", http::server::URIGHTS_ADMIN);
+		if (adminResult.empty())
+		{
+			const char *envPassword = std::getenv("DOMOTICZ_ADMIN_PASSWORD");
+			if (envPassword != nullptr && strlen(envPassword) > 0)
+			{
+				const char *envUsername = std::getenv("DOMOTICZ_ADMIN_USERNAME");
+				std::string username = (envUsername != nullptr && strlen(envUsername) > 0) ? envUsername : DEFAULT_ADMINUSER;
+				std::string password = envPassword;
+
+				safe_query("INSERT INTO Users (Active, Username, Password, Rights, TabsEnabled) VALUES (1, '%q', '%q', %d, 0x1F)",
+					base64_encode(username).c_str(), GenerateMD5Hash(password).c_str(), http::server::URIGHTS_ADMIN);
+
+				_log.Log(LOG_STATUS, "Admin user '%s' created from environment variables", username.c_str());
+			}
+		}
+		else
+		{
+			// Admin already exists - ignore env vars if set
+			const char *envPassword = std::getenv("DOMOTICZ_ADMIN_PASSWORD");
+			if (envPassword != nullptr && strlen(envPassword) > 0)
+			{
+				_log.Log(LOG_STATUS, "Admin account already exists, ignoring DOMOTICZ_ADMIN_PASSWORD environment variable");
+			}
+		}
+	}
 
 	//Check preferences table for extreme sized sValues
 	result = safe_query("SELECT Key FROM Preferences WHERE LENGTH(sValue) > 2500");
@@ -4283,7 +4358,7 @@ void CSQLHelper::Do_Work()
 
 		for (const auto &itt : _items2do)
 		{
-			_log.Debug(DEBUG_NORM, "SQLH: Do Task ItemType: %d Cmd: %s Value: %s", itt._ItemType, itt._command.c_str(), itt._sValue.c_str());
+			_log.Debug(DEBUG_SQL, "SQLH: Do Task ItemType: %d Cmd: %s Value: %s", itt._ItemType, itt._command.c_str(), itt._sValue.c_str());
 
 			if (itt._ItemType == TITEM_SWITCHCMD)
 			{
@@ -4791,9 +4866,9 @@ uint64_t CSQLHelper::CreateDevice(const int HardwareID, const int SensorType, co
 		else if (SensorSubType == sTypeThermostat6TempHum)
 			sValue = "20.0;20.0;50;1";
 		else if (SensorSubType == sTypeThermostat6TempBaro)
-			sValue = "20.0;20.0;1013";
+			sValue = "20.0;20.0;1013;0";
 		else if (SensorSubType == sTypeThermostat6TempHumBaro)
-			sValue = "20.0;20.0;50;1;1013";
+			sValue = "20.0;20.0;50;1;1013;0";
 
 		DeviceRowIdx = UpdateValue(HardwareID, 0, ID, 1, SensorType, SensorSubType, 12, 255, 0, sValue.c_str(), devname, true, userName.c_str());
 		break;
@@ -5466,7 +5541,7 @@ uint64_t CSQLHelper::UpdateValueInt(
 		//TODO: Plugins should perhaps be blocked from implicitly adding a device by update? It's most likely a bug due to updating a removed device..
 		if (pHardware != nullptr && pHardware->HwdType == HTYPE_PythonPlugin)
 		{
-			_log.Debug(DEBUG_NORM, "CSQLHelper::UpdateValueInt: Notifying plugin %u about creation of device %u", HardwareID, unit);
+			_log.Debug(DEBUG_SQL, "CSQLHelper::UpdateValueInt: Notifying plugin %u about creation of device %u", HardwareID, unit);
 			Plugins::CPlugin* pPlugin = (Plugins::CPlugin*)pHardware;
 			pPlugin->DeviceAdded(ID, unit);
 		}
@@ -5882,7 +5957,7 @@ uint64_t CSQLHelper::UpdateValueInt(
 		break;
 	}
 
-	_log.Debug(DEBUG_NORM, "SQLH UpdateValueInt %s HwID:%d  DevID:%s Type:%d  sType:%d nValue:%d sValue:%s IDX: %" PRIu64, devname.c_str(), HardwareID, ID, devType, subType, nValue, sValue, ulID);
+	_log.Debug(DEBUG_SQL, "SQLH UpdateValueInt %s HwID:%d  DevID:%s Type:%d  sType:%d nValue:%d sValue:%s IDX: %" PRIu64, devname.c_str(), HardwareID, ID, devType, subType, nValue, sValue, ulID);
 
 	if (bDeviceUsed)
 	{
@@ -8402,7 +8477,7 @@ void CSQLHelper::DeleteDevices(const std::string& idx)
 #ifdef ENABLE_PYTHON
 	for (const auto &str : _idx)
 	{
-		_log.Debug(DEBUG_NORM, "CSQLHelper::DeleteDevices: ID: %s", str.c_str());
+		_log.Debug(DEBUG_SQL, "CSQLHelper::DeleteDevices: ID: %s", str.c_str());
 		std::vector<std::vector<std::string> > result;
 		result = safe_query("SELECT HardwareID, DeviceID, Unit FROM DeviceStatus WHERE (ID == '%q')", str.c_str());
 		if (!result.empty())
@@ -8475,7 +8550,7 @@ void CSQLHelper::DeleteDevices(const std::string& idx)
 		CDomoticzHardwareBase* pHardware = m_mainworker.GetHardware(HwID);
 		if (pHardware != nullptr && pHardware->HwdType == HTYPE_PythonPlugin)
 		{
-			_log.Debug(DEBUG_NORM, "CSQLHelper::DeleteDevices: Notifying plugin %u about deletion of device %u", HwID, Unit);
+			_log.Debug(DEBUG_SQL, "CSQLHelper::DeleteDevices: Notifying plugin %u about deletion of device %u", HwID, Unit);
 			Plugins::CPlugin* pPlugin = (Plugins::CPlugin*)pHardware;
 			pPlugin->DeviceRemoved(DeviceID, Unit);
 		}
@@ -8687,7 +8762,7 @@ void CSQLHelper::DeleteDateRange(const char *ID, const std::string &fromDate, co
 	for (const auto &historyTable : historyTables)
 	{
 		safe_query("DELETE FROM %q WHERE (DeviceRowID=='%q') AND (Date>='%q') AND (Date<='%q')", historyTable.c_str(), ID, fromDate.c_str(), toDate.c_str() );
-		_log.Debug(DEBUG_NORM, "CSQLHelper::DeleteDateRange; delete from %s with idx: %s and Date >= %s and date <= %s" , historyTable.c_str(), std::string(ID).c_str(), fromDate.c_str(), toDate.c_str() );
+		_log.Debug(DEBUG_SQL, "CSQLHelper::DeleteDateRange; delete from %s with idx: %s and Date >= %s and date <= %s" , historyTable.c_str(), std::string(ID).c_str(), fromDate.c_str(), toDate.c_str() );
 	}
 }
 
@@ -8713,7 +8788,7 @@ void CSQLHelper::AddTaskItem(const _tTaskItem& tItem, const bool cancelItem)
 	std::lock_guard<std::mutex> l(m_background_task_mutex);
 
 	// Check if an event for the same device is already in queue, and if so, replace it
-	_log.Debug(DEBUG_NORM, "SQLH AddTask: Request to add task: idx=%" PRIu64 ", DelayTime=%f, Command='%s', Level=%d, Color='%s', RelatedEvent='%s'", tItem._idx, tItem._DelayTime, tItem._command.c_str(), tItem._level, tItem._Color.toString().c_str(), tItem._relatedEvent.c_str());
+	_log.Debug(DEBUG_SQL, "SQLH AddTask: Request to add task: idx=%" PRIu64 ", DelayTime=%f, Command='%s', Level=%d, Color='%s', RelatedEvent='%s'", tItem._idx, tItem._DelayTime, tItem._command.c_str(), tItem._level, tItem._Color.toString().c_str(), tItem._relatedEvent.c_str());
 	// Remove any previous task linked to the same device
 
 	if (
@@ -8726,13 +8801,13 @@ void CSQLHelper::AddTaskItem(const _tTaskItem& tItem, const bool cancelItem)
 		auto itt = m_background_task_queue.begin();
 		while (itt != m_background_task_queue.end())
 		{
-			_log.Debug(DEBUG_NORM, "SQLH AddTask: Comparing with item in queue: idx=%" PRIu64 ", DelayTime=%f, Command='%s', Level=%d, Color='%s', RelatedEvent='%s'", itt->_idx, itt->_DelayTime, itt->_command.c_str(), itt->_level, itt->_Color.toString().c_str(), itt->_relatedEvent.c_str());
+			_log.Debug(DEBUG_SQL, "SQLH AddTask: Comparing with item in queue: idx=%" PRIu64 ", DelayTime=%f, Command='%s', Level=%d, Color='%s', RelatedEvent='%s'", itt->_idx, itt->_DelayTime, itt->_command.c_str(), itt->_level, itt->_Color.toString().c_str(), itt->_relatedEvent.c_str());
 			if (itt->_idx == tItem._idx && itt->_ItemType == tItem._ItemType)
 			{
 				float iDelayDiff = tItem._DelayTime - itt->_DelayTime;
 				if (iDelayDiff < (1. / timer_resolution_hz / 2))
 				{
-					_log.Debug(DEBUG_NORM, "SQLH AddTask: => Already present. Cancelling previous task item");
+					_log.Debug(DEBUG_SQL, "SQLH AddTask: => Already present. Cancelling previous task item");
 					itt = m_background_task_queue.erase(itt);
 				}
 				else
@@ -9205,9 +9280,9 @@ void CSQLHelper::SetUnitsAndScale()
 bool CSQLHelper::HandleOnOffAction(const bool bIsOn, const std::string& OnAction, const std::string& OffAction)
 {
 	if (bIsOn)
-		_log.Debug(DEBUG_NORM, "SQLH HandleOnOffAction: OnAction:%s", OnAction.c_str());
+		_log.Debug(DEBUG_SQL, "SQLH HandleOnOffAction: OnAction:%s", OnAction.c_str());
 	else
-		_log.Debug(DEBUG_NORM, "SQLH HandleOnOffAction: OffAction:%s", OffAction.c_str());
+		_log.Debug(DEBUG_SQL, "SQLH HandleOnOffAction: OffAction:%s", OffAction.c_str());
 
 	if (bIsOn)
 	{

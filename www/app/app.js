@@ -132,7 +132,8 @@ define(['angularAMD', 'app.routes', 'app.constants', 'app.notifications', 'app.p
     	return {
     		confirm: confirm,
             confirmDecorator: confirmDecorator,
-            alert: alert
+            alert: alert,
+            prompt: prompt
 		};
 
 		function confirm(message) {
@@ -159,6 +160,22 @@ define(['angularAMD', 'app.routes', 'app.constants', 'app.notifications', 'app.p
 		function alert(message) {
 			return bootbox.alert($.t(message));
         }
+
+		function prompt(message, defaultValue) {
+			return $q(function(resolve, reject) {
+				bootbox.prompt({
+					title: message,
+					value: defaultValue || '',
+					callback: function (result) {
+						if (result === null) {
+							reject();
+						} else {
+							resolve(result);
+						}
+					}
+				});
+			});
+		}
 	});
 
     app.factory('dzNotification', function($q) {
@@ -204,13 +221,17 @@ define(['angularAMD', 'app.routes', 'app.constants', 'app.notifications', 'app.p
 				},
 				responseError: function (response) {
 					if (response && response.status === 401) {
-						var permissionList = {
-							isloggedin: false,
-							rights: -1,
-							user: ''
-						};
-						permissions.setPermissions(permissionList);
-						$location.path('/Login');
+						if (window.needsSetup) {
+							$location.path('/SetupWizard');
+						} else {
+							var permissionList = {
+								isloggedin: false,
+								rights: -1,
+								user: ''
+							};
+							permissions.setPermissions(permissionList);
+							$location.path('/Login');
+						}
 						return $q.reject(response);
 					}
 					return $q.reject(response);
@@ -547,6 +568,18 @@ define(['angularAMD', 'app.routes', 'app.constants', 'app.notifications', 'app.p
 			}
 		});
 
+		// Check if initial setup is required (no admin user exists)
+		$.ajax({
+			url: 'json.htm?type=command&param=getsetuprequired',
+			async: false,
+			dataType: 'json',
+			success: function (data) {
+				if (data.SetupRequired) {
+					window.needsSetup = true;
+				}
+			}
+		});
+
 		$rootScope.$on("$routeChangeStart", function (scope, next, current) {
 			if (!isOnline) {
 				$location.path('/Offline');
@@ -566,7 +599,13 @@ define(['angularAMD', 'app.routes', 'app.constants', 'app.notifications', 'app.p
 				//	return;
 				//}
 
-				if ((!permissions.isAuthenticated()) && (next.templateUrl != "views/login.html")) {
+				// If setup wizard is needed, redirect there instead of login
+				if (window.needsSetup && next.templateUrl !== "views/setup-wizard.html") {
+					$location.path('/SetupWizard');
+					return;
+				}
+
+				if ((!permissions.isAuthenticated()) && (next.templateUrl != "views/login.html") && (next.templateUrl !== "views/setup-wizard.html")) {
 					$location.path('/Login');
 					//$window.location = '/#Login';
 					//$window.location.reload();

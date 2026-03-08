@@ -1,12 +1,15 @@
 define(['app'], function (app) {
 	app.controller('EnergyDashboardController', ['$scope', '$rootScope', '$location', '$http', '$interval', 'livesocket', function ($scope, $rootScope, $location, $http, $interval, livesocket) {
 
+		$scope.debug = false;
 		$scope.idP1 = -1;
 		$scope.idGas = -1;
 		$scope.idWater = -1;
 		$scope.idSolar = -1;
 		$scope.idBattWatt = -1;
 		$scope.idBattSoc = -1;
+		$scope.idBattVolt = -1;
+		$scope.fBattVolt = 0;
 		$scope.idTextObj = -1;
 		$scope.idOutsideTemp = -1;
 		$scope.idItemH1 = -1;
@@ -97,7 +100,7 @@ define(['app'], function (app) {
 			let dash_height = (bSmallHeight && ($scope.idBattWatt == -1)) ? 40 : ($scope.idBattWatt != -1) ? 60 : 55;
 			let dash_width = (($scope.idItemH1!=-1)||($scope.idItemH2!=-1)||($scope.idItemH3!=-1)) ? 71.5 : 60;
 
-			$scope.viewBox = "0 0 " + dash_width + " " + dash_height;
+			$scope.viewBox = "-1.5 -1.5 " + (dash_width + 3) + " " + (dash_height + 3);
 
 			$scope.bDisplayRT1 = ($scope.idGas != -1) || (($scope.idGas == -1)&&($scope.idWater != -1));
 			$scope.bDisplayRB1 = ($scope.idWater != -1) && (!(($scope.idGas == -1)&&($scope.idWater != -1)));
@@ -114,6 +117,7 @@ define(['app'], function (app) {
 			if ($scope.idSolar != -1) devArray.push($scope.idSolar);
 			if ($scope.idBattWatt != -1) devArray.push($scope.idBattWatt);
 			if ($scope.idBattSoc != -1) devArray.push($scope.idBattSoc);
+			if ($scope.idBattVolt != -1) devArray.push($scope.idBattVolt);
 			if ($scope.idTextObj != -1) devArray.push($scope.idTextObj);
 			if ($scope.idOutsideTemp != -1) devArray.push($scope.idOutsideTemp);
 			if ($scope.idItemH1 != -1) devArray.push($scope.idItemH1);
@@ -160,6 +164,9 @@ define(['app'], function (app) {
 					$scope.idSolar = data.result.ESettings.idSolar;
 					$scope.idBattWatt = data.result.ESettings.idBatteryWatt;
 					$scope.idBattSoc = data.result.ESettings.idBatterySoc;
+					if (typeof data.result.ESettings.idBatteryVolt != 'undefined') {
+     					$scope.idBattVolt = data.result.ESettings.idBatteryVolt;
+ 					}
 					$scope.idTextObj = data.result.ESettings.idTextSensor;
 					if (typeof data.result.ESettings.idOutsideTempSensor != 'undefined') {
 						$scope.idOutsideTemp = data.result.ESettings.idOutsideTempSensor;
@@ -176,11 +183,11 @@ define(['app'], function (app) {
 					
 					$scope.convertWaterM3ToLiter = data.result.ESettings.ConvertWaterM3ToLiter;
 					$scope.bEnableServerTime = data.result.ESettings.DisplayTime;
-					if (data.result.ESettings.DisplayFlowWithLines != 'undefined') {
+					if (typeof data.result.ESettings.DisplayFlowWithLines != 'undefined') {
 						$scope.flowAsLines = (data.result.ESettings.DisplayFlowWithLines == true);
 						$scope.flowStrokeBack = ($scope.flowAsLines) ? 0.6 : 0.2;
 					}
-					if (data.result.ESettings.UseCustomIcons != 'undefined') {
+					if (typeof data.result.ESettings.UseCustomIcons != 'undefined') {
 						$scope.useCustomIcons = (data.result.ESettings.UseCustomIcons == true);
 					}
 					
@@ -235,6 +242,9 @@ define(['app'], function (app) {
 				case $scope.idBattSoc:
 					bHandledData = $scope.handleBattSoc(item);
 					break;
+				case $scope.idBattVolt:
+     				bHandledData = $scope.handleBattVolt(item);
+     				break;
 				case $scope.idTextObj:
 					bHandledData = $scope.handleTextObj(item);
 					break;
@@ -265,7 +275,7 @@ define(['app'], function (app) {
 			if (item.CustomImage != 0) {
 				if ((item.TypeImg == "lightbulb") || (item.TypeImg == "dimmer")) {
 					ficon = "images/" + item.Image + "48_";
-					if ((item.Data == "On"||(item.Data.search("%") != -1))) {
+					if ((item.Data == "On") || (item.Data.search("%") != -1)) {
 						ficon += "On";
 					} else if (item.Data == "Off") {
 						ficon += "Off";
@@ -315,7 +325,7 @@ define(['app'], function (app) {
 					ficon = "Alert48_1";
 				}
 				else if (item.TypeImg == "temperature") {
-					return "images/" + GetTemp48Item(item.Temp);
+					return (typeof GetTemp48Item === 'function') ? "images/" + GetTemp48Item(item.Temp) : "";
 				}
 				else if (item.TypeImg == "wind") {
 					if (typeof item.Direction != 'undefined') {
@@ -348,27 +358,26 @@ define(['app'], function (app) {
 			}
 			if (item.Type != "P1 Smart Meter") {
 				$scope.P1InkWh = true;
-				console.log(item);
 			}
 			
 			let fActualNetDeliv = 0;
-			
-			$scope.fDayNetUsage = parseFloat(item["CounterToday"].replace(' kWh',''));
-			let fActualNetUsage = parseFloat(item["Usage"].replace(' Watt',''));
+
+			$scope.fDayNetUsage = parseFloat(item["CounterToday"].replace(' kWh','')) || 0;
+			let fActualNetUsage = parseFloat(item["Usage"].replace(' Watt','')) || 0;
 			if ($scope.P1InkWh == false) {
-				$scope.fDayNetDeliv = parseFloat(item["CounterDelivToday"].replace(' kWh',''));
-				fActualNetDeliv = parseFloat(item["UsageDeliv"].replace(' Watt',''));
+				$scope.fDayNetDeliv = parseFloat(item["CounterDelivToday"].replace(' kWh','')) || 0;
+				fActualNetDeliv = parseFloat(item["UsageDeliv"].replace(' Watt','')) || 0;
 			} else {
 				$scope.fDayNetDeliv = 0;
 			}
 			$scope.fActualNet = Math.round(fActualNetUsage - fActualNetDeliv);
 			if (item.hasOwnProperty("price")) {
-				$scope.p1Price = parseFloat(item["price"]);
+				$scope.p1Price = parseFloat(item["price"]) || 0;
 			}
 			$scope.customIconGrid = $scope.GetIconForItem(item);
 			return true;
 		}
-		
+
 		$scope.handleGas = function(item) {
 			if (item.hasOwnProperty("CounterToday")) {
 				$scope.txtDayGasUsage = item["CounterToday"];
@@ -386,7 +395,7 @@ define(['app'], function (app) {
 		$scope.handleWater = function(item) {
 			if (item.hasOwnProperty("CounterToday")) {
 				let bWaterMeterInM3 = item["CounterToday"].search("m3") != -1;
-				let fDayWaterUsage = parseFloat(item["CounterToday"].replace(' m3','').replace(' Liter',''));
+				let fDayWaterUsage = parseFloat(item["CounterToday"].replace(' m3','').replace(' Liter','')) || 0;
 				if ((bWaterMeterInM3) && ($scope.convertWaterM3ToLiter==true)) {
 					fDayWaterUsage*=1000;
 				}
@@ -412,10 +421,10 @@ define(['app'], function (app) {
 				console.log("Error with Power meter results. Check ID!");
 				return false;
 			}
-			$scope.fDaySolar = parseFloat(item["CounterToday"].replace(' kWh',''));
-			$scope.fActualSolar = Math.round(Math.abs(parseFloat(item["Usage"].replace(' Watt',''))));
+			$scope.fDaySolar = parseFloat(item["CounterToday"].replace(' kWh','')) || 0;
+			$scope.fActualSolar = Math.round(Math.abs(parseFloat(item["Usage"].replace(' Watt','')) || 0));
 			if (item.hasOwnProperty("price")) {
-				$scope.solarPrice = parseFloat(item["price"]);
+				$scope.solarPrice = parseFloat(item["price"]) || 0;
 			}
 			item.TypeImg = "pv";
 			$scope.customIconSolar = $scope.GetIconForItem(item);
@@ -425,9 +434,9 @@ define(['app'], function (app) {
 		$scope.handleBattSetpoint = function(item) {
 			let data = 0;
 			if (item["Data"].search("kWh") == -1) {
-				data = parseFloat(item["Data"]);
+				data = parseFloat(item["Data"]) || 0;
 			} else {
-				data = parseFloat(item["Usage"].replace(' Watt',''));
+				data = parseFloat(item["Usage"].replace(' Watt','')) || 0;
 			}
 			$scope.fActualBattWatt = Math.round(data);
 			if ($scope.idBattSoc == -1) {
@@ -437,8 +446,13 @@ define(['app'], function (app) {
 		}
 		
 		$scope.handleBattSoc = function(item) {
-			$scope.fBattSoc = parseFloat(item["Data"].replace('%',''));
+			$scope.fBattSoc = parseFloat(item["Data"].replace('%','')) || 0;
 			$scope.customIconBatt = $scope.GetIconForItem(item);
+			return true;
+		}
+		
+		$scope.handleBattVolt = function(item) {
+			$scope.fBattVolt = parseFloat(item["Data"]) || 0;
 			return true;
 		}
 
@@ -449,7 +463,7 @@ define(['app'], function (app) {
 
 		$scope.handleTempObj = function(item) {
 			$scope.txtOutsideTemp = item["Temp"];
-			$scope.imgOutsideTemp = 'images/' + GetTemp48Item(item["Temp"]);
+			$scope.imgOutsideTemp = (typeof GetTemp48Item === 'function') ? 'images/' + GetTemp48Item(item["Temp"]) : '';
 			return true;
 		}
 
@@ -563,33 +577,92 @@ define(['app'], function (app) {
 		$scope.SetEclipseAnim = function(item, fPower, isReverse = false) {
 			let fSec = $scope.GetAnimDuration(fPower);
 			let dElement=document.getElementById(item);
+			if (!dElement) return;
 			dElement.setAttribute('dur',fSec);
 			if (isReverse == false) {
 				dElement.setAttribute('keyPoints','0;1');
 			} else {
 				dElement.setAttribute('keyPoints','1;0');
 			}
+			// Sync fade animation duration
+			let fadeId = item.replace('-sphere', '-fade');
+			let fadeElement = document.getElementById(fadeId);
+			if (fadeElement) {
+				fadeElement.setAttribute('dur', fSec);
+			}
+		}
+
+		$scope.lightenDarkColors = function(html) {
+			// Named CSS colors that are too dark on a dark background
+			var darkNames = {
+				'black': '#aaaaaa', 'navy': '#6699ff', 'darkblue': '#6699ff',
+				'darkgreen': '#66cc66', 'green': '#66cc66', 'maroon': '#ff8888',
+				'darkred': '#ff8888', 'purple': '#cc88ff', 'indigo': '#aa88ff',
+				'darkslategray': '#88aaaa', 'darkslategrey': '#88aaaa',
+				'midnightblue': '#7799dd', 'brown': '#cc8866'
+			};
+
+			// Lighten a hex color if its luminance is too low
+			function lightenHex(hex) {
+				hex = hex.replace('#', '');
+				if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+				var r = parseInt(hex.substring(0,2), 16);
+				var g = parseInt(hex.substring(2,4), 16);
+				var b = parseInt(hex.substring(4,6), 16);
+				// Relative luminance check
+				var lum = (0.299 * r + 0.587 * g + 0.114 * b);
+				if (lum < 100) {
+					// Lighten: blend toward white
+					var f = 0.6;
+					r = Math.round(r + (255 - r) * f);
+					g = Math.round(g + (255 - g) * f);
+					b = Math.round(b + (255 - b) * f);
+					return '#' + ((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+				}
+				return '#' + hex;
+			}
+
+			// Replace color="..." attributes (e.g. <font color="purple">)
+			html = html.replace(/color\s*=\s*"([^"]+)"/gi, function(match, col) {
+				var lower = col.trim().toLowerCase();
+				if (darkNames[lower]) return 'color="' + darkNames[lower] + '"';
+				if (lower.match(/^#[0-9a-f]{3,6}$/)) return 'color="' + lightenHex(lower) + '"';
+				return match;
+			});
+
+			// Replace color:... in style attributes
+			html = html.replace(/color\s*:\s*([^;"']+)/gi, function(match, col) {
+				var lower = col.trim().toLowerCase();
+				if (darkNames[lower]) return 'color:' + darkNames[lower];
+				if (lower.match(/^#[0-9a-f]{3,6}$/)) return 'color:' + lightenHex(lower);
+				return match;
+			});
+
+			return html;
 		}
 
 		$scope.makeTextLines = function() {
-			let tspans = "";
-			let lines = $scope.txtObjText.split("\n");
-			for (i = 0; i < lines.length; i++) {
-				let ntline = '<tspan x="1" dy="1.2em">' + lines[i] + '</tspan>\n';
-				tspans += ntline;
-			}
 			let ltext = document.getElementById('ltext');
-			ltext.innerHTML = tspans;
+			if (ltext) {
+				let txt = $scope.txtObjText.replace(/<br\s*\/?>/gi, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '<br>');
+				ltext.innerHTML = $scope.lightenDarkColors(txt);
+			}
 		}
 
 		$scope.UpdateScreen = function () {
 			//for debugging purposes
-			//$scope.fActualNet = 545;
-			//$scope.fActualSolar = 4146;
-			//$scope.fActualBattWatt = -2294;
-			//$scope.fBattSoc = 62.4;
-			//$scope.txtDayGasUsage = '0.417 m3';
-			//$scope.txtDayWaterUsage = '294 L';
+			if ($scope.debug == true) {
+				$scope.fActualNet = 1545;
+				$scope.fActualSolar = 340;
+				$scope.fActualBattWatt = 200;
+				$scope.fBattSoc = 62.4;
+				$scope.txtDayGasUsage = '0.417 m3';
+				$scope.txtDayWaterUsage = '294 L';
+				$scope.p1Price = 2.34;
+				$scope.solarPrice = 3.21;
+				$scope.gasPrice = 1.23;
+				$scope.waterPrice = 2.34;
+			}
 			
 			// Total Home usage: Calculated
 			$scope.fTotalHomeUsage = $scope.fDayNetUsage + $scope.fDaySolar - $scope.fDayNetDeliv;
@@ -787,7 +860,6 @@ define(['app'], function (app) {
 		$scope.init = function () {
 			$scope.calculateViewport();
 			$scope.GetEnergyDashboardDevices();
-			//$scope.RefreshUptime();
 		};
 
 		$("#dashcontent").i18n();

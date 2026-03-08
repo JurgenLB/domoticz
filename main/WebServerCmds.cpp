@@ -35,7 +35,7 @@
 #include "KWHStats.h"
 #include "../httpclient/HTTPClient.h"
 #include "../hardware/hardwaretypes.h"
-#include "../webserver/Base64.h"
+#include <libwebem/Base64.h>
 #include "../smtpclient/SMTPClient.h"
 #include "../push/BasePush.h"
 #include "../notifications/NotificationHelper.h"
@@ -1494,7 +1494,7 @@ namespace http
 					|| (htype == HTYPE_PiFace) || (htype == HTYPE_HTTPPOLLER) || (htype == HTYPE_BleBox) || (htype == HTYPE_HEOS) || (htype == HTYPE_Yeelight) || (htype == HTYPE_XiaomiGateway)
 					|| (htype == HTYPE_Arilux) || (htype == HTYPE_USBtinGateway) || (htype == HTYPE_BuienRadar) || (htype == HTYPE_Honeywell) ||(htype == HTYPE_RaspberryGPIO)
 					|| (htype == HTYPE_SysfsGpio) || (htype == HTYPE_OpenWebNetTCP) || (htype == HTYPE_Daikin) || (htype == HTYPE_PythonPlugin) || (htype == HTYPE_RaspberryPCF8574)
-					|| (htype == HTYPE_OpenWebNetUSB) || (htype == HTYPE_IntergasInComfortLAN2RF) || (htype == HTYPE_EnphaseAPI) || (htype == HTYPE_EcoCompteur) || (htype == HTYPE_Meteorologisk)
+					|| (htype == HTYPE_OpenWebNetUSB) || (htype == HTYPE_IntergasInComfortLAN2RF) || (htype == HTYPE_EnphaseAPI) || (htype == HTYPE_EcoCompteur) || (htype == HTYPE_Meteorologisk) || (htype == HTYPE_OpenMeteo)
 					|| (htype == HTYPE_AirconWithMe) || (htype == HTYPE_EneverPriceFeeds) || (htype == HTYPE_Tado))
 			{
 				return true;
@@ -2515,13 +2515,67 @@ namespace http
 		{
 			root["status"] = "OK";
 			root["title"] = "GetAuth";
-			root["canlogout"] = !session.istrustednetwork;
+			root["canlogout"] = !session.istrustednetwork || !session.id.empty();
 			if (session.rights != URIGHTS_NONE)
 			{
 				root["user"] = session.username;
 				root["rights"] = session.rights;
 				root["version"] = szAppVersion;
 			}
+		}
+
+		void CWebServer::Cmd_GetSetupRequired(WebEmSession& session, const request& req, Json::Value& root)
+		{
+			root["status"] = "OK";
+			root["title"] = "GetSetupRequired";
+			root["SetupRequired"] = !FindAdminUser();
+		}
+
+		void CWebServer::Cmd_SetupWizardCreateAdmin(WebEmSession& session, const request& req, Json::Value& root)
+		{
+			root["title"] = "SetupWizardCreateAdmin";
+
+			static std::mutex setupMutex;
+			std::lock_guard<std::mutex> lock(setupMutex);
+
+			// Security: only allow when no admin user exists
+			if (FindAdminUser())
+			{
+				_log.Log(LOG_ERROR, "Setup wizard attempt blocked: admin account already exists (IP: %s)", session.remote_host.c_str());
+				root["status"] = "ERR";
+				root["message"] = "Setup has already been completed";
+				return;
+			}
+
+			std::string username = CURLEncode::URLDecode(request::findValue(&req, "username"));
+			std::string password = CURLEncode::URLDecode(request::findValue(&req, "password"));
+
+			if (username.empty() || password.empty())
+			{
+				root["status"] = "ERR";
+				root["message"] = "Username and password are required";
+				return;
+			}
+
+			if (username.length() > 128)
+			{
+				root["status"] = "ERR";
+				root["message"] = "Username is too long";
+				return;
+			}
+
+			// Username is sent as plaintext, we base64 encode for storage
+			// Password is sent as MD5 hash from the frontend (same as login flow)
+			m_sql.safe_query(
+				"INSERT INTO Users (Active, Username, Password, Rights, TabsEnabled) VALUES (1, '%q', '%q', %d, 0x1F)",
+				base64_encode(username).c_str(), password.c_str(), http::server::URIGHTS_ADMIN);
+
+			_log.Log(LOG_STATUS, "Admin user '%s' created via setup wizard", username.c_str());
+
+			// Reload users so the new admin is immediately available for login
+			LoadUsers();
+
+			root["status"] = "OK";
 		}
 
 		void CWebServer::Cmd_GetMyProfile(WebEmSession& session, const request& req, Json::Value& root)
@@ -3798,6 +3852,7 @@ namespace http
 				int ESolar = atoi(request::findValue(&req, "ESolar").c_str());
 				int EBatteryWatt = atoi(request::findValue(&req, "EBatteryWatt").c_str());
 				int EBatterySoc = atoi(request::findValue(&req, "EBatterySoc").c_str());
+				int EBatteryVolt = atoi(request::findValue(&req, "EBatteryVolt").c_str());
 				int ETextSensor = atoi(request::findValue(&req, "ETextSensor").c_str());
 				int EOutsideTempSensor = atoi(request::findValue(&req, "EOutsideTempSensor").c_str());
 				int EExtra1 = atoi(request::findValue(&req, "EExtra1").c_str());
@@ -3823,6 +3878,7 @@ namespace http
 				ESettings["idSolar"] = ESolar;
 				ESettings["idBatteryWatt"] = EBatteryWatt;
 				ESettings["idBatterySoc"] = EBatterySoc;
+				ESettings["idBatteryVolt"] = EBatteryVolt;
 				ESettings["idTextSensor"] = ETextSensor;
 				ESettings["idOutsideTempSensor"] = EOutsideTempSensor;
 				ESettings["idExtra1"] = EExtra1;
@@ -3854,6 +3910,25 @@ namespace http
 				// Signal plugins to update Settings dictionary
 				PluginLoadConfig();
 #endif
+
+				std::string sDebugLevel = request::findValue(&req, "DebugLevel");
+				if (!sDebugLevel.empty())
+				{
+					uint32_t iDebugLevel = static_cast<uint32_t>(atoi(sDebugLevel.c_str()));
+					_log.SetDebugFlags(iDebugLevel);
+					if (iDebugLevel != 0)
+					{
+						// Enable debug log level when any debug flags are set
+						_log.SetLogFlags(_log.GetLogFlags() | LOG_DEBUG_INT);
+					}
+					else
+					{
+						// Disable debug log level when no debug flags are set
+						_log.SetLogFlags(_log.GetLogFlags() & ~LOG_DEBUG_INT);
+					}
+					cntSettings++;
+				}
+
 				root["status"] = "OK";
 			}
 			catch (const std::exception& e)
@@ -5502,13 +5577,13 @@ namespace http
 						{
 							sprintf(szTmp, "%s;%.2f;%s;%s", strarray[0].c_str(), tempcelcius, strarray[2].c_str(), strarray[3].c_str());
 						}
-						else if (dSubType == sTypeThermostat6TempBaro && strarray.size() >= 3)
+						else if (dSubType == sTypeThermostat6TempBaro && strarray.size() >= 4)
 						{
-							sprintf(szTmp, "%s;%.2f;%s", strarray[0].c_str(), tempcelcius, strarray[2].c_str());
+							sprintf(szTmp, "%s;%.2f;%s;%s", strarray[0].c_str(), tempcelcius, strarray[2].c_str(), strarray[3].c_str());
 						}
-						else if (dSubType == sTypeThermostat6TempHumBaro && strarray.size() >= 5)
+						else if (dSubType == sTypeThermostat6TempHumBaro && strarray.size() >= 6)
 						{
-							sprintf(szTmp, "%s;%.2f;%s;%s;%s", strarray[0].c_str(), tempcelcius, strarray[2].c_str(), strarray[3].c_str(), strarray[4].c_str());
+							sprintf(szTmp, "%s;%.2f;%s;%s;%s;%s", strarray[0].c_str(), tempcelcius, strarray[2].c_str(), strarray[3].c_str(), strarray[4].c_str(), strarray[5].c_str());
 						}
 						m_sql.safe_query("UPDATE DeviceStatus SET Used=%d, sValue='%q' WHERE (ID == '%q')", used, szTmp, idx.c_str());
 					}
@@ -6078,6 +6153,7 @@ namespace http
 					root["PriceResolution"] = nValue;
 				}
 			}
+			root["DebugLevel"] = static_cast<int>(_log.GetDebugFlags());
 		}
 
 		void CWebServer::Cmd_GetLightLog(WebEmSession& session, const request& req, Json::Value& root)

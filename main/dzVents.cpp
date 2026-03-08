@@ -5,14 +5,19 @@
 #include "../main/Logger.h"
 #include "../main/RFXNames.h"
 #include "../main/WebServerHelper.h"
-#include "../webserver/server_settings.hpp"
+#include <libwebem/server_settings.h>
 #include "../main/LuaTable.h"
 #include "../main/json_helper.h"
 #include "dzVents.h"
 #include "Helper.h"
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include "../webserver/Base64.h"
+#include <libwebem/Base64.h>
+#ifdef WIN32
+#include "../main/dirent_windows.h"
+#else
+#include <dirent.h>
+#endif
 
 extern "C" {
 #include <lua.h>
@@ -39,7 +44,7 @@ enum edzVentsLogLevel
 };
 
 CdzVents::CdzVents()
-	: m_version("3.1.8")
+	: m_version("3.1.11")
 {
 	m_bdzVentsExist = false;
 }
@@ -55,6 +60,9 @@ void CdzVents::EvaluateDzVents(lua_State* lua_state, const std::vector<CEventSys
 	luaL_openlibs(lua_state);
 	lua_pushcfunction(lua_state, l_domoticz_print);
 	lua_setglobal(lua_state, "print");
+
+	lua_pushcfunction(lua_state, l_domoticz_scandir);
+	lua_setglobal(lua_state, "dz_scandir");
 
 	bool reasonTime = false;
 	bool reasonURL = false;
@@ -763,6 +771,30 @@ void CdzVents::IterateTable(lua_State* lua_state, const int tIndex, std::vector<
 
 		lua_pop(lua_state, 1);
 	}
+}
+
+int CdzVents::l_domoticz_scandir(lua_State* lua_state)
+{
+	// Takes a directory path as argument, returns a table of filenames
+	const char* dirpath = luaL_checkstring(lua_state, 1);
+
+	lua_newtable(lua_state);
+	int idx = 1;
+
+	DIR* d = opendir(dirpath);
+	if (d != nullptr)
+	{
+		struct dirent* ent;
+		while ((ent = readdir(d)) != nullptr)
+		{
+			lua_pushinteger(lua_state, idx++);
+			lua_pushstring(lua_state, ent->d_name);
+			lua_settable(lua_state, -3);
+		}
+		closedir(d);
+	}
+
+	return 1; // returns the table
 }
 
 int CdzVents::l_domoticz_print(lua_State* lua_state)

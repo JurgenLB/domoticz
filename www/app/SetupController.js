@@ -311,6 +311,7 @@ define(['app'], function (app) {
 						let listSolar = [];
 						let listBatteryWatt = [];
 						let listBatterySoc = [];
+						let listBatteryVolt = [];
 						let listText = [];
 						let listExtra = [];
 						let listTemperatureSensors = [];
@@ -323,6 +324,7 @@ define(['app'], function (app) {
 
 						let $comboEBatteryWatt = $("#comboEBatteryWatt");
 						let $comboEBatterySoc = $("#comboEBatterySoc");
+						let $comboEBatteryVolt = $("#comboEBatteryVolt");
 
 						let $comboEText = $("#comboETextSensor");
 						let $comboEExtra1 = $("#comboEExtra1");
@@ -376,6 +378,10 @@ define(['app'], function (app) {
 										listBatterySoc.push({"idx": item.idx, "name": item.Name});
 										listExtra.push({"idx": item.idx, "name": item.Name});
 									}
+									else if (item.SubType == "Voltage") {
+										listBatteryVolt.push({"idx": item.idx, "name": item.Name});
+										listExtra.push({"idx": item.idx, "name": item.Name});
+									}
 									else if (item.SubType == "Text") {
 										listText.push({"idx": item.idx, "name": item.Name});
 										listExtra.push({"idx": item.idx, "name": item.Name});
@@ -404,6 +410,7 @@ define(['app'], function (app) {
 						listSolar.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : 0));
 						listBatteryWatt.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : 0));
 						listBatterySoc.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : 0));
+						listBatteryVolt.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : 0));
 						listText.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : 0));
 						listExtra.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : 0));
 						listTemperatureSensors.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : 0));
@@ -425,6 +432,9 @@ define(['app'], function (app) {
 						});
 						$.each(listBatterySoc, function (i, item) {
 							$comboEBatterySoc.append($("<option />").val(item.idx).text(item.name));
+						});
+						$.each(listBatteryVolt, function (i, item) {
+							$comboEBatteryVolt.append($("<option />").val(item.idx).text(item.name));
 						});
 						$.each(listText, function (i, item) {
 							$comboEText.append($("<option />").val(item.idx).text(item.name));
@@ -589,6 +599,18 @@ define(['app'], function (app) {
 					}
 					if (typeof data.ShortLogInterval != 'undefined') {
 						$scope.ShortLogInterval = data.ShortLogInterval;
+					}
+					if (typeof data.DebugLevel != 'undefined') {
+						var dl = data.DebugLevel;
+						$("#debugleveltable #DebugNormal").prop('checked', (dl & 0x01) != 0);
+						$("#debugleveltable #DebugHardware").prop('checked', (dl & 0x02) != 0);
+						$("#debugleveltable #DebugReceived").prop('checked', (dl & 0x04) != 0);
+						$("#debugleveltable #DebugWebServer").prop('checked', (dl & 0x08) != 0);
+						$("#debugleveltable #DebugEventSystem").prop('checked', (dl & 0x10) != 0);
+						$("#debugleveltable #DebugPython").prop('checked', (dl & 0x20) != 0);
+						$("#debugleveltable #DebugThreadIDs").prop('checked', (dl & 0x40) != 0);
+						$("#debugleveltable #DebugSQL").prop('checked', (dl & 0x80) != 0);
+						$("#debugleveltable #DebugAuth").prop('checked', (dl & 0x100) != 0);
 					}
 					if (typeof data.DashboardType != 'undefined') {
 						$("#settingscontent #combosdashtype").val(data.DashboardType);
@@ -845,6 +867,9 @@ define(['app'], function (app) {
 						$("#comboESolar").val(data.ESettings.idSolar);
 						$("#comboEBatteryWatt").val(data.ESettings.idBatteryWatt);
 						$("#comboEBatterySoc").val(data.ESettings.idBatterySoc);
+						if (typeof data.ESettings.idBatteryVolt != 'undefined') {
+							$("#comboEBatteryVolt").val(data.ESettings.idBatteryVolt);
+						}
 						$("#comboETextSensor").val(data.ESettings.idTextSensor);
 						$("#comboEExtra1").val(data.ESettings.idExtra1);
 						$("#comboEExtra2").val(data.ESettings.idExtra2);
@@ -927,6 +952,18 @@ define(['app'], function (app) {
 			if (!isNaN(priceRes) && !isNaN(shortLogInterval) && priceRes < 60 && shortLogInterval > priceRes) {
 				ShowNotify($.t('Warning: ShortLog Interval is greater than the selected pricing resolution. For accurate pricing, the ShortLog Interval should be ' + priceRes + ' minutes or less.'), 5000, true);
 			}
+
+			var debugLevel = 0;
+			if ($("#debugleveltable #DebugNormal").prop("checked")) debugLevel |= 0x01;
+			if ($("#debugleveltable #DebugHardware").prop("checked")) debugLevel |= 0x02;
+			if ($("#debugleveltable #DebugReceived").prop("checked")) debugLevel |= 0x04;
+			if ($("#debugleveltable #DebugWebServer").prop("checked")) debugLevel |= 0x08;
+			if ($("#debugleveltable #DebugEventSystem").prop("checked")) debugLevel |= 0x10;
+			if ($("#debugleveltable #DebugPython").prop("checked")) debugLevel |= 0x20;
+			if ($("#debugleveltable #DebugThreadIDs").prop("checked")) debugLevel |= 0x40;
+			if ($("#debugleveltable #DebugSQL").prop("checked")) debugLevel |= 0x80;
+			if ($("#debugleveltable #DebugAuth").prop("checked")) debugLevel |= 0x100;
+			$("#settings #DebugLevel").val(debugLevel);
 
 			$http.post('json.htm?type=command&param=storesettings', new FormData(document.querySelector("#settings")), {
 				transformRequest: angular.identity,

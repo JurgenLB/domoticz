@@ -12,7 +12,7 @@
 #include "../push/MQTTPush.h"
 
 #include "../httpclient/HTTPClient.h"
-#include "../webserver/Base64.h"
+#include <libwebem/Base64.h>
 #include <boost/algorithm/string/join.hpp>
 #include "../main/json_helper.h"
 
@@ -152,6 +152,7 @@
 #include "../hardware/Buienradar.h"
 #include "../hardware/OctoPrintMQTT.h"
 #include "../hardware/Meteorologisk.h"
+#include "../hardware/OpenMeteo.h"
 #include "../hardware/AirconWithMe.h"
 #include "../hardware/AlfenEve.h"
 #include "../hardware/Enever.h"
@@ -1080,6 +1081,9 @@ bool MainWorker::AddHardwareFromParams(
 	case HTYPE_Meteorologisk:
 		pHardware = new CMeteorologisk(ID, Password); //Password is location here.
 		break;
+	case HTYPE_OpenMeteo:
+		pHardware = new COpenMeteo(ID);
+		break;
 	case HTYPE_AirconWithMe:
 		pHardware = new CAirconWithMe(ID, Address, Port, Username, Password);
 		break;
@@ -1119,6 +1123,8 @@ bool MainWorker::AddHardwareFromParams(
 
 bool MainWorker::Start()
 {
+	m_bStarted = true;
+
 	utsname my_uname;
 	if (uname(&my_uname) == 0)
 	{
@@ -1251,6 +1257,15 @@ bool MainWorker::Start()
 
 bool MainWorker::Stop()
 {
+	if (m_bStopped)
+		return true;
+	m_bStopped = true;
+
+	// If Start() was never called (e.g. --help, --version, or parameter error),
+	// there is nothing to stop.
+	if (!m_bStarted)
+		return true;
+
 	if (m_thread)
 	{
 		m_notificationsystem.NotifyWait(Notification::DZ_STOP, Notification::STATUS_INFO); // blocking call
@@ -1263,30 +1278,44 @@ bool MainWorker::Stop()
 		m_rxMessageThread->join();
 		m_rxMessageThread.reset();
 	}
+
+	// Stop all subsystems that may have been started before the main thread.
+	// These must be cleaned up even if Start() failed partway through
+	// (e.g. webserver bind failure), otherwise their threads are destroyed
+	// without being joined, causing 'terminate called without an active exception'.
+	_log.Log(LOG_STATUS, "Stopping all hardware...");
+	StopDomoticzHardware();
+	m_webservers.StopServers();
+	m_sharedserver.StopServer();
+	m_scheduler.StopScheduler();
+#ifdef ENABLE_PYTHON
+	// Stop the plugin system before the event system so that Plugin_ASIO
+	// and other plugin threads release the GIL before PythonEventsStop()
+	// calls PyEval_RestoreThread() + Py_EndInterpreter().  If the plugin
+	// system is still running at that point it may hold the GIL, causing
+	// Py_EndInterpreter to block forever.
+	m_pluginsystem.StopPluginSystem();
+#endif
+	// Pass false: skip Py_EndInterpreter on final shutdown.
+	// PyEval_RestoreThread() blocks indefinitely if any Python thread is
+	// still holding the GIL (e.g. a plugin callback in flight).  The OS
+	// will release all Python resources when the process exits.
+	m_eventsystem.StopEventSystem(false);
+	m_notificationsystem.Stop();
+	m_fibaropush.Stop();
+	m_httppush.Stop();
+	m_influxpush.Stop();
+	m_mqttpush.Stop();
+	m_googlepubsubpush.Stop();
+	if (m_mdns.isServiceRunning())	// Stop mDNS service
+		m_mdns.stopService();
+
+	//    m_cameras.StopCameraGrabber();
+
+	HTTPClient::Cleanup();
+
 	if (m_thread)
 	{
-		_log.Log(LOG_STATUS, "Stopping all hardware...");
-		StopDomoticzHardware();
-		m_webservers.StopServers();
-		m_sharedserver.StopServer();
-		m_scheduler.StopScheduler();
-		m_eventsystem.StopEventSystem();
-		m_notificationsystem.Stop();
-		m_fibaropush.Stop();
-		m_httppush.Stop();
-		m_influxpush.Stop();
-		m_mqttpush.Stop();
-		m_googlepubsubpush.Stop();
-#ifdef ENABLE_PYTHON
-		m_pluginsystem.StopPluginSystem();
-#endif
-		if (m_mdns.isServiceRunning())	// Stop mDNS service
-			m_mdns.stopService();
-
-		//    m_cameras.StopCameraGrabber();
-
-		HTTPClient::Cleanup();
-
 		RequestStop();
 		m_thread->join();
 		m_thread.reset();
@@ -5760,6 +5789,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		// Standard FAN structure for non-Orcon devices
 		sprintf(IDTmp, "%02X%02X%02X", pResponse->FAN.id1, pResponse->FAN.id2, pResponse->FAN.id3);
 		ID = IDTmp;
+		nValue = cmnd;
+		sValue = std::to_string(cmnd);
 	}
 	uint64_t DevRowIdx = m_sql.UpdateValue(pHardware->m_HwdID, 0, ID.c_str(), Unit, devType, subType, SignalLevel, -1, nValue, sValue.c_str(), Name, true, procResult.Username.c_str());
 	if (DevRowIdx == (uint64_t)-1)
@@ -8541,6 +8572,7 @@ void MainWorker::decode_Thermostat6(const CDomoticzHardwareBase* pHardware, cons
 	uint8_t humidity = pMeter->humidity;
 	uint8_t humidity_status = pMeter->humidity_status;
 	uint16_t barometer = pMeter->barometer;
+	uint8_t forecast = pMeter->forecast;
 
 	// Determine expected flags based on subtype
 	uint8_t expected_flags = 0x03; // temp + setpoint for sTypeThermostat6Temp
@@ -8574,9 +8606,17 @@ void MainWorker::decode_Thermostat6(const CDomoticzHardwareBase* pHardware, cons
 			if (!(pMeter->update_flags & 0x08))
 			{
 				if (subType == sTypeThermostat6TempBaro && values.size() >= 3)
+				{
 					barometer = atoi(values[2].c_str());
+					if (values.size() >= 4)
+						forecast = atoi(values[3].c_str());
+				}
 				else if (subType == sTypeThermostat6TempHumBaro && values.size() >= 5)
+				{
 					barometer = atoi(values[4].c_str());
+					if (values.size() >= 6)
+						forecast = atoi(values[5].c_str());
+				}
 			}
 		}
 	}
@@ -8591,10 +8631,10 @@ void MainWorker::decode_Thermostat6(const CDomoticzHardwareBase* pHardware, cons
 		sprintf(szTmp, "%.1f;%.1f;%d;%d", temperature, setpoint, humidity, humidity_status);
 		break;
 	case sTypeThermostat6TempBaro:
-		sprintf(szTmp, "%.1f;%.1f;%d", temperature, setpoint, barometer);
+		sprintf(szTmp, "%.1f;%.1f;%d;%d", temperature, setpoint, barometer, forecast);
 		break;
 	case sTypeThermostat6TempHumBaro:
-		sprintf(szTmp, "%.1f;%.1f;%d;%d;%d", temperature, setpoint, humidity, humidity_status, barometer);
+		sprintf(szTmp, "%.1f;%.1f;%d;%d;%d;%d", temperature, setpoint, humidity, humidity_status, barometer, forecast);
 		break;
 	default:
 		sprintf(szTmp, "ERROR: Unknown Sub type for Packet type= %02X:%02X", pMeter->type, pMeter->subtype);
