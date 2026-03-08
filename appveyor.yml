@@ -31,7 +31,8 @@ platform: x86
 #- cd %APPVEYOR_BUILD_FOLDER%
 
 before_build:
-- cmd: git submodule update --init --recursive extern/jwtcpp
+- cmd: git submodule update --init --remote extern/jwtcpp
+- cmd: git submodule update --init extern/libwebem
 
 - ps: >-
     nuget install Tools.InnoSetup
@@ -44,6 +45,18 @@ before_build:
     7z x WindowsLibraries.7z > NUL:
     
     cd ..
+
+ps: |
+    $propsContent = @"
+    <Project>
+      <ItemDefinitionGroup>
+        <ClCompile>
+          <AdditionalIncludeDirectories>$env:APPVEYOR_BUILD_FOLDER\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+        </ClCompile>
+      </ItemDefinitionGroup>
+    </Project>
+    "@
+    $propsContent | Out-File -FilePath "extern\libwebem\Directory.Build.props" -Encoding utf8
 
 build:
   parallel: true                  # enable MSBuild parallel builds
@@ -66,13 +79,13 @@ artifacts:
 
 test: off
 
-deploy:
-- provider: FTP
-  protocol: sftp
-  host: $(FTP_HOST)
-  username: $(FTP_USER)
-  password: $(FTP_PASSWORD)
-  folder: beta
-  on:
-    APPVEYOR_REPO_NAME: domoticz/domoticz
-    APPVEYOR_REPO_BRANCH: development
+#deploy:
+#- provider: FTP
+#  protocol: sftp
+#  host: $(FTP_HOST)
+#  username: $(FTP_USER)
+#  password: $(FTP_PASSWORD)
+#  folder: beta
+#  on:
+#    APPVEYOR_REPO_NAME: domoticz/domoticz
+#    APPVEYOR_REPO_BRANCH: development
