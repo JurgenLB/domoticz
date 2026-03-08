@@ -9,6 +9,7 @@ build:
   verbosity: minimal
 
 before_build:
+  - git submodule update --init extern/libwebem
   - ps: |
       cd msbuild
       Invoke-WebRequest `
