@@ -46,6 +46,18 @@ before_build:
     
     cd ..
 
+- ps: |
+    $propsContent = @"
+    <Project>
+      <ItemDefinitionGroup>
+        <ClCompile>
+          <AdditionalIncludeDirectories>$env:APPVEYOR_BUILD_FOLDER\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+        </ClCompile>
+      </ItemDefinitionGroup>
+    </Project>
+    "@
+    $propsContent | Out-File -FilePath "extern\libwebem\Directory.Build.props" -Encoding utf8
+
 build:
   parallel: true                  # enable MSBuild parallel builds
   project: msbuild\domoticz.sln   # path to Visual Studio solution or project
