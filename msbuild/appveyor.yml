@@ -1,0 +1,81 @@
+# AppVeyor CI configuration for Domoticz Windows build.
+#
+# IMPORTANT: This file lives in msbuild/ (not the repository root) so that it
+# does NOT get picked up automatically by AppVeyor when a pull request is
+# opened against the upstream domoticz/domoticz repository.  AppVeyor reads
+# appveyor.yml from the repository root by default; using a custom path means
+# only the AppVeyor project that is explicitly configured to look here will use
+# this file.
+#
+# To activate this configuration in your AppVeyor project:
+#   Settings → General → Custom configuration .yml file name
+#   → enter:  msbuild/appveyor.yml
+
+version: 1.0.{build}
+image: Visual Studio 2022
+configuration: Release
+platform: x86
+
+# Initialise submodules required for the Windows build.
+before_build:
+  - cmd: git submodule update --init extern/jwtcpp
+  - cmd: git submodule update --init extern/libwebem
+
+  - ps: >-
+      nuget install Tools.InnoSetup
+
+  - cmd: >-
+      cd msbuild
+
+      appveyor DownloadFile https://raw.githubusercontent.com/domoticz/win32-libraries/master/WindowsLibraries.7z
+
+      7z x WindowsLibraries.7z > NUL:
+
+      cd ..
+
+  # Inject a Directory.Build.props so that the libwebem sub-project finds the
+  # jwt-cpp headers from the submodule before the bundled Windows Libraries
+  # copy, eliminating MSVC C4244 narrowing-conversion warnings.
+  - ps: |
+      $propsContent = @"
+      <Project>
+        <ItemDefinitionGroup>
+          <ClCompile>
+            <AdditionalIncludeDirectories>$env:APPVEYOR_BUILD_FOLDER\extern\jwtcpp\include;$env:APPVEYOR_BUILD_FOLDER\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+          </ClCompile>
+        </ItemDefinitionGroup>
+      </Project>
+      "@
+      $propsContent | Out-File -FilePath "extern\libwebem\Directory.Build.props" -Encoding utf8
+
+build:
+  parallel: true
+  project: msbuild\domoticz.sln
+  verbosity: minimal
+
+after_build:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - cp appversion.h version_windows_x86.h
+  - cp History.txt history_windows_x86.txt
+  - move Tools.InnoSetup.* Tools.InnoSetup
+  - Tools.InnoSetup\tools\ISCC msbuild\WindowsInstaller\DomoticzSetup.iss
+  - msbuild msbuild\package.proj
+
+artifacts:
+  - path: domoticz_windows_x86.zip
+  - path: version_windows_x86.h
+  - path: history_windows_x86.txt
+  - path: History.txt
+
+test: off
+
+#deploy:
+#- provider: FTP
+#  protocol: sftp
+#  host: $(FTP_HOST)
+#  username: $(FTP_USER)
+#  password: $(FTP_PASSWORD)
+#  folder: beta
+#  on:
+#    APPVEYOR_REPO_NAME: JurgenLB/domoticz
+#    APPVEYOR_REPO_BRANCH: development
