@@ -18,7 +18,6 @@ jobs:
   windows:
     runs-on: windows-2022
 
-    if: github.repository == 'domoticz/domoticz'
 
     env:
       CONFIGURATION: Release
