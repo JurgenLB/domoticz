@@ -18,7 +18,6 @@ jobs:
   windows:
     runs-on: windows-2022
 
-
     env:
       CONFIGURATION: Release
       PLATFORM: x86
