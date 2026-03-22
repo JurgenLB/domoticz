@@ -48,8 +48,19 @@ before_build:
     $propsContent | Out-File -FilePath $propsFile -Encoding utf8
 
 build_script:
-- cmd: msbuild extern\libwebem\webem.vcxproj /m /p:Configuration=%CONFIGURATION% /p:Platform=Win32 /verbosity:minimal
-- cmd: msbuild msbuild\domoticz.sln /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /verbosity:minimal
+- ps: |
+    $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+      -latest -requires Microsoft.Component.MSBuild `
+      -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
+    if (-not $msbuild) {
+      Write-Error "Could not locate MSBuild.exe via vswhere"
+      exit 1
+    }
+    Write-Host "Using MSBuild: $msbuild"
+    & $msbuild extern\libwebem\webem.vcxproj /m /p:Configuration=$env:CONFIGURATION /p:Platform=Win32 /p:PlatformToolset=v143 /verbosity:minimal
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    & $msbuild msbuild\domoticz.sln /m /p:Configuration=$env:CONFIGURATION /p:Platform=$env:PLATFORM /p:PlatformToolset=v143 /verbosity:minimal
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 after_build:
 - cmd: |
