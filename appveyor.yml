@@ -5,21 +5,24 @@ platform: x86
 
 build: off
 
-install:
+clone_script:
 - ps: |
-    Write-Host "=== Initialising git submodules ==="
-    Write-Host "git version: $(git --version)"
-    git submodule update --init --recursive
+    Write-Host "Cloning $env:APPVEYOR_REPO_NAME branch $env:APPVEYOR_REPO_BRANCH ..."
+    git clone -q --branch $env:APPVEYOR_REPO_BRANCH https://github.com/$env:APPVEYOR_REPO_NAME.git $env:APPVEYOR_BUILD_FOLDER
+    Set-Location $env:APPVEYOR_BUILD_FOLDER
+    git checkout -qf $env:APPVEYOR_REPO_COMMIT
+    Write-Host "Initialising required submodules ..."
+    git submodule update --init -- extern/libwebem extern/jwtcpp
     if ($LASTEXITCODE -ne 0) {
       Write-Error "git submodule update failed (exit $LASTEXITCODE)"
       exit 1
     }
     if (-not (Test-Path "extern\libwebem\webem.vcxproj")) {
-      Write-Error "webem.vcxproj not found after submodule init - listing extern\:"
+      Write-Error "webem.vcxproj not found after submodule init"
       Get-ChildItem "extern" -ErrorAction SilentlyContinue
       exit 1
     }
-    Write-Host "Submodule OK: extern\libwebem\webem.vcxproj present"
+    Write-Host "Clone complete - extern\libwebem\webem.vcxproj present"
 
 before_build:
 - ps: nuget install Tools.InnoSetup
