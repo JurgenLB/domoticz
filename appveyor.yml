@@ -31,8 +31,6 @@ git_submodules: normal
 #- .\vcpkg integrate install
 #- cd %APPVEYOR_BUILD_FOLDER%
 
-build: off
-
 before_build:
 - cmd: git submodule update --init --remote extern/jwtcpp
 - cmd: git submodule update --init extern/libwebem
