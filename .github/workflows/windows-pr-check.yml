@@ -6,9 +6,7 @@ concurrency:
 
 on:
   pull_request:
-    branches:
-      - development
-      - master
+    
     paths-ignore:
       - 'tools/**'
       - '**.md'
