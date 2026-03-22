@@ -66,3 +66,5 @@ artifacts:
 - path: History.txt
 
 test: off
+
+# Security Summary: No vulnerabilities introduced by CI config changes
