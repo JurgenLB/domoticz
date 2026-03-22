@@ -1,5 +1,7 @@
 *.orig
 msbuild
+!msbuild/Directory.Build.targets
+!msbuild/ensure-windows-libraries.ps1
 *.db
 *.db_*
 *.db-*

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    Auto-setup Windows build dependencies for AppVeyor (and other CI systems where
+    the MSBuild auto-detect runs before lifecycle scripts download dependencies).
+
+    MSBuild imports Directory.Build.targets automatically from every project
+    directory and its ancestors, so this file is imported by domoticz.vcxproj
+    before the Build target runs.  The EnsureWindowsBuildDeps target invokes
+    ensure-windows-libraries.ps1 which downloads Windows Libraries, initialises
+    submodules, and builds webem.lib — all before the first ClCompile task.
+
+    The target is skipped when Windows Libraries are already present (e.g. in
+    GitHub Actions or a local developer build where setup has already been done).
+  -->
+
+  <PropertyGroup>
+    <!-- Capture the msbuild/ directory path at import time. -->
+    <_WinLibsMsbuildDir Condition="'$(_WinLibsMsbuildDir)'==''">$([System.IO.Path]::GetDirectoryName('$(MSBuildThisFileFullPath)'))</_WinLibsMsbuildDir>
+  </PropertyGroup>
+
+  <Target Name="EnsureWindowsBuildDeps"
+          BeforeTargets="Build"
+          Condition="'$(OS)'=='Windows_NT' AND !Exists('$(_WinLibsMsbuildDir)\Windows Libraries\include\json\json.h')">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(_WinLibsMsbuildDir)\ensure-windows-libraries.ps1&quot; -MsbuildDir &quot;$(_WinLibsMsbuildDir)&quot;" />
+  </Target>
+
+</Project>
