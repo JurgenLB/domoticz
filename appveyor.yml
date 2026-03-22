@@ -2,7 +2,9 @@ version: 1.0.{build}
 image: Visual Studio 2022
 configuration: Release
 platform: x86
-git_submodules: normal
+
+git:
+  submodules: true
 
 # below is to build/use packaged with VCPKG, as this is currently taking too long it is disabled
 #environment:
@@ -34,6 +36,7 @@ git_submodules: normal
 build: off
 
 before_build:
+- cmd: git submodule update --init extern/jwtcpp extern/libwebem
 - ps: >-
     nuget install Tools.InnoSetup
 - cmd: |
