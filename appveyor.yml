@@ -3,48 +3,13 @@ image: Visual Studio 2019
 configuration: Release
 platform: x86
 
+# Replace the default clone with our own so the branch/commit are correct.
+# All dependency setup (Windows Libraries download, submodule init, webem build)
+# is handled by msbuild/Directory.Build.targets which runs inside MSBuild before
+# the first ClCompile task — this works regardless of when AppVeyor triggers
+# its auto-msbuild relative to YAML lifecycle scripts.
 clone_script:
 - cmd: git clone -q --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
 - cmd: cd %APPVEYOR_BUILD_FOLDER% && git checkout -qf %APPVEYOR_REPO_COMMIT%
-- ps: |
-    Set-Location $env:APPVEYOR_BUILD_FOLDER
-    git submodule update --init -- extern/libwebem extern/jwtcpp
-    if ($LASTEXITCODE -ne 0) { exit 1 }
-    Set-Location msbuild
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    (New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/domoticz/win32-libraries/master/WindowsLibraries.7z', 'WindowsLibraries.7z')
-    & 7z x WindowsLibraries.7z | Out-Null
-    if ($LASTEXITCODE -ne 0) { exit 1 }
-    Set-Location ..
-    $j = "$env:APPVEYOR_BUILD_FOLDER\extern\jwtcpp\include"
-    $w = "$env:APPVEYOR_BUILD_FOLDER\msbuild\Windows Libraries\include"
-    $xml = @(
-      '<Project><ItemDefinitionGroup><ClCompile>',
-      "<AdditionalIncludeDirectories>$j;$w;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>",
-      '</ClCompile></ItemDefinitionGroup></Project>'
-    ) -join ''
-    $xml | Set-Content -Path "extern\libwebem\Directory.Build.props" -Encoding utf8
-    msbuild extern\libwebem\webem.vcxproj /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v142 /verbosity:minimal
-    if ($LASTEXITCODE -ne 0) { exit 1 }
-
-install:
-- ps: nuget install Tools.InnoSetup
-
-build_script:
-- cmd: msbuild msbuild\domoticz.sln /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /p:PlatformToolset=v142 /verbosity:minimal
-
-after_build:
-- cmd: |
-    copy appversion.h version_windows_x86.h
-    copy History.txt history_windows_x86.txt
-    move Tools.InnoSetup.* Tools.InnoSetup
-    Tools.InnoSetup\tools\ISCC msbuild\WindowsInstaller\DomoticzSetup.iss
-    msbuild msbuild\package.proj
-
-artifacts:
-- path: domoticz_windows_x86.zip
-- path: version_windows_x86.h
-- path: history_windows_x86.txt
-- path: History.txt
 
 test: off
