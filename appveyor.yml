@@ -5,13 +5,9 @@ platform: x86
 
 build: off
 
-clone_script:
+install:
 - ps: |
-    Write-Host "Cloning $env:APPVEYOR_REPO_NAME branch $env:APPVEYOR_REPO_BRANCH ..."
-    git clone -q --branch $env:APPVEYOR_REPO_BRANCH https://github.com/$env:APPVEYOR_REPO_NAME.git $env:APPVEYOR_BUILD_FOLDER
-    Set-Location $env:APPVEYOR_BUILD_FOLDER
-    git checkout -qf $env:APPVEYOR_REPO_COMMIT
-    Write-Host "Initialising required submodules ..."
+    Write-Host "=== Initialising git submodules ==="
     git submodule update --init -- extern/libwebem extern/jwtcpp
     if ($LASTEXITCODE -ne 0) {
       Write-Error "git submodule update failed (exit $LASTEXITCODE)"
@@ -19,10 +15,9 @@ clone_script:
     }
     if (-not (Test-Path "extern\libwebem\webem.vcxproj")) {
       Write-Error "webem.vcxproj not found after submodule init"
-      Get-ChildItem "extern" -ErrorAction SilentlyContinue
       exit 1
     }
-    Write-Host "Clone complete - extern\libwebem\webem.vcxproj present"
+    Write-Host "Submodule OK: extern\libwebem\webem.vcxproj present"
 
 before_build:
 - ps: nuget install Tools.InnoSetup
@@ -49,9 +44,11 @@ before_build:
       </ItemDefinitionGroup>
     </Project>
     "@
-    $propsContent | Out-File -FilePath "extern\libwebem\Directory.Build.props" -Encoding utf8
+    $propsFile = Join-Path $env:APPVEYOR_BUILD_FOLDER "extern\libwebem\Directory.Build.props"
+    $propsContent | Out-File -FilePath $propsFile -Encoding utf8
 
 build_script:
+- cmd: msbuild extern\libwebem\webem.vcxproj /m /p:Configuration=%CONFIGURATION% /p:Platform=Win32 /verbosity:minimal
 - cmd: msbuild msbuild\domoticz.sln /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /verbosity:minimal
 
 after_build:

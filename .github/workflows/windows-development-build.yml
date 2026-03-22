@@ -68,6 +68,10 @@ jobs:
           "@
           $propsContent | Out-File -FilePath "extern\libwebem\Directory.Build.props" -Encoding utf8
 
+      - name: Build webem
+        shell: cmd
+        run: msbuild extern\libwebem\webem.vcxproj /m /p:Configuration=%CONFIGURATION% /p:Platform=Win32 /verbosity:minimal
+
       - name: Build Domoticz
         shell: cmd
         run: msbuild msbuild\domoticz.sln /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /verbosity:minimal
