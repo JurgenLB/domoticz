@@ -1,39 +1,36 @@
 <#
 .SYNOPSIS
-    Patches jwt-cpp headers in the downloaded Windows Libraries to fix MSVC C4244
-    narrowing-conversion warnings.
+    Patches the jwt-cpp traits header in the extern/jwtcpp submodule to fix MSVC
+    C4244 narrowing-conversion warnings.
 
 .DESCRIPTION
-    The Windows Libraries package ships an older jwt-cpp version with two type
-    mismatches that MSVC reports as C4244 errors when compiling cWebem.cpp:
+    The open-source-parsers-jsoncpp traits header typedef's integer_type as
+    Json::Value::Int (32-bit) while as_integer() returns val.asInt64() (64-bit),
+    causing a C4244 narrowing warning on return.
 
-      1. traits.h  - integer_type is typedef'd to Json::Value::Int (32-bit) while
-                     as_integer() returns val.asInt64() (64-bit).
+    The as_date() fix (replacing from_time_t with date(std::chrono::seconds(...)))
+    is already present in the main jwt-cpp repository at the submodule commit used
+    by this project, so no patch is needed for that.
 
-      2. jwt.h     - as_date() uses system_clock::from_time_t(std::round(...)),
-                     where std::round returns double and from_time_t expects time_t
-                     (implicit double->time_t narrowing). Replaced with
-                     date(std::chrono::seconds(std::llround(...))) which avoids
-                     any implicit conversion.
+    The Release|Win32 build includes ../extern/jwtcpp/include before
+    ../msbuild/Windows Libraries/include so that the upstream-fixed jwt.h is used.
+    This script therefore patches the traits header in extern/jwtcpp.
 
-    This script applies minimal, targeted text replacements to correct both issues
-    after the archive has been extracted.
-
-.PARAMETER WindowsLibrariesPath
-    Path to the extracted "Windows Libraries" directory.
-    Defaults to "msbuild\Windows Libraries" (relative to the repo root).
+.PARAMETER JwtCppIncludePath
+    Path to the jwt-cpp include directory.
+    Defaults to "extern\jwtcpp\include" (relative to the repo root).
 #>
 param(
-    [string]$WindowsLibrariesPath = "msbuild\Windows Libraries"
+    [string]$JwtCppIncludePath = "extern\jwtcpp\include"
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# --- Fix 1: traits.h ---------------------------------------------------------
-# integer_type was Json::Value::Int (32-bit) but as_integer() returns asInt64()
+# Fix: traits.h integer_type -------------------------------------------------
+# integer_type is Json::Value::Int (32-bit) but as_integer() returns asInt64()
 # (64-bit), causing a C4244 narrowing warning on return.
-$traitsPath = "$WindowsLibrariesPath\include\jwt-cpp\traits\open-source-parsers-jsoncpp\traits.h"
+$traitsPath = "$JwtCppIncludePath\jwt-cpp\traits\open-source-parsers-jsoncpp\traits.h"
 if (-not (Test-Path $traitsPath)) {
     Write-Error "File not found: $traitsPath"
     exit 1
@@ -45,27 +42,4 @@ if ($patched -eq $content) {
 } else {
     [System.IO.File]::WriteAllText($traitsPath, $patched)
     Write-Host "Patched $traitsPath"
-}
-
-# --- Fix 2: jwt.h as_date() --------------------------------------------------
-# Old code used system_clock::from_time_t(std::round(as_number())) which has an
-# implicit double->time_t conversion (C4244).  Replace the two return statements
-# with date(std::chrono::seconds(...)) which avoids any narrowing:
-#   - std::llround returns long long
-#   - std::chrono::seconds takes long long
-#   - as_integer() returns Int64 (long long after Fix 1 above)
-$jwtPath = "$WindowsLibrariesPath\include\jwt-cpp\jwt.h"
-if (-not (Test-Path $jwtPath)) {
-    Write-Error "File not found: $jwtPath"
-    exit 1
-}
-$content = [System.IO.File]::ReadAllText($jwtPath)
-$oldDateImpl = "date as_date() const {`n`t`t`tusing std::chrono::system_clock;`n`t`t`tif (get_type() == json::type::number) return system_clock::from_time_t(std::round(as_number()));`n`t`t`treturn system_clock::from_time_t(as_integer());`n`t`t}"
-$newDateImpl = "date as_date() const {`n`t`t`tusing std::chrono::system_clock;`n`t`t`tif (get_type() == json::type::number)`n`t`t`t`treturn date(std::chrono::seconds(std::llround(as_number())));`n`t`t`treturn date(std::chrono::seconds(as_integer()));`n`t`t}"
-$patched = $content.Replace($oldDateImpl, $newDateImpl)
-if ($patched -eq $content) {
-    Write-Warning "No replacement made in $jwtPath - pattern not found (already patched?)"
-} else {
-    [System.IO.File]::WriteAllText($jwtPath, $patched)
-    Write-Host "Patched $jwtPath"
 }
