@@ -50,6 +50,10 @@ jobs:
           7z x WindowsLibraries.7z | Out-Null
           cd ..
 
+      - name: Fix jwt-cpp header type mismatches
+        shell: powershell
+        run: msbuild\patch-jwt-cpp.ps1
+
       - name: Configure libwebem build paths
         shell: powershell
         run: |
@@ -58,7 +62,6 @@ jobs:
             <ItemDefinitionGroup>
               <ClCompile>
                 <AdditionalIncludeDirectories>${{ github.workspace }}\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-                <DisableSpecificWarnings>4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
               </ClCompile>
             </ItemDefinitionGroup>
           </Project>
