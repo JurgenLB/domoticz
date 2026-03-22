@@ -3,13 +3,14 @@ image: Visual Studio 2019
 configuration: Release
 platform: x86
 
-# Replace the default clone with our own so the branch/commit are correct.
-# All dependency setup (Windows Libraries download, submodule init, webem build)
-# is handled by msbuild/Directory.Build.targets which runs inside MSBuild before
-# the first ClCompile task — this works regardless of when AppVeyor triggers
-# its auto-msbuild relative to YAML lifecycle scripts.
+# clone_script replaces AppVeyor's default clone so we control the order of
+# steps.  All items use "cmd:" so they run synchronously and complete BEFORE
+# AppVeyor triggers the auto-detected MSBuild build.  "ps:" items in
+# clone_script run concurrently with (or after) the auto-msbuild step on this
+# project type and therefore cannot be relied on for pre-build setup.
 clone_script:
 - cmd: git clone -q --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
 - cmd: cd %APPVEYOR_BUILD_FOLDER% && git checkout -qf %APPVEYOR_REPO_COMMIT%
+- cmd: powershell -NoProfile -ExecutionPolicy Bypass -File "%APPVEYOR_BUILD_FOLDER%\msbuild\ensure-windows-libraries.ps1" -MsbuildDir "%APPVEYOR_BUILD_FOLDER%\msbuild"
 
 test: off
