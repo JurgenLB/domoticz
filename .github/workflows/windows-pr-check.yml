@@ -51,6 +51,7 @@ jobs:
             <ItemDefinitionGroup>
               <ClCompile>
                 <AdditionalIncludeDirectories>${{ github.workspace }}\msbuild\Windows Libraries\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+                <DisableSpecificWarnings>4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
               </ClCompile>
             </ItemDefinitionGroup>
           </Project>
