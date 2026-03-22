@@ -55,10 +55,8 @@ before_build:
     </Project>
     "@
     $propsContent | Out-File -FilePath "extern\libwebem\Directory.Build.props" -Encoding utf8
-build:
-  parallel: true                  # enable MSBuild parallel builds
-  project: msbuild\domoticz.sln   # path to Visual Studio solution or project
-  verbosity: minimal
+build_script:
+- cmd: msbuild msbuild\domoticz.sln /m /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /verbosity:minimal
 
 after_build:
 - cd %APPVEYOR_BUILD_FOLDER%
