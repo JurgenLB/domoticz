@@ -3,7 +3,7 @@ image: Visual Studio 2022
 configuration: Release
 platform: x86
 
-# below is to build/use packaged with VCPKG, as this is currently taking to long it is disabled
+# below is to build/use packaged with VCPKG, as this is currently taking too long it is disabled
 #environment:
 #  APPVEYOR_SAVE_CACHE_ON_ERROR: true
 #  VCPKG_INSTALL_PATH: 'C:\tools\vcpkg\installed'
@@ -19,7 +19,7 @@ platform: x86
 #on_finish:
 #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
-# below is to build/use packaged with VCPKG, as this is currently taking to long it is disabled
+# below is to build/use packaged with VCPKG, as this is currently taking too long it is disabled
 #install:
 #- cd "C:\Tools\vcpkg"
 #- git pull
