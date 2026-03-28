@@ -384,7 +384,8 @@ define(['app'], function (app) {
                         device.SubType.indexOf('Itho') == 0 ||
                         device.SubType.indexOf('Lucci') == 0 ||
                         device.SubType.indexOf('Falmec') == 0 ||
-                        device.SubType.indexOf('Westinghouse') == 0
+                        device.SubType.indexOf('Westinghouse') == 0 ||
+                        device.SubType.indexOf('Orcon') == 0
                     )) {
                         return 'images/Fan48_On.png';
                     }
@@ -499,7 +500,7 @@ define(['app'], function (app) {
                     if (!ctrl.isClickable()) return;
 
                     // Fan subtypes - show specialized popups
-                    if (device.SubType && device.SubType.indexOf('Itho') == 0) {
+                    if (device.SubType && (device.SubType.indexOf('Itho') == 0 || device.SubType.indexOf('Orcon') == 0)) {
                         ShowIthoPopup($event || event, device.idx, device.Protected, window.myglobals.ismobile);
                         return;
                     }
