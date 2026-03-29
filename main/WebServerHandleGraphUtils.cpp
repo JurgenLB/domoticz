@@ -333,9 +333,7 @@ std::string FormatDate(int year, int month, int day)
 
 std::string FormatDateTime(int year, int month, int day, int h, int m, int s)
 {
-    char buf[24];
-    snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d", year, month, day, h, m, s);
-    return buf;
+    return std_format("%04d-%02d-%02d %02d:%02d:%02d", year, month, day, h, m, s);
 }
 
 std::string FormatWindSpeed(int rawTenthsMs, int windunit, float windscale)
