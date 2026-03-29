@@ -9239,9 +9239,7 @@ bool CSQLHelper::SpreadCounterSpike(uint64_t idx, const std::string& sdate, std:
 	{
 		t.tm_mday--;
 		mktime(&t);
-		char datebuf[12];
-		snprintf(datebuf, sizeof(datebuf), "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
-		std::string check_date(datebuf);
+		std::string check_date = std_format("%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
 
 		auto it = row_map.find(check_date);
 		if (it == row_map.end())

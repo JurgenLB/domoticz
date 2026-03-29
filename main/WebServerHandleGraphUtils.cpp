@@ -328,9 +328,7 @@ std::string FormatMeterRate(double value, _eMeterType metertype)
 
 std::string FormatDate(int year, int month, int day)
 {
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%04d-%02d-%02d", year, month, day);
-    return buf;
+    return std_format("%04d-%02d-%02d", year, month, day);
 }
 
 std::string FormatDateTime(int year, int month, int day, int h, int m, int s)

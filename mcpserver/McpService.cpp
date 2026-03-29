@@ -3054,13 +3054,10 @@ namespace mcp		// Model Context Protocol
 					localtime_r(&now, &tmNow);
 					time_t tStart = now - (time_t)(iDays - 1) * 86400LL;
 					localtime_r(&tStart, &tmStart);
-					char buf[16];
-					snprintf(buf, sizeof(buf), "%04d-%02d-%02d",
+					szDateEnd = std_format("%04d-%02d-%02d",
 						tmNow.tm_year + 1900, tmNow.tm_mon + 1, tmNow.tm_mday);
-					szDateEnd = buf;
-					snprintf(buf, sizeof(buf), "%04d-%02d-%02d",
+					szDateStart = std_format("%04d-%02d-%02d",
 						tmStart.tm_year + 1900, tmStart.tm_mon + 1, tmStart.tm_mday);
-					szDateStart = buf;
 				}
 				auto result = m_sql.safe_query(
 					"SELECT Date, nValue, sValue, User FROM LightingLog "
@@ -3134,13 +3131,10 @@ namespace mcp		// Model Context Protocol
 			time_t tStart = now - (time_t)(iDays - 1) * 86400LL;
 			localtime_r(&tStart, &tmStart);
 
-			char buf[16];
-			snprintf(buf, sizeof(buf), "%04d-%02d-%02d",
+			szDateEnd = std_format("%04d-%02d-%02d",
 				tmNow.tm_year + 1900, tmNow.tm_mon + 1, tmNow.tm_mday);
-			szDateEnd = buf;
-			snprintf(buf, sizeof(buf), "%04d-%02d-%02d",
+			szDateStart = std_format("%04d-%02d-%02d",
 				tmStart.tm_year + 1900, tmStart.tm_mon + 1, tmStart.tm_mday);
-			szDateStart = buf;
 		}
 
 		// Build range string "YYYY-MM-DDTYYYY-MM-DD"
