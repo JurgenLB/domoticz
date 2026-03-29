@@ -38,6 +38,19 @@ Domoticz uses several bundled libraries as git submodules under `extern/`:
 
 > **Important:** Never include the `extern/` folder in a pull request. Submodule contents are managed externally through git submodule references.
 
+### Per-branch submodule strategy
+
+The project uses a **different submodule update strategy depending on the branch**:
+
+| Branch | Command | Behaviour |
+|--------|---------|-----------|
+| `master` (stable) | `git submodule update --init --recursive` | Checks out the **exact commit SHA** pinned in the repository index. Guarantees reproducible, stable builds. |
+| `development` | `git submodule update --init --remote` | Fetches the **latest commit on the upstream tracking branch** (`branch =` in `.gitmodules`). Keeps bundled libraries up-to-date during active development. |
+
+CMake applies this automatically (see `CMakeLists.txt`). CI workflows for `development` apply it as well.
+
+When working on a feature branch based on `development`, use `git submodule update --init --recursive` to stay on the pinned SHAs until you intentionally want to bump a dependency.
+
 ### Understanding the three submodule update commands
 
 When working with submodules, three variants of `git submodule update` are commonly used. Understanding their differences helps you choose the right one:
@@ -85,7 +98,7 @@ git submodule update --init --recursive --force
 | `--init --remote` | Latest commit on tracked remote branch | No | No (by default) |
 | `--init --recursive --force` | Pinned commit SHA in parent repo | **Yes** | Yes |
 
-For day-to-day development and all CI builds, use `--init --recursive`. Use `--remote` only when deliberately upgrading a submodule, and `--force` to clean up an accidentally-modified submodule.
+For day-to-day development and all CI builds, use `--init --recursive` (or let CMake do it for you). On the `development` branch, CMake and the CI workflows automatically use `--remote` to track the latest upstream. Use `--force` to clean up an accidentally-modified submodule.
 
 ## Code style
 
