@@ -1,6 +1,7 @@
 [submodule "extern/jsoncpp"]
 	path = extern/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
+	branch = master
 	ignore = dirty
 [submodule "minizip"]
 	path = extern/minizip
