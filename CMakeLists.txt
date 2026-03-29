@@ -128,6 +128,9 @@ IF(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 # Update submodules as needed
     IF(GIT_SUBMODULE)
         message(STATUS "Submodule update")
+    # Use --recursive (not --remote) to check out the exact commit SHA pinned in the
+    # parent repository, ensuring reproducible builds.  Use --remote only when
+    # deliberately upgrading a submodule to a newer upstream commit.
     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         RESULT_VARIABLE GIT_SUBMOD_RESULT)
