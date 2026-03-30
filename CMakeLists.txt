@@ -140,18 +140,13 @@ IF(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
             OUTPUT_STRIP_TRAILING_WHITESPACE
             ERROR_QUIET
         )
-        # In CI environments (e.g. GitHub Actions PR builds) the checkout is in
-        # detached HEAD state, so rev-parse returns "HEAD" instead of a branch
-        # name.  Fall back to the environment variables that CI sets for the
-        # source branch so the correct submodule strategy is still selected.
-        IF("${GIT_BRANCH}" STREQUAL "HEAD")
-            IF(NOT "$ENV{GITHUB_HEAD_REF}" STREQUAL "")
-                SET(GIT_BRANCH "$ENV{GITHUB_HEAD_REF}")
-            ELSEIF(NOT "$ENV{GITHUB_REF_NAME}" STREQUAL "")
-                SET(GIT_BRANCH "$ENV{GITHUB_REF_NAME}")
-            ENDIF()
-        ENDIF()
-        IF("${GIT_BRANCH}" STREQUAL "development")
+        # In CI/PR builds the checkout is a detached HEAD, so rev-parse returns
+        # "HEAD".  Check the CI environment variables directly in the condition:
+        #   GITHUB_HEAD_REF - source branch name for pull-request events
+        #   GITHUB_REF_NAME - branch name for push / workflow-dispatch events
+        IF("${GIT_BRANCH}" STREQUAL "development"
+                OR "$ENV{GITHUB_HEAD_REF}" STREQUAL "development"
+                OR "$ENV{GITHUB_REF_NAME}" STREQUAL "development")
             message(STATUS "Development branch: updating submodules to latest upstream (--remote)")
             execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --remote
                                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
