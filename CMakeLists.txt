@@ -131,8 +131,8 @@ IF(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
         #   development branch -> --remote: track the latest upstream commit on the
         #     branch configured in .gitmodules, so new library fixes are picked up
         #     automatically during active development.
-        #   master / stable release -> --checkout: detach each submodule at the exact
-        #     commit SHA recorded in the superproject, ensuring reproducible builds.
+        #   master / other branches -> --recursive: check out the exact commit SHA
+        #     pinned in the parent repository, ensuring reproducible stable builds.
         execute_process(
             COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -152,8 +152,8 @@ IF(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
                                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                                 RESULT_VARIABLE GIT_SUBMOD_RESULT)
         ELSE()
-            message(STATUS "Stable release: checking out submodules at pinned SHA (--checkout, branch: ${GIT_BRANCH})")
-            execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --checkout
+            message(STATUS "Submodule update (pinned SHA, branch: ${GIT_BRANCH})")
+            execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
                                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                                 RESULT_VARIABLE GIT_SUBMOD_RESULT)
         ENDIF()

@@ -1,0 +1,81 @@
+name: Domoticz Release (Stable) Unix
+
+concurrency:
+  group: linux-release-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'msbuild/**'
+      - '.github/**'
+      - 'tools/**'
+      - '**.md'
+      - '**.txt'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      # Stable release: check out each submodule at the exact commit SHA pinned
+      # in the repository index, ensuring a reproducible build.
+      - name: Checkout submodules at pinned SHA
+        run: git submodule update --init --checkout
+
+      # Prepare environment
+      - name: prepare environment
+        run: |
+          sudo timedatectl set-timezone Europe/Amsterdam
+          buildnr=$(git rev-list HEAD --count)
+          echo "BUILDNR=$(($buildnr + 2107))" >> $GITHUB_ENV
+
+      # install dependencies
+      - name: dependencies
+        run: |
+          echo 'APT::Get::Always-Include-Phased-Updates "false";' | sudo tee /etc/apt/apt.conf.d/99-phased-updates
+          sudo apt-mark hold grub-efi-amd64-signed
+          sudo apt-get update --fix-missing
+          sudo apt-get install make gcc cmake g++ libssl-dev git libcurl4-gnutls-dev libusb-dev libmosquitto-dev python3-dev zlib1g-dev liblua5.3-dev uthash-dev libsqlite3-dev
+          sudo apt-get install libboost-chrono-dev libboost-system-dev libboost-thread-dev
+          sudo apt-get install python3-pytest python3-pytest-bdd
+
+      # Domoticz
+      - name: build domoticz
+        run: |
+          cd $GITHUB_WORKSPACE
+          cmake -DCMAKE_BUILD_TYPE=Release CMakeLists.txt
+          make -j$(nproc)
+
+      # Packaging
+      - name: package domoticz
+        run: |
+          cd $GITHUB_WORKSPACE
+          mkdir package
+          tar czf package/domoticz_linux_x86_64-${{ env.BUILDNR }}.tgz domoticz History.txt License.txt domoticz.sh server_cert.pem updatebeta updaterelease www/ scripts/ Config/ dzVents/
+          shasum -a 256 package/domoticz_linux_x86_64-${{ env.BUILDNR }}.tgz > package/domoticz_linux_x86_64-${{ env.BUILDNR }}.tgz.sha256sum
+
+      # Artifact upload
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: domoticz_linux_x86_64-${{ env.BUILDNR }}
+          path: package/
+          retention-days: 400
+          if-no-files-found: error

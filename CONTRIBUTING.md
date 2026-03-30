@@ -47,25 +47,25 @@ The project uses a **different submodule update strategy depending on the branch
 | `master` (stable) | `git submodule update --init --checkout` | Detaches each submodule at the **exact commit SHA** pinned in the repository index. Guarantees reproducible, stable builds. |
 | `development` | `git submodule update --init --remote` | Fetches the **latest commit on the upstream tracking branch** (`branch =` in `.gitmodules`). Keeps bundled libraries up-to-date during active development. |
 
-CMake applies this automatically (see `CMakeLists.txt`). CI workflows for `development` apply it as well.
+CMake (`CMakeLists.txt`) applies this automatically using `--recursive` for stable/master and `--remote` for `development`. In addition, the CI release workflow (`.github/workflows/release.yml`) runs `git submodule update --init --checkout` explicitly as a named step to make the intent unambiguous; the CI development workflow (`development.yml`) likewise runs `--remote` explicitly.
 
-When working on a feature branch based on `development`, use `git submodule update --init --checkout` to stay on the pinned SHAs until you intentionally want to bump a dependency.
+When working on a feature branch based on `development`, use `git submodule update --init --recursive` to stay on the pinned SHAs until you intentionally want to bump a dependency.
 
 ### Understanding the three submodule update commands
 
 When working with submodules, three variants of `git submodule update` are commonly used. Understanding their differences helps you choose the right one:
 
-#### 1. `git submodule update --init --checkout`
+#### 1. `git submodule update --init --recursive`
 
 ```bash
-git submodule update --init --checkout
+git submodule update --init --recursive
 ```
 
 - **Initializes** any submodule that has not yet been set up locally (`--init`).
 - **Checks out the exact commit SHA** that is recorded in the parent repository's git index — the pinned version chosen by the last committer.
-- `--checkout` is the default update method; including it explicitly makes the intent clear.
+- **Recurses into nested submodules** (`--recursive`), so submodules-within-submodules are also updated.
 - **Use this** when building Domoticz from source for the first time, or after pulling new commits, to ensure your submodule state exactly matches what the repository expects.
-- This is the command run automatically by `cmake` during stable/master builds (see `CMakeLists.txt`).
+- `cmake` runs this automatically for non-development branches (see `CMakeLists.txt`); the CI release workflow uses the equivalent `--checkout` flag explicitly.
 
 #### 2. `git submodule update --init --remote`
 
@@ -79,13 +79,13 @@ git submodule update --init --remote
 - After running this command you must `git add extern/<name>` and commit the new submodule SHA into the parent repository.
 - **Do not use** this during a regular build; it breaks reproducibility by pulling in unreleased upstream changes.
 
-#### 3. `git submodule update --init --checkout --force`
+#### 3. `git submodule update --init --recursive --force`
 
 ```bash
-git submodule update --init --checkout --force
+git submodule update --init --recursive --force
 ```
 
-- Does everything `--checkout` does, **plus** it forcibly discards any local uncommitted modifications inside the submodule working trees before checking out the pinned commit.
+- Does everything `--recursive` does, **plus** it forcibly discards any local uncommitted modifications inside the submodule working trees before checking out the pinned commit.
 - Equivalent to running `git checkout --force` inside each submodule.
 - **Use this** when a submodule working tree has been accidentally modified and you need to restore the exact state recorded in the parent repository.
 - Useful in CI pipelines where a dirty submodule state from a previous run could otherwise cause conflicts.
@@ -94,11 +94,11 @@ git submodule update --init --checkout --force
 
 | Command | Checkout target | Discards local changes | Recurses |
 |---------|----------------|----------------------|---------|
-| `--init --checkout` | Pinned commit SHA in parent repo | No | No |
+| `--init --recursive` | Pinned commit SHA in parent repo | No | Yes |
 | `--init --remote` | Latest commit on tracked remote branch | No | No (by default) |
-| `--init --checkout --force` | Pinned commit SHA in parent repo | **Yes** | No |
+| `--init --recursive --force` | Pinned commit SHA in parent repo | **Yes** | Yes |
 
-For day-to-day development and all CI builds, use `--init --checkout` (or let CMake do it for you). On the `development` branch, CMake and the CI workflows automatically use `--remote` to track the latest upstream. Use `--force` to clean up an accidentally-modified submodule.
+For day-to-day development and all CI builds, use `--init --recursive` (or let CMake do it for you). On the `development` branch, CMake and the CI workflows automatically use `--remote` to track the latest upstream. Use `--force` to clean up an accidentally-modified submodule.
 
 ## Code style
 
