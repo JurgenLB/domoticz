@@ -10,6 +10,9 @@
 #include "../../main/dirent_windows.h"
 #else
 #include <dirent.h>
+#include <sys/stat.h>
+#include <cerrno>
+#include <cstring>
 #endif
 
 #include "../../main/Helper.h"
@@ -65,9 +68,8 @@ bool C1WireByOWFS::FindDevice(const std::string &inDir, const std::string &sID, 
 				    found = FindDevice(inDir + "/" + de->d_name + HUB_AUX_SUB_PATH, sID, device);
 		    }
 	    }
+	    closedir(d);
     }
-
-    closedir(d);
     return found;
 }
 
@@ -105,9 +107,12 @@ void C1WireByOWFS::GetDevices(const std::string &inDir, /*out*/std::vector<_t1Wi
 			    GetDevices(inDir + "/" + de->d_name + HUB_AUX_SUB_PATH, devices);
 		    }
 	    }
+	    closedir(d);
     }
-
-    closedir(d);
+    else if (inDir == m_path)
+    {
+	    m_p1WireBase->Log(LOG_ERROR, "1Wire (OWFS): Cannot open OWFS path '%s'. Make sure OWFS is mounted.", inDir.c_str());
+    }
 }
 
 std::string C1WireByOWFS::readRawData(const std::string& filename) const
@@ -374,6 +379,72 @@ void C1WireByOWFS::StartSimultaneousTemperatureRead()
 
 void C1WireByOWFS::PrepareDevices()
 {
+#ifndef WIN32
+	// Create the OWFS mount point directory if it does not exist
+	struct stat st;
+	if (stat(m_path.c_str(), &st) != 0)
+	{
+		if (mkdir(m_path.c_str(), 0755) == 0)
+			m_p1WireBase->Log(LOG_STATUS, "1Wire (OWFS): Created mount point directory %s", m_path.c_str());
+		else
+		{
+			m_p1WireBase->Log(LOG_ERROR, "1Wire (OWFS): Failed to create mount point directory %s: %s", m_path.c_str(), strerror(errno));
+			return;
+		}
+	}
+#ifdef __linux__
+	// Check if OWFS is already mounted at the configured path
+	bool isMounted = false;
+	std::ifstream procmounts("/proc/mounts");
+	if (procmounts.is_open())
+	{
+		std::string line;
+		while (std::getline(procmounts, line))
+		{
+			// /proc/mounts format: <device> <mountpoint> <fstype> <options> <dump> <pass>
+			std::istringstream iss(line);
+			std::string device, mountpoint, fstype;
+			if ((iss >> device >> mountpoint >> fstype) && mountpoint == m_path && (device == "owfs" || fstype == "fuse.owfs"))
+			{
+				isMounted = true;
+				break;
+			}
+		}
+		procmounts.close();
+	}
+
+	if (!isMounted)
+	{
+		// Validate path before using in system() call (prevent shell injection)
+		bool pathIsSafe = !m_path.empty();
+		for (char c : m_path)
+		{
+			if (!isalnum(c) && c != '/' && c != '-' && c != '_' && c != '.' && c != ' ')
+			{
+				pathIsSafe = false;
+				break;
+			}
+		}
+
+		if (!pathIsSafe)
+		{
+			m_p1WireBase->Log(LOG_ERROR, "1Wire (OWFS): Invalid characters in OWFS path '%s'", m_path.c_str());
+			return;
+		}
+
+		// Try to mount OWFS automatically; owfs will use its default device discovery
+		// (USB adapters are auto-detected, or owserver on localhost:4304 if running)
+		std::string mountCmd = "owfs --allow_other " + m_path;
+		m_p1WireBase->Log(LOG_STATUS, "1Wire (OWFS): OWFS is not mounted at '%s', attempting: %s", m_path.c_str(), mountCmd.c_str());
+		if (system(mountCmd.c_str()) != 0)
+		{
+			m_p1WireBase->Log(LOG_ERROR, "1Wire (OWFS): Failed to mount OWFS at '%s'", m_path.c_str());
+			m_p1WireBase->Log(LOG_STATUS, "1Wire (OWFS): To mount manually, run: owfs --allow_other %s", m_path.c_str());
+			m_p1WireBase->Log(LOG_STATUS, "1Wire (OWFS): Or add to /etc/fstab: owfs %s fuse.owfs allow_other,_netdev 0 0", m_path.c_str());
+		}
+	}
+#endif // __linux__
+#endif // WIN32
 }
 
 bool C1WireByOWFS::IsValidDir(const struct dirent*const de)
