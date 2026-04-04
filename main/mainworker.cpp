@@ -5691,8 +5691,8 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t OID4;
 	int LastLevel = 0;
 	int llevel = 0;
-	int switchType;
-	int nValue;
+	int switchType = 0;
+	int nValue = 0;
 	std::string sValue;
 	std::string SourceID;
 	std::string lstatus;
@@ -5781,11 +5781,18 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 					nValue = llevel;
 					sValue = std::to_string(llevel);
 		}
-		else
+		else if (!LevelToCommand.empty())
 		{
+					// Selector mode but this command is not mapped to a speed level - keep the last known level
 					nValue = LastLevel;
 					sValue = std::to_string(LastLevel);
 					_log.Debug(DEBUG_HARDWARE, "Orcon: Status '%s' for command %02X not found in selector configuration, using LastLevel=%d", lstatus.c_str(), cmnd, LastLevel);
+		}
+		else
+		{
+					// Not a selector device - use the command value directly, same as Itho CVE RFT
+					nValue = cmnd;
+					sValue = std::to_string(cmnd);
 		}
 	}
 	else
