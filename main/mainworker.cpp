@@ -5791,8 +5791,18 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 		else
 		{
 					// Not a selector device - use the command value directly, same as Itho CVE RFT
-					nValue = cmnd;
-					sValue = std::to_string(cmnd);
+					// Ignore "speed" acknowledgment packets sent by the device after level commands
+					if (cmnd != fan_Orconspeed)
+					{
+						nValue = cmnd;
+						sValue = std::to_string(cmnd);
+					}
+					else
+					{
+						nValue = LastLevel;
+						sValue = std::to_string(LastLevel);
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Ignoring speed acknowledgment, keeping LastLevel=%d", LastLevel);
+					}
 		}
 	}
 	else
