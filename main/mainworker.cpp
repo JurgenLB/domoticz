@@ -5690,6 +5690,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 	uint8_t OID3;
 	uint8_t OID4;
 	int LastLevel = 0;
+	int currentNValue = 0;
 	int llevel = 0;
 	int switchType = 0;
 	int nValue = 0;
@@ -5718,7 +5719,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			ID = DIDTmp;
 			SourceID = IDTmp;
 		}
-		result = m_sql.safe_query("SELECT Name, SwitchType, Options, LastLevel, Description FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
+		result = m_sql.safe_query("SELECT Name, SwitchType, Options, LastLevel, Description, nValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit==%d) AND (Type==%d) AND (SubType==%d)",
 			pHardware->m_HwdID, ID.c_str(), Unit, devType, subType);
 		if (!result.empty())
 		{
@@ -5727,6 +5728,7 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 			switchType = atoi(result[0][1].c_str());
 			std::string optionsStr = result[0][2];
 			LastLevel = atoi(result[0][3].c_str());
+			currentNValue = atoi(result[0][5].c_str());
 			if(SourceID.empty()) {
 				SourceID = result[0][4];
 			}
@@ -5799,9 +5801,10 @@ void MainWorker::decode_Fan(const CDomoticzHardwareBase* pHardware, const tRBUF*
 					}
 					else
 					{
-						nValue = LastLevel;
-						sValue = std::to_string(LastLevel);
-						_log.Debug(DEBUG_HARDWARE, "Orcon: Ignoring speed acknowledgment, keeping LastLevel=%d", LastLevel);
+						// Use the current DB nValue (not LastLevel, which is only maintained for selector devices)
+						nValue = currentNValue;
+						sValue = std::to_string(currentNValue);
+						_log.Debug(DEBUG_HARDWARE, "Orcon: Ignoring speed acknowledgment, keeping current nValue=%d", currentNValue);
 					}
 		}
 	}
@@ -13246,8 +13249,20 @@ MainWorker::eSwitchLightReturnCode MainWorker::SwitchLight(const uint64_t idx, c
 		result = m_sql.safe_query(
 			"SELECT HardwareID,DeviceID,Unit,Type,SubType,SwitchType,AddjValue2,nValue,sValue,Name,Options,OrgHardwareID,LastLevel,Description FROM DeviceStatus WHERE (ID == %" PRIu64 ")",
 			idx);
-		sd = result[0];
-		sd[7] = std::to_string(level); // Change nValue to current level
+		if (!result.empty())
+		{
+			sd = result[0];
+			if (level < 0)
+			{
+				// Derive the correct level from switchcmd so SwitchLightInt does not
+				// fall into the "level < 0 → LastLevel" path with a potentially stale value
+				uint8_t derivedCmd = 0;
+				std::map<std::string, std::string> opts = m_sql.BuildDeviceOptions(sd[10]);
+				if (GetLightCommand((uint8_t)dtype, (uint8_t)subtype, switchtype, switchcmd, derivedCmd, opts))
+					level = derivedCmd;
+			}
+			sd[7] = std::to_string(level); // Change nValue to current level
+		}
 	}
 	bool bIsOn = IsLightSwitchOn(switchcmd);
 	if (ooc)//Only on change
