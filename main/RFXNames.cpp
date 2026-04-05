@@ -1943,6 +1943,20 @@ void GetLightStatus(
 		}
 		break;
 	case pTypeFan:
+		if (switchtype == STYPE_Selector)
+		{
+			// For selector-type fan devices, derive level and status from sValue
+			// (nValue holds the selector level, not a raw fan command code)
+			llevel = atoi(sValue.c_str());
+			if (llevel == 0)
+				lstatus = "Off";
+			else
+			{
+				sprintf(szTmp, "Set Level: %d %%", llevel);
+				lstatus = szTmp;
+			}
+			break;
+		}
 		switch (dSubType)
 		{
 		case sTypeSiemensSF01:

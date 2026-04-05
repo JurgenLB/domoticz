@@ -379,7 +379,7 @@ define(['app'], function (app) {
                         return device.Status != 'Off' ? 'images/Fireplace48_On.png' : 'images/Fireplace48_Off.png';
                     }
 
-                    // Fan subtypes always show Fan48_On.png
+                    // Fan subtypes always show Fan48_On.png, unless configured as a selector
                     if (device.SubType && (
                         device.SubType.indexOf('Itho') == 0 ||
                         device.SubType.indexOf('Lucci') == 0 ||
@@ -387,6 +387,9 @@ define(['app'], function (app) {
                         device.SubType.indexOf('Westinghouse') == 0 ||
                         device.SubType.indexOf('Orcon') == 0
                     )) {
+                        if (ctrl.isSelector()) {
+                            return 'images/Fan48_' + (device.LevelInt > 0 ? 'On' : 'Off') + '.png';
+                        }
                         return 'images/Fan48_On.png';
                     }
 
