@@ -62,6 +62,7 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 
 bool CRFXBase::CheckValidRFXData(const uint8_t *pData)
 {
+	Log(LOG_ERROR, "Data received!....%s", ToHexString(pData, pData[0] + 1).c_str());
 	uint8_t pLen = pData[0];
 	uint8_t pType = pData[1];
 
@@ -347,4 +348,3 @@ void CRFXBase::SendResetCommand()
 	sleep_milliseconds(50);
 	SendCommand(cmdSTATUS);
 }
-
