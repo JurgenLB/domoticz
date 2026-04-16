@@ -52,7 +52,7 @@ bool CRFXBase::CheckValidRFXData(const uint8_t *pData)
 {
 	uint8_t pLen = pData[0];
 	uint8_t pType = pData[1];
-	Log(LOG_STATUS, "Data received: length=%u, type=0x%02X, payload=%s", static_cast<unsigned int>(pLen), static_cast<unsigned int>(pType), ToHexString(pData, pLen + 1).c_str());
+	_log.Debug(DEBUG_RECEIVED, "Data received: length=%u, type=0x%02X, payload=%s", static_cast<unsigned int>(pLen), static_cast<unsigned int>(pType), ToHexString(pData, pLen + 1).c_str());
 
 	if (pLen < 1)
 		return false;
