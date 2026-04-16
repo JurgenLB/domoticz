@@ -232,6 +232,12 @@ bool CRtl433::ParseData(std::map<std::string, std::string> &data)
 		tempC = (float)atof(data["temperature_C"].c_str());
 		haveTemp = true;
 	}
+	if (!haveTemp && FindField(data, "temperature_F"))
+	{
+		float tempF = (float)atof(data["temperature_F"].c_str());
+		tempC = (tempF - 32.0F) * (5.0F / 9.0F);
+		haveTemp = true;
+	}
 	if (FindField(data, "humidity"))
 	{
 		if (data["humidity"] == "HH") // "HH" and "LL" are specific to WT_GT-02 and WT-GT-03 see issue 1996
