@@ -8,6 +8,7 @@
 #include "../main/json_helper.h"
 #include "../notifications/NotificationHelper.h"
 #include <cinttypes>                    //PRIu64
+#include <filesystem>
 
 #define NETATMO_API_URI "https://api.netatmo.com/"
 #define NETATMO_PRESET_UNIT 10
