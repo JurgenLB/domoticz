@@ -560,7 +560,7 @@ const char* RFX_Type_SubType_Desc(const unsigned char dType, const unsigned char
 		{ pTypeTEMP_HUM, sTypeTH4, "THGR328" },
 		{ pTypeTEMP_HUM, sTypeTH5, "WTGR800" },
 		{ pTypeTEMP_HUM, sTypeTH6, "THGR918, THGRN228, THGN500" },
-		{ pTypeTEMP_HUM, sTypeTH7, "Cresta, TFA TS34C" },
+		{ pTypeTEMP_HUM, sTypeTH7, "Cresta, TFA TS34C, TFA 30.3215, TFA 30.3240" },
 		{ pTypeTEMP_HUM, sTypeTH8, "WT450H" },
 		{ pTypeTEMP_HUM, sTypeTH9, "Viking 02035, 02038, TSS320" },
 		{ pTypeTEMP_HUM, sTypeTH10, "Rubicson/IW008T/TX95" },

@@ -3776,7 +3776,7 @@ void MainWorker::decode_TempHum(const CDomoticzHardwareBase* pHardware, const tR
 			WriteMessage(szTmp);
 			break;
 		case sTypeTH7:
-			WriteMessage("subtype       = TH7 - Cresta, TFA TS34C");
+			WriteMessage("subtype       = TH7 - Cresta, TFA TS34C, TFA 30.3215, TFA 30.3240");
 			if (pResponse->TEMP_HUM.id1 < 0x40)
 				WriteMessage("                channel 1");
 			else if (pResponse->TEMP_HUM.id1 < 0x60)

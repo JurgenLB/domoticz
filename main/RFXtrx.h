@@ -1339,7 +1339,7 @@ SDK version 4.9
 #define sTypeTH4 0x4  //THGR328
 #define sTypeTH5 0x5  //WTGR800
 #define sTypeTH6 0x6  //THGR918,THGRN228,THGN500
-#define sTypeTH7 0x7  //TFA TS34C, Cresta
+#define sTypeTH7 0x7  //TFA TS34C, TFA 30.3215, TFA 30.3240, Cresta
 #define sTypeTH8 0x8  //WT450H
 #define sTypeTH9 0x9  //Viking 02035,02038 (02035 has no humidity), TSS320
 #define sTypeTH10 0xA   //Rubicson
