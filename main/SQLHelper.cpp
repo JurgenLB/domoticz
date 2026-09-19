@@ -9517,7 +9517,7 @@ bool CSQLHelper::FixKwhCounterSpikes(uint64_t idx, double max_daily_kwh, bool dr
 		localtime_r(&now, &tm1);
 		char szDateStart[40], szDateEnd[40];
 		sprintf(szDateStart, "%04d-%02d-%02d", tm1.tm_year + 1900, tm1.tm_mon + 1, tm1.tm_mday);
-		sprintf(szDateEnd, "%s 23:59:59", szDateStart);
+		snprintf(szDateEnd, sizeof(szDateEnd), "%s 23:59:59", szDateStart);
 		float freshPrice = 0;
 		if (CalcMeterPrice(idx, energyDivider, szDateStart, szDateEnd, freshPrice))
 			m_actual_prices[idx] = freshPrice;
