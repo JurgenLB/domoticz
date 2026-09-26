@@ -2454,7 +2454,8 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 			if (mlen > 13)
 			{
 				FWType = pResponse->IRESPONSE.msg10;
-				FWVersion = pResponse->IRESPONSE.msg2 + 1000;
+				int fwGen = FWType >> 4;
+				FWVersion = pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
 			}
 			else
 			{
@@ -2516,6 +2517,10 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					break;
 				case FWtypeRFX868:
 					strcpy(szTmp, "RFM69 868");
+					NoiseLevel = static_cast<int>(pResponse->IRESPONSE.msg11);
+					break;
+				case FWtypeRFX433v4:
+					strcpy(szTmp, "RFX-433 RFM69");
 					NoiseLevel = static_cast<int>(pResponse->IRESPONSE.msg11);
 					break;
 				default:
@@ -2678,6 +2683,11 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					WriteMessage("Home Confort      enabled");
 				else
 					WriteMessage("Home Confort      disabled");
+
+				if (pResponse->IRESPONSE.DDenabled)
+					WriteMessage("DDxxxx            enabled");
+				else
+					WriteMessage("DDxxxx            disabled");
 			}
 			else
 			{
