@@ -2524,7 +2524,7 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					NoiseLevel = static_cast<int>(pResponse->IRESPONSE.msg11);
 					break;
 				default:
-					strcpy(szTmp, "? %d", FWType);
+					sprintf(szTmp, "? %d", FWType);
 					break;
 				}
 				WriteMessage(szTmp);
