@@ -505,7 +505,7 @@ SDK version 4.9
 #define FWtypePro2 0x6
 #define FWtypeProXL1 0x10
 #define FWtypeProXL2 0x13
-#define FWtypeRFX433 0x14 || 0x46 //RFM69 433 firmware
+#define FWtypeRFX433 0x14 //RFM69 433 firmware
 #define FWtypeRFX868 0x15 //RFM69 868 firmware
 #define FWtypeProXL95 0x16 //RFM95 firmware
 #define FWtypeRFX433XXL 0x17 //RFU
