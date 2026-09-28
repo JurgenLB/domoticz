@@ -2450,13 +2450,14 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 			}
 			int FWType = 0;
 			int FWVersion = 0;
+			int FWVer = 0;
 			int NoiseLevel = 0;
 			if (mlen > 13)
 			{
 				FWType = pResponse->IRESPONSE.msg10;
 				FWVersion = pResponse->IRESPONSE.msg2 + 1000;
 				int fwGen = FWType >> 4;
-				int FWVer= pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
+				FWVer= pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
 			}
 			else
 			{
