@@ -2454,8 +2454,9 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 			if (mlen > 13)
 			{
 				FWType = pResponse->IRESPONSE.msg10;
+				FWVersion = pResponse->IRESPONSE.msg2 + 1000;
 				int fwGen = FWType >> 4;
-				FWVersion = pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
+				int FWVer= pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
 			}
 			else
 			{
@@ -2520,7 +2521,9 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					NoiseLevel = static_cast<int>(pResponse->IRESPONSE.msg11);
 					break;
 				default:
-					sprintf(szTmp, "? %x", FWType);
+					strcpy(szTmp, "?");
+					_log.Debug(DEBUG_HARDWARE, "FWType = %x", FWType);
+					_log.Debug(DEBUG_HARDWARE, "FWVersion = %d", FWVer);
 					break;
 				}
 				WriteMessage(szTmp);
