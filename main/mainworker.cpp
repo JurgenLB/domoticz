@@ -2519,12 +2519,8 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					strcpy(szTmp, "RFM69 868");
 					NoiseLevel = static_cast<int>(pResponse->IRESPONSE.msg11);
 					break;
-				case FWtypeRFX433v4:
-					strcpy(szTmp, "RFX-433 RFM69");
-					NoiseLevel = static_cast<int>(pResponse->IRESPONSE.msg11);
-					break;
 				default:
-					sprintf(szTmp, "? %d", FWType);
+					sprintf(szTmp, "? %x", FWType);
 					break;
 				}
 				WriteMessage(szTmp);
