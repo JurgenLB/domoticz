@@ -2452,12 +2452,18 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 			int FWVersion = 0;
 			int FWVer = 0;
 			int NoiseLevel = 0;
+			int msg2 = 0;
+			int msg7 = 0;
+			int msg8 = 0;
 			if (mlen > 13)
 			{
 				FWType = pResponse->IRESPONSE.msg10;
 				FWVersion = pResponse->IRESPONSE.msg2 + 1000;
 				int fwGen = FWType >> 4;
-				FWVer= pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
+				FWVer = pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
+				msg2 = pResponse->IRESPONSE.msg2;
+				msg7 = pResponse->IRESPONSE.msg7;
+				msg8 = pResponse->IRESPONSE.msg8;
 			}
 			else
 			{
@@ -2525,6 +2531,9 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					strcpy(szTmp, "?");
 					_log.Debug(DEBUG_HARDWARE, "FWType = %x", FWType);
 					_log.Debug(DEBUG_HARDWARE, "FWVersion = %d", FWVer);
+					_log.Debug(DEBUG_HARDWARE, "msg2 = %d", msg2);
+					_log.Debug(DEBUG_HARDWARE, "msg7 = %d", msg7);
+					_log.Debug(DEBUG_HARDWARE, "msg8 = %d", msg8);
 					break;
 				}
 				WriteMessage(szTmp);
