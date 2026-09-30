@@ -2476,10 +2476,10 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 				FWVer = pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
 				msg1 = pResponse->IRESPONSE.msg1;
 				msg2 = pResponse->IRESPONSE.msg2;
-				msg3 = pResponse->IRESPONSE.msg3;
-				msg4 = pResponse->IRESPONSE.msg4;
-				msg5 = pResponse->IRESPONSE.msg5;
-				msg6 = pResponse->IRESPONSE.msg6;
+				//msg3 = pResponse->IRESPONSE.msg3;
+				//msg4 = pResponse->IRESPONSE.msg4;
+				//msg5 = pResponse->IRESPONSE.msg5;
+				//msg6 = pResponse->IRESPONSE.msg6;
 				msg7 = pResponse->IRESPONSE.msg7;
 				msg8 = pResponse->IRESPONSE.msg8;
 				msg9 = pResponse->IRESPONSE.msg9;
