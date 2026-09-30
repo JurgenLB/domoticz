@@ -2452,18 +2452,44 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 			int FWVersion = 0;
 			int FWVer = 0;
 			int NoiseLevel = 0;
+			int msg1 = 0;
 			int msg2 = 0;
+			int msg3 = 0;
+			int msg4 = 0;
+			int msg5 = 0;
+			int msg6 = 0;
 			int msg7 = 0;
 			int msg8 = 0;
+			int msg9 = 0;
+			int msg10 = 0;
+			int msg11 = 0;
+			int msg12 = 0;
+			int msg13 = 0;
+			int msg14 = 0;
+			int msg15 = 0;
+			int msg16 = 0;
 			if (mlen > 13)
 			{
 				FWType = pResponse->IRESPONSE.msg10;
 				FWVersion = pResponse->IRESPONSE.msg2 + 1000;
 				int fwGen = FWType >> 4;
 				FWVer = pResponse->IRESPONSE.msg2 + (fwGen > 0 ? fwGen : 1) * 1000;
+				msg1 = pResponse->IRESPONSE.msg1;
 				msg2 = pResponse->IRESPONSE.msg2;
+				msg3 = pResponse->IRESPONSE.msg3;
+				msg4 = pResponse->IRESPONSE.msg4;
+				msg5 = pResponse->IRESPONSE.msg5;
+				msg6 = pResponse->IRESPONSE.msg6;
 				msg7 = pResponse->IRESPONSE.msg7;
 				msg8 = pResponse->IRESPONSE.msg8;
+				msg9 = pResponse->IRESPONSE.msg9;
+				msg10 = pResponse->IRESPONSE.msg10;
+				msg11 = pResponse->IRESPONSE.msg11;
+				msg12 = pResponse->IRESPONSE.msg12;
+				msg13 = pResponse->IRESPONSE.msg13;
+				msg14 = pResponse->IRESPONSE.msg14;
+				msg15 = pResponse->IRESPONSE.msg15;
+				msg16 = pResponse->IRESPONSE.msg16;
 			}
 			else
 			{
@@ -2531,9 +2557,22 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					strcpy(szTmp, "?");
 					_log.Debug(DEBUG_HARDWARE, "FWType = %x", FWType);
 					_log.Debug(DEBUG_HARDWARE, "FWVersion = %d", FWVer);
-					_log.Debug(DEBUG_HARDWARE, "msg2 = %d", msg2);
-					_log.Debug(DEBUG_HARDWARE, "msg7 = %d", msg7);
-					_log.Debug(DEBUG_HARDWARE, "msg8 = %d", msg8);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg1, msg1);
+					_log.Debug(DEBUG_HARDWARE, "msg2 = %d %x", msg2, msg2);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg3, msg3);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg4, msg4);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg5, msg5);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg6, msg6);
+					_log.Debug(DEBUG_HARDWARE, "msg7 = %d %x", msg7, msg7);
+					_log.Debug(DEBUG_HARDWARE, "msg8 = %d %x", msg8, msg8);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg9, msg9);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg10, msg10);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg11, msg11);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg12, msg12);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg13, msg13);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg14, msg14);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg15, msg15);
+					_log.Debug(DEBUG_HARDWARE, "msg1 = %d %x", msg16, msg16);
 					break;
 				}
 				WriteMessage(szTmp);
