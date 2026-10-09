@@ -64,7 +64,7 @@ bool CRFXBase::CheckValidRFXData(const uint8_t *pData)
 {
 	uint8_t pLen = pData[0];
 	uint8_t pType = pData[1];
-	_log.Debug(DEBUG_HARDWARE, "pData = %s", asstring(pData));
+	_log.Debug(DEBUG_HARDWARE, "pData = %s", std::asstring(pData));
 	_log.Debug(DEBUG_HARDWARE, "pLen = %u, pType = %u",
            static_cast<unsigned>(pLen),
            static_cast<unsigned>(pType));
