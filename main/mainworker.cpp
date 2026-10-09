@@ -2586,11 +2586,11 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					_log.Debug(DEBUG_HARDWARE, "imsg7 major = %d %x", imsg7, imsg7);
 					_log.Debug(DEBUG_HARDWARE, "imsg8 minor = %d %x", imsg8, imsg8);
 					_log.Debug(DEBUG_HARDWARE, "imsg9 RF-power= %d %x", imsg9, imsg9);
-					_log.Debug(DEBUG_HARDWARE, "packetlength Firmware Version = %d %x", packetlength, packetlength);
-					_log.Debug(DEBUG_HARDWARE, "packettype Firmware Version = %d %x", packettype, packettype);
-					_log.Debug(DEBUG_HARDWARE, "subtype Firmware Version = %d %x", subtype, subtype);
-					_log.Debug(DEBUG_HARDWARE, "seqnbr Firmware Version = %d %x", seqnbr, seqnbr);
-					_log.Debug(DEBUG_HARDWARE, "cmnd Firmware Version = %d %x", cmnd, cmnd);
+					_log.Debug(DEBUG_HARDWARE, "packetlength = %d %x", packetlength, packetlength);
+					_log.Debug(DEBUG_HARDWARE, "packettype  = %d %x", packettype, packettype);
+					_log.Debug(DEBUG_HARDWARE, "subtype     = %d %x", subtype, subtype);
+					_log.Debug(DEBUG_HARDWARE, "seqnbr      = %d %x", seqnbr, seqnbr);
+					_log.Debug(DEBUG_HARDWARE, "cmnd        = %d %x", cmnd, cmnd);
 					_log.Debug(DEBUG_HARDWARE, "msg1 reciever/transiever type = %d %x", msg1, msg1);
 					_log.Debug(DEBUG_HARDWARE, "msg2 Firmware Version = %d %x", msg2, msg2);
 					_log.Debug(DEBUG_HARDWARE, "msg3 = %d %x", msg3, msg3);
