@@ -93,10 +93,24 @@ bool CRFXBase::CheckValidRFXData(const uint8_t *pData)
 {
 	uint8_t pLen = pData[0];
 	uint8_t pType = pData[1];
-	_log.Debug(DEBUG_HARDWARE, "pData = %s", reinterpret_cast<const char*>(pData));
-	_log.Debug(DEBUG_HARDWARE, "pLen = %u, pType = %u",
-           static_cast<unsigned>(pLen),
-           static_cast<unsigned>(pType));
+	uint8_t pSubtype = pData[2];
+	uint8_t pSeq = pData[3];
+	uint8_t pCmd = pData[4];
+
+	uint8_t pTrxType = pData[5];
+	uint8_t pFwv = pData[6];
+	uint8_t pFwType = (pLen > 14) ? pData[14] : 0;
+
+	_log.Debug(DEBUG_HARDWARE,
+    	"Debug ValidRFXData len=%u type=0x%02X subtype=0x%02X seq=0x%02X cmd=0x%02X trx=0x%02X fwver=0x%02X fwtype=%s",
+    	static_cast<unsigned>(pLen),
+    	static_cast<unsigned>(pType),
+    	static_cast<unsigned>(pSubtype),
+    	static_cast<unsigned>(pSeq),
+    	static_cast<unsigned>(pCmd),
+    	static_cast<unsigned>(pTrxType),
+    	static_cast<unsigned>(pFwv),
+    	RFXFirmwareTypeName(pFwType));
 
 	if (pLen < 1)
 		return false;
