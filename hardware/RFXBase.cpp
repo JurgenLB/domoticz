@@ -78,6 +78,11 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 				const uint8_t* pData = reinterpret_cast<const uint8_t*>(m_rxbuffer);
 			    uint8_t pLen = pData[0];
 				uint8_t pType = pData[1];
+				uint8_t pSubtype = pData[2];
+				uint8_t pSeq = pData[3];
+				uint8_t pCmd = pData[4];
+				uint8_t pType = pData[5];
+				uint8_t pFWversion = pData[6];
 
 				// hex dump
 				std::ostringstream oss;
@@ -95,10 +100,57 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 					ascii.push_back(std::isprint(c) ? static_cast<char>(c) : '.');
 				}
 
-				_log.Debug(DEBUG_HARDWARE, "RFX pkt len=%u type=0x%02X (%u) hex=\"%s\" ascii=\"%s\"",
+				// compute FW type only for Interface Response packets and when packet is large enough
+				std::string fwTypeStr;
+				if ((pType == pTypeInterfaceMessage) && (pSubtype == sTypeInterfaceResponse) && (pLen > 14)) {
+					uint8_t pFwType = pData[14];
+					fwTypeStr = RFXFirmwareTypeName(pFwType);
+				} else if ((pType == pTypeInterfaceMessage) && (pLen > 14)) {
+					// For other interface-message subtypes, the byte at index 14 may be ASCII or other data;
+					// show raw hex and ASCII to help diagnosis instead of trying to map it.
+					char tmp[16];
+					snprintf(tmp, sizeof(tmp), "0x%02X", static_cast<unsigned>(pData[14]));
+					fwTypeStr = std::string("[raw: ") + tmp + "] (not an InterfaceResponse)";
+				} else {
+					fwTypeStr = "(n/a)";
+				}
+
+				// compute firmware version (major.minor) with preferred explicit fields (msg7/msg8)
+				// and fallback to packed msg2 (high nibble = major, low nibble = minor)
+				std::string fwVersionStr;
+				if ((pType == pTypeInterfaceMessage) && (pSubtype == sTypeInterfaceResponse) && (pLen > 12)) {
+					// IRESPONSE struct: msg7 is at pData[11], msg8 at pData[12]
+					uint8_t major = pData[11];
+					uint8_t minor = pData[12];
+					std::ostringstream voss;
+					voss << static_cast<unsigned>(major) << "." << static_cast<unsigned>(minor);
+					fwVersionStr = voss.str();
+				}
+				else if (pLen > 6) {
+					// fallback: parse msg2 (pData[6]) as packed nibble: high = major, low = minor
+					uint8_t packed = pData[6];
+					uint8_t major = (packed >> 4) & 0x0F;
+					uint8_t minor = packed & 0x0F;
+					// format minor as decimal (e.g. 6.15) - if you prefer hex for minor use std::hex
+					std::ostringstream voss;
+					voss << static_cast<unsigned>(major) << "." << static_cast<unsigned>(minor);
+					fwVersionStr = voss.str();
+				}
+				else {
+					fwVersionStr = "(n/a)";
+				}
+
+				_log.Debug(DEBUG_HARDWARE,
+					"RFX pkt len=%u type=0x%02X subtype=0x%02X seq=0x%02X cmd=0x%02X trx=0x%02X fwver=0x%02X fwtype=%s fwVersion=%s hex=\"%s\" ascii=\"%s\"",
 					static_cast<unsigned>(pLen),
 					static_cast<unsigned>(pType),
+					static_cast<unsigned>(pSubtype),
+					static_cast<unsigned>(pSeq),
+					static_cast<unsigned>(pCmd),
 					static_cast<unsigned>(pType),
+					static_cast<unsigned>(pFWversion),
+					fwTypeStr.c_str(),
+					fwVersionStr.c_str(),
 					hex.c_str(),
 					ascii.c_str());
 
@@ -124,6 +176,13 @@ bool CRFXBase::CheckValidRFXData(const uint8_t *pData)
 
 	uint8_t pTrxType = pData[5];
 	uint8_t pFwv = pData[6];
+	uint8_t p7 = pData[7];
+	uint8_t p8 = pData[8];
+	uint8_t p9 = pData[9];
+	uint8_t p10 = pData[10];
+	uint8_t p11 = pData[11];
+	uint8_t p12 = pData[12];
+	uint8_t p13 = pData[13];
 	uint8_t pFwType = (pLen > 14) ? pData[14] : 0;
 
 	_log.Debug(DEBUG_HARDWARE,
