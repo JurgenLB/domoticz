@@ -50,7 +50,33 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 		{
 			if (!checkValid || CheckValidRFXData((uint8_t*)&m_rxbuffer))
 			{
-				_log.Debug(DEBUG_HARDWARE, "pData = %s (sDecodeRXMessage)", reinterpret_cast<const uint8_t *>(&m_rxbuffer));
+				const uint8_t* pData = reinterpret_cast<const uint8_t*>(m_rxbuffer);
+			    uint8_t pLen = pData[0];
+				uint8_t pType = pData[1];
+
+				// hex dump
+				std::ostringstream oss;
+				oss << std::hex << std::setfill('0');
+				for (size_t i = 0; i <= pLen && i < sizeof(m_rxbuffer); ++i) {
+					oss << std::setw(2) << static_cast<int>(pData[i]);
+					if (i != pLen) oss << ' ';
+				}
+				std::string hex = oss.str();
+
+				// printable ASCII (non-printables -> '.')
+				std::string ascii;
+				for (size_t i = 2; i <= pLen && i < sizeof(m_rxbuffer); ++i) {
+					unsigned char c = static_cast<unsigned char>(pData[i]);
+					ascii.push_back(std::isprint(c) ? static_cast<char>(c) : '.');
+				}
+
+				_log.Debug(DEBUG_HARDWARE, "RFX pkt len=%u type=0x%02X (%u) hex=\"%s\" ascii=\"%s\"",
+					static_cast<unsigned>(pLen),
+					static_cast<unsigned>(pType),
+					static_cast<unsigned>(pType),
+					hex.c_str(),
+					ascii.c_str());
+
 				sDecodeRXMessage(this, (const uint8_t *)&m_rxbuffer, nullptr, -1, m_Name.c_str());
 			}
 			else
