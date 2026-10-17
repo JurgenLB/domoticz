@@ -49,7 +49,10 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 		if (m_rxbufferpos > m_rxbuffer[0])
 		{
 			if (!checkValid || CheckValidRFXData((uint8_t*)&m_rxbuffer))
+			{
+				_log.Debug(DEBUG_HARDWARE, "pData = %s (sDecodeRXMessage)", reinterpret_cast<const uint8_t *>(&m_rxbuffer));
 				sDecodeRXMessage(this, (const uint8_t *)&m_rxbuffer, nullptr, -1, m_Name.c_str());
+			}
 			else
 				Log(LOG_ERROR, "Invalid data received!....");
 
