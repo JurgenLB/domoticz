@@ -2480,6 +2480,7 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 			int msg14 = 0;
 			int msg15 = 0;
 			int msg16 = 0;
+			_log.Debug(DEBUG_HARDWARE, "if (mlen > 13) %d", mlen);
 			if (mlen > 13)
 			{
 				FWType = pResponse->IRESPONSE.msg10;
@@ -2515,6 +2516,7 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 			}
 			else
 			{
+				_log.Debug(DEBUG_HARDWARE, "if (mlen > 13) else");
 				FWVersion = pResponse->IRESPONSE.msg2;
 				if ((pResponse->IRESPONSE.msg1 == recType43392) && (FWVersion < 162))
 					FWType = 0; //Type1 RFXrec
@@ -2610,6 +2612,36 @@ void MainWorker::decode_InterfaceMessage(const CDomoticzHardwareBase* pHardware,
 					break;
 				}
 				WriteMessage(szTmp);
+				_log.Debug(DEBUG_HARDWARE, "FWType = %x", FWType);
+				_log.Debug(DEBUG_HARDWARE, "FWVersion = %d", FWVer);
+				_log.Debug(DEBUG_HARDWARE, "imsg3 = %d %x", imsg3, imsg3);
+				_log.Debug(DEBUG_HARDWARE, "imsg4 = %d %x", imsg4, imsg4);
+				_log.Debug(DEBUG_HARDWARE, "imsg5 = %d %x", imsg5, imsg5);
+				_log.Debug(DEBUG_HARDWARE, "imsg6 = %d %x", imsg6, imsg6);
+				_log.Debug(DEBUG_HARDWARE, "imsg7 major = %d %x", imsg7, imsg7);
+				_log.Debug(DEBUG_HARDWARE, "imsg8 minor = %d %x", imsg8, imsg8);
+				_log.Debug(DEBUG_HARDWARE, "imsg9 RF-power= %d %x", imsg9, imsg9);
+				_log.Debug(DEBUG_HARDWARE, "packetlength = %d %x", packetlength, packetlength);
+				_log.Debug(DEBUG_HARDWARE, "packettype  = %d %x", packettype, packettype);
+				_log.Debug(DEBUG_HARDWARE, "subtype     = %d %x", subtype, subtype);
+				_log.Debug(DEBUG_HARDWARE, "seqnbr      = %d %x", seqnbr, seqnbr);
+				_log.Debug(DEBUG_HARDWARE, "cmnd        = %d %x", cmnd, cmnd);
+				_log.Debug(DEBUG_HARDWARE, "msg1 reciever/transiever type = %d %x", msg1, msg1);
+				_log.Debug(DEBUG_HARDWARE, "msg2 Firmware Version = %d %x", msg2, msg2);
+				_log.Debug(DEBUG_HARDWARE, "msg3 = %d %x", msg3, msg3);
+				_log.Debug(DEBUG_HARDWARE, "msg4 = %d %x", msg4, msg4);
+				_log.Debug(DEBUG_HARDWARE, "msg5 = %d %x", msg5, msg5);
+				_log.Debug(DEBUG_HARDWARE, "msg6 = %d %x", msg6, msg6);
+				_log.Debug(DEBUG_HARDWARE, "msg7 major = %d %x", msg7, msg7);
+				_log.Debug(DEBUG_HARDWARE, "msg8 minor = %d %x", msg8, msg8);
+				_log.Debug(DEBUG_HARDWARE, "msg9 RF-power= %d %x", msg9, msg9);
+				_log.Debug(DEBUG_HARDWARE, "msg10 FWtype = %d %x", msg10, msg10);
+				_log.Debug(DEBUG_HARDWARE, "msg11 NoiseLevel = %d %x", msg11, msg11);
+				_log.Debug(DEBUG_HARDWARE, "msg12 = %d %x", msg12, msg12);
+				_log.Debug(DEBUG_HARDWARE, "msg13 = %d %x", msg13, msg13);
+				_log.Debug(DEBUG_HARDWARE, "msg14 = %d %x", msg14, msg14);
+				_log.Debug(DEBUG_HARDWARE, "msg15 = %d %x", msg15, msg15);
+				_log.Debug(DEBUG_HARDWARE, "msg16 = %d %x", msg16, msg16);
 			}
 
 			CRFXBase* pMyHardware = (CRFXBase*)pHardware;
