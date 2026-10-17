@@ -83,14 +83,14 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 				uint8_t pCmd = pData[4];
 				uint8_t p5 = pData[5];
 				uint8_t pFWversion = pData[6];
-				uint8_t p7 = pData[7]
-				uint8_t p8 = pData[8]
-				uint8_t p9 = pData[9]
-				uint8_t p10 = pData[10]
-				uint8_t p11 = pData[11]
-				uint8_t p12 = pData[12]
-				uint8_t p13 = pData[13]
-				uint8_t p14 = pData[14]
+				uint8_t p7 = pData[7];
+				uint8_t p8 = pData[8];
+				uint8_t p9 = pData[9];
+				uint8_t p10 = pData[10];
+				uint8_t p11 = pData[11];
+				uint8_t p12 = pData[12];
+				uint8_t p13 = pData[13];
+				uint8_t p14 = pData[14];
 
 				// hex dump
 				std::ostringstream oss;
