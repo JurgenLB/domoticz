@@ -108,45 +108,70 @@ bool CRFXBase::onInternalMessage(const unsigned char *pBuffer, const size_t Len,
 					ascii.push_back(std::isprint(c) ? static_cast<char>(c) : '.');
 				}
 
-				// compute FW type only for Interface Response packets and when packet is large enough
-				std::string fwTypeStr;
-				if ((pType == pTypeInterfaceMessage) && (pSubtype == sTypeInterfaceResponse) && (pLen > 14)) {
-					uint8_t pFwType = pData[14];
-					fwTypeStr = RFXFirmwareTypeName(pFwType);
-				} else if ((pType == pTypeInterfaceMessage) && (pLen > 14)) {
-					// For other interface-message subtypes, the byte at index 14 may be ASCII or other data;
-					// show raw hex and ASCII to help diagnosis instead of trying to map it.
-					char tmp[16];
-					snprintf(tmp, sizeof(tmp), "0x%02X", static_cast<unsigned>(pData[14]));
-					fwTypeStr = std::string("[raw: ") + tmp + "] (not an InterfaceResponse)";
-				} else {
-					fwTypeStr = "(n/a)";
-				}
+				// Determine FW type byte (msg10) if present
+                uint8_t pFwType = (pLen > 14) ? pData[14] : 0;
 
-				// compute firmware version (major.minor) with preferred explicit fields (msg7/msg8)
-				// and fallback to packed msg2 (high nibble = major, low nibble = minor)
-				std::string fwVersionStr;
-				if ((pType == pTypeInterfaceMessage) && (pSubtype == sTypeInterfaceResponse) && (pLen > 12)) {
-					// IRESPONSE struct: msg7 is at pData[11], msg8 at pData[12]
-					uint8_t major = pData[11];
-					uint8_t minor = pData[12];
-					std::ostringstream voss;
-					voss << static_cast<unsigned>(major) << "." << static_cast<unsigned>(minor);
-					fwVersionStr = voss.str();
+                // Hardware version is msg7/msg8 (pData[11]/pData[12]) when available
+                std::string hwVersionStr = "(n/a)";
+                if ((pType == pTypeInterfaceMessage) && (pLen > 12)) {
+                    uint8_t hwMajor = pData[11]; // msg7
+                    uint8_t hwMinor = pData[12]; // msg8
+                    std::ostringstream voss;
+                    voss << static_cast<unsigned>(hwMajor) << "." << static_cast<unsigned>(hwMinor);
+                    hwVersionStr = voss.str();
+                }
+
+				// Firmware version: try several decodings and pick the most sensible.
+                // 1) For known RFX433 (RFM69 433) devices we construct firmware as 4000 + decimal(msg2)
+                //    because these devices use a scheme where msg2 (pData[6]) carries the low part (e.g. 55)
+                //    and the firmware major is 40 (-> 4055).
+                // 2) Else show raw msg2 value.
+
+                std::string fwVersionStr = "(n/a)";
+                uint8_t rawMsg2 = (pLen > 6) ? pData[6] : 0;
+
+				// compute FW type only for Interface Response packets and when packet is large enough
+				if ((pType == pTypeInterfaceMessage) && (pSubtype == sTypeInterfaceResponse) && (pLen > 6)) {
+					// Special-case RFX433 -> numeric = 4000 + decimal(msg2)
+					if (pFwType == FWtypeRFX433) {
+                        unsigned int minor = static_cast<unsigned int>(rawMsg2);
+                        unsigned int numeric = 4000 + minor; // e.g. 4000 + 55 -> 4055
+                        std::ostringstream voss;
+                        voss << (numeric / 100) << "." << std::setw(2) << std::setfill('0') << (numeric % 100) << " (" << numeric << ")";
+                        fwVersionStr = voss.str();
+                    }
+					else {
+                        // generic fallback: interpret msg2 as packed nibbles: high.nibble low.nibble
+                        unsigned int maj = (rawMsg2 >> 4) & 0x0F;
+                        unsigned int min = rawMsg2 & 0x0F;
+                        unsigned int numeric = (maj * 100) + min;
+                        std::ostringstream voss;
+                        voss << maj << "." << min << " (" << numeric << ")";
+                        fwVersionStr = voss.str();
+                    }
 				}
 				else if (pLen > 6) {
-					// fallback: parse msg2 (pData[6]) as packed nibble: high = major, low = minor
-					uint8_t packed = pData[6];
-					uint8_t major = (packed >> 4) & 0x0F;
-					uint8_t minor = packed & 0x0F;
-					// format minor as decimal (e.g. 6.15) - if you prefer hex for minor use std::hex
-					std::ostringstream voss;
-					voss << static_cast<unsigned>(major) << "." << static_cast<unsigned>(minor);
-					fwVersionStr = voss.str();
-				}
-				else {
-					fwVersionStr = "(n/a)";
-				}
+                    // Not an InterfaceResponse but msg2 present: show raw interpretations
+                    unsigned int maj = (rawMsg2 >> 4) & 0x0F;
+                    unsigned int min = rawMsg2 & 0x0F;
+                    std::ostringstream voss;
+                    voss << maj << "." << min << " [raw: 0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned>(rawMsg2) << std::dec << "]";
+                    fwVersionStr = voss.str();
+                }
+
+				// fw type printable
+                std::string fwTypeStr;
+                if ((pType == pTypeInterfaceMessage) && (pSubtype == sTypeInterfaceResponse) && (pLen > 14)) {
+                    fwTypeStr = RFXFirmwareTypeName(pFwType);
+                }
+                else if (pLen > 14) {
+                    char tmp[16];
+                    snprintf(tmp, sizeof(tmp), "0x%02X", static_cast<unsigned>(pFwType));
+                    fwTypeStr = std::string("[raw: ") + tmp + "] (not an InterfaceResponse)";
+                }
+                else {
+                    fwTypeStr = "(n/a)";
+                }
 
 				_log.Debug(DEBUG_HARDWARE,
 					"RFX pkt len=%u type=0x%02X subtype=0x%02X seq=0x%02X cmd=0x%02X trx=0x%02X fwver=0x%02X fwtype=%s fwVersion=%s hex=\"%s\" ascii=\"%s\"",
