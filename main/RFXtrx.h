@@ -510,7 +510,10 @@ SDK version 4.9
 #define FWtypeProXL95 0x16 //RFM95 firmware
 #define FWtypeRFX433XXL 0x17 //RFU
 #define FWtypeRFX310 0x18 //RFXusb with 310MHz receiver module
-#define FWtypeRFX433emc 0x46 || 0x47//RFX-433 EMC - Type 6 firmware (RFM69)
+
+// RFX-433 EMC - Type 6 firmware (RFM69) — two values observed in the wild
+#define FWtypeRFX433emc 0x46 // primary EMC firmware type
+#define FWtypeRFX433emc2 0x47 // alternate EMC firmware type (also encountered)
 
 //433 config bits
 #define msg3_AE 0x01			//AE Blyss
