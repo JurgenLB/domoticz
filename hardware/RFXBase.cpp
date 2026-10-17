@@ -5,6 +5,31 @@
 #include "../main/Logger.h"
 #include "../main/RFXtrx.h"
 
+static const char* RFXFirmwareTypeName(uint8_t type)
+{
+    switch (type)
+    {
+    case FWtyperec:     return "rec";
+    case FWtype1:       return "1";
+    case FWtype2:       return "2";
+    case FWtypeExt:     return "Ext";
+    case FWtypeExt2:    return "Ext2";
+    case FWtypePro1:    return "Pro1";
+    case FWtypePro2:    return "Pro2";
+    case FWtypeProXL1:  return "Pro XL1";
+    case FWtypeProXL2:  return "Pro XL2";
+    case FWtypeRFX433:  return "RFX433 (RFM69 433)";
+    case FWtypeRFX868:  return "RFX868 (RFM69 868)";
+    case FWtypeProXL95: return "Pro XL95";
+    case FWtypeRFX433XXL: return "RFX433XXL";
+    case FWtypeRFX310:  return "RFX310";
+    default:
+        static char buf[16];
+        snprintf(buf, sizeof(buf), "0x%02X", type);
+        return buf;
+    }
+}
+
 CRFXTeleinfoHelper::CRFXTeleinfoHelper()
 {
 	InitTeleinfo();
