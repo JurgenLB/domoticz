@@ -3601,7 +3601,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						SendWind(crcId, batteryLevel, wind_angle, wind_strength, wind_gust, wind_Temp, wind_Chill, false, false, moduleName, mrf_status);
 					}
 					Debug(DEBUG_HARDWARE, "Type = %s", type.c_str());
-					if (type == NTDC)
+					if (type == "NTDC")
 					{
 						int ChildID = 0;
 						int roomIndex = 0;
