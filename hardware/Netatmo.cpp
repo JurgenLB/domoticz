@@ -149,6 +149,7 @@ void CNetatmo::Init()
 	m_Room_mode.clear();
 	m_Room_setpoint.clear();
 	m_Room_Temp.clear();
+	m_ThermostatName.clear();
 	m_ModuleNames.clear();
 	m_ModuleIDs.clear();
 	m_Module_Bat_Level.clear();
@@ -1880,6 +1881,7 @@ void CNetatmo::GetHomesDataDetails()
 							std::string type = module["type"].asString();
 							std::string macID = module["id"].asString();
 							std::string module_id;
+							std::string bridge;
 							m_Device_types[macID] = type;
 							uint64_t moduleID = convert_mac(macID);
 							int Hardware_int = (int)moduleID;
@@ -1891,6 +1893,10 @@ void CNetatmo::GetHomesDataDetails()
 							else
 							{
 								m_ModuleNames[macID] = "unknown-" + macID;
+							}
+							if (!module["bridge"].empty())
+							{
+								bridge = module["bridge"].asString();
 							}
 
 							for (auto device : module["modules_bridged"])
@@ -1911,10 +1917,12 @@ void CNetatmo::GetHomesDataDetails()
 							//Store thermostate name for later naming switch / sensor
 							if (type == "NAPlug")
 								m_ModuleNames[homeID] = macID;
-							if (module["type"] == "NATherm1")
+							if ((module["type"] == "NATherm1") || (module["type"] == "NRV"))
 								m_ThermostatName[macID] = module["name"].asString();
-							if (module["type"] == "NRV")
-								m_ThermostatName[macID] = module["name"].asString();
+							if (module["type"] == "NTDC")
+							{
+								m_ThermostatName[macID] = bridge;
+							}
 							if (!module["category"].empty())
 							{
 								std::string category = module["category"].asString();
@@ -3593,6 +3601,79 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						SendWind(crcId, batteryLevel, wind_angle, wind_strength, wind_gust, wind_Temp, wind_Chill, false, false, moduleName, mrf_status);
 					}
 					Debug(DEBUG_HARDWARE, "Type = %s", type.c_str());
+					if (type == NTDC)
+					{
+						int ChildID = 0;
+						int roomIndex = 0;
+						//Find the room info
+						std::string roomNetatmoID = m_RoomIDs[module_id];
+						std::string roomName = m_RoomNames[roomNetatmoID];
+						std::string roomType = m_Types[roomNetatmoID];
+						std::string module_Category = m_Module_category[module_id];
+						std::string room_setpoint = m_Room_setpoint[roomNetatmoID];
+						std::string room_mode = m_Room_mode[roomNetatmoID];
+						std::string room_temp = m_Room_Temp[roomNetatmoID];
+						const uint8_t Unit = 7;
+						nDevice.roomNetatmoID = roomNetatmoID;
+						std::string aName = moduleName
+						std::string bridge = m_ThermostatName[macID];
+						//Room Selector Switch
+						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str());
+						uint64_t roomid = convert_mac(roomNetatmoID);
+						int Room_int = int(roomid);
+						//int Room_int = stoi(roomNetatmoID); // std::__throw_out_of_range
+						m_DeviceModuleID[Room_int] = roomNetatmoID;            // mac-adres
+						m_RoomIDs[roomNetatmoID] = roomNetatmoID;
+						//type_module == "room";
+						m_ModuleNames[module_id] = moduleName;
+
+						float SP_temp;
+						if (!room_setpoint.empty())
+						{
+							SP_temp = std::stof(room_setpoint);
+							SendSetPointSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, moduleName);   // No RF-level
+						}
+						else
+							Log(LOG_ERROR, "NetatmoThermostat: Error setpoint! - Check Battery/module Connection");
+						// thermostatModuleID
+						uint64_t mid = convert_mac(module_id);
+						int Hardware_int = (int)mid;
+						//Debug(DEBUG_HARDWARE, "roomNetatmoID %d  %d -  %s %s in Home; %s", crcId , Hardware_int, module_id.c_str(), roomNetatmoID.c_str(), home_id.c_str());
+						m_thermostatModuleID[crcId] = module_id;              // mac-adres
+						//m_RoomIDs[module_id] = roomNetatmoID;                 // Room Netatmo ID
+						//m_DeviceHomeID[roomNetatmoID] = home_id;            // Home_ID
+						m_ModuleIDs[mid] = crcId;
+						//float room_measured = std::stof(room_temp);
+						m_thermostatModuleID[crcId] = module_id;     // mac-adres
+
+						std::stringstream t_R;
+						t_R << room_temp;
+						t_R >> Temp;
+						SendTempSensor(crcId, batteryLevel, Temp, moduleName, mrf_status);
+						std::string room_mode_str;
+
+						if (m_Device_types[roomNetatmoID] == "home")
+						{
+							room_mode_str = "10";
+						}
+						else if (m_Device_types[roomNetatmoID] == "manual")
+						{
+							m_Device_types[roomNetatmoID] = "manual";
+							room_mode_str = "20";
+						}
+						else if (m_Device_types[roomNetatmoID] == "max")
+						{
+							m_Device_types[roomNetatmoID] = "max";
+							room_mode_str = "30";
+						}
+						else
+						{
+							// Thermostat therm_setpoint_mode: schedule / manual / max / away / hg
+							//m_Device_types[roomNetatmoID] = "home";
+							room_mode_str = "10";
+						}
+						
+					}
 
 					if ((type == "NATherm1") || (type == "NRV"))
 					{
