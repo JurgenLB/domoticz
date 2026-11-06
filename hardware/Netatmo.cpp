@@ -1440,7 +1440,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 			Log(LOG_ERROR, "NetatmoThermostat : No thermostat found in online devices!");
 			return;
 		}
-		Log(LOG_STATUS, "Module %s Bridge %s Type %s Mode %s", module_id.c_str(), m_ThermostatName[module_id].c_str(), Type.c_str(), Mode_room.c_str());
+		Log(LOG_STATUS, "Module %s Bridge %s Type %s Mode %s", module_id.c_str(), m_ThermostatName[module_id].c_str(), Type.c_str(), Mode.c_str());
 
 		if (Type == "NTDC")
 		{
@@ -1451,7 +1451,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 			json_data["home"]["id"] = Home_id;
 			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
 			//json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = endtime;  //Optional
-			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = Mode_room;
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = Mode;
 			json_data["home"]["rooms"][0]["cooling_setpoint_temperature"] = temp;
 			home_data = "&";
 			//
