@@ -781,10 +781,28 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string roomNetatmoID = m_DeviceModuleID[uid];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
 		m_Device_types[roomNetatmoID] = mode;
+		std::string Type = m_thermostatModuleID[uid];
+		Json::Value macID = m_Room[roomNetatmoID];
 
-		home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + mode + "&endtime=" + std::to_string(end_time) + "&";
-		// https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
-		Get_Response_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
+		if (type == "NTDC")
+		{
+			Json::Value json_data;
+			//json_data {"body":{"home":{"id":
+			json_data["home"]["id"] = Home_id;
+			json_data["home"]["rooms"][0]["id"] = module_id;
+			//json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = endtime;  //Optional
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = State;
+			json_data["home"]["rooms"][0]["cooling_setpoint_temperature"] = temp;
+			home_data = "&";
+			//
+			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
+		}
+		else
+		{
+			home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + mode + "&endtime=" + std::to_string(end_time) + "&";
+			// https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
+			Get_Response_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
+		}
 
 		if (!bRet)
 		{
