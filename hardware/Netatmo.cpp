@@ -1442,6 +1442,18 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 		if (m_ThermostatName[module_id].empty())
 		{
 			//Thermolink Thermostat - NTDC
+			Log(LOG_STATUS, "Thermo Link %s", Type.c_str());
+			Json::Value json_data;
+			//json_data {"body":{"home":{"id":
+			json_data["home"]["id"] = Home_id;
+			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
+			//json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = endtime;  //Optional
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
+			json_data["home"]["rooms"][0]["cooling_setpoint_temperature"] = temp;
+			home_data = "&";
+			//
+			_data = json_data.toStyledString();
+			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
 		}
 		else
 		{
@@ -1953,6 +1965,7 @@ void CNetatmo::GetHomesDataDetails()
 							if (module["type"] == "NTDC")
 							{
 								m_ThermostatName[macID] = bridge;
+								m_DeviceModuleID[crcId] = module_id;
 							}
 							if (!module["category"].empty())
 							{
