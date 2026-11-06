@@ -785,6 +785,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		m_Device_types[roomNetatmoID] = mode;
 		std::string Type = m_thermostatModuleID[uid];
 		Json::Value macID = m_Room[roomNetatmoID];
+		Log(LOG_STATUS, "Thermostat Type %s", Type.c_str());
 
 		if (Type == "NTDC")
 		{
@@ -1438,10 +1439,16 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 			return;
 		}
 
-		home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + Mode  + "&temp=" + std::to_string(temp)  + "&endtime=" + std::to_string(end_time) + "&get_favorites=true&";
-		// https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
-		Get_Response_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
-
+		if (m_ThermostatName[module_id].empty())
+		{
+			//Thermolink Thermostat - NTDC
+		}
+		else
+		{
+			home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + Mode  + "&temp=" + std::to_string(temp)  + "&endtime=" + std::to_string(end_time) + "&get_favorites=true&";
+			// https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
+			Get_Response_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
+		}
 		uint64_t roomid = convert_mac(roomNetatmoID);
 		int Room_int = int(roomid);
 		//Debug(DEBUG_HARDWARE, "SetSetpoint %08X RoomID %d %s", Room_int, Room_int, roomName.c_str());
