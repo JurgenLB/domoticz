@@ -3636,7 +3636,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						const uint8_t Unit = 7;
 						nDevice.roomNetatmoID = roomNetatmoID;
 						std::string aName = moduleName;
-						std::string bridge = m_ThermostatName[macID];
+						std::string bridge = m_ThermostatName[module_id];
 						//Room Selector Switch
 						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s Bridge %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str(), bridge.c_str());
 						uint64_t roomid = convert_mac(roomNetatmoID);
