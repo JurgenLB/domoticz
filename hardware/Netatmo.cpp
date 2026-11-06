@@ -1384,6 +1384,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 	unsigned char uid = (unsigned char)ID;
 	std::string sName = "";
 	std::string id;
+	std::string _data;
 	id = std::to_string(ID);
 	Json::Value root;
 	std::string module_id = m_DeviceModuleID[uid];             //uid
@@ -1442,6 +1443,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 		if (m_ThermostatName[module_id].empty())
 		{
 			//Thermolink Thermostat - NTDC
+			std::string Type = m_Device_types[module_id];
 			Log(LOG_STATUS, "Thermo Link %s", Type.c_str());
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
