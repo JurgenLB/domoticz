@@ -1169,8 +1169,9 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			_data = json_data.toStyledString();
 			//_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"scenario\":\"" + State + "\"}]}}" ;
 		}
-		else if (type_module == " ")
+		else if (type_module == "NTDC")
 		{
+			int temp;
 			std::string State;
 			switch (newState)
 			{
@@ -1195,7 +1196,9 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			//json_data {"body":{"home":{"id":
 			json_data["home"]["id"] = Home_id;
 			json_data["home"]["modules"][0]["id"] = module_id;
-			json_data["home"]["modules"][0]["therm_setpoint_mode"] = State;
+			//json_data["home"]["modules"][0]["therm_setpoint_mode"] = State;
+			json_data["home"]["modules"][0]["cooling_setpoint_mode"] = State;
+			json_data["home"]["modules"][0]["cooling_setpoint_temperature"] = temp;
 			_data = json_data.toStyledString();
 			//setpoint of the room to away or comfort NLC
 			//_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"rooms\":[{\"id\":\"" + module_id + "\",\"therm_setpoint_mode\":\"" + "manual" + "\",\"therm_setpoint_fp\":\"" + "away" + "\",\"therm_setpoint_end_time\":\"" + 1505368800 + "\"}]}}" ;
@@ -3652,7 +3655,6 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						if (!room_setpoint.empty())
 						{
 							SP_temp = std::stof(room_setpoint);
-							SendSetPointSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, moduleName);   // No RF-level
 						}
 						else
 							Log(LOG_ERROR, "NetatmoThermostat: Error setpoint! - Check Battery/module Connection");
@@ -3670,7 +3672,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::stringstream t_R;
 						t_R << room_temp;
 						t_R >> Temp;
-						SendTempSensor(crcId, batteryLevel, Temp, moduleName, mrf_status);
+						SendThermostatSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, Temp, moduleName);
 						std::string room_mode_str;
 
 						if (m_Device_types[roomNetatmoID] == "home")
