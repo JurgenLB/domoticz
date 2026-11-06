@@ -778,6 +778,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::stringstream bstr;
 		std::string home_data;
 		bool ret = false;
+		std::string _data;
 		bool bRet;              //Parsing status
 		std::string roomNetatmoID = m_DeviceModuleID[uid];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
