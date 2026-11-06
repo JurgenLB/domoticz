@@ -1394,6 +1394,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 	std::string mode = m_Room_mode[roomNetatmoID];
 	std::string Mode_room = m_Device_types[roomNetatmoID];
 	std::string roomName = m_RoomNames[roomNetatmoID];
+	std::string Type = m_Device_types[module_id];
 	//Debug(DEBUG_HARDWARE, "Netatmo Thermostat MAC; %s in Room ID = %s in Home: %s", module_id.c_str(), roomNetatmoID.c_str(), Home_id.c_str());
 	// mode of Room "manual" / "max" / "home"
 	std::string Mode = "manual";
@@ -1439,11 +1440,11 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 			Log(LOG_ERROR, "NetatmoThermostat : No thermostat found in online devices!");
 			return;
 		}
+		Log(LOG_STATUS, "Module %s Bridge %s Type %s", module_id.c_str(), m_ThermostatName[module_id].c_str(), Type.c_str());
 
 		if (m_ThermostatName[module_id].empty())
 		{
 			//Thermolink Thermostat - NTDC
-			std::string Type = m_Device_types[module_id];
 			Log(LOG_STATUS, "Thermo Link %s", Type.c_str());
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
