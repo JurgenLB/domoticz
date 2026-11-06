@@ -732,6 +732,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string mode;
 		int uid = xcmd->id;       //switch ID
 		int selectorLevel = xcmd->level;
+		int temp = xcmd->cmnd;
 
 		switch (selectorLevel)
 		{
@@ -784,17 +785,18 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string Type = m_thermostatModuleID[uid];
 		Json::Value macID = m_Room[roomNetatmoID];
 
-		if (type == "NTDC")
+		if (Type == "NTDC")
 		{
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
 			json_data["home"]["id"] = Home_id;
-			json_data["home"]["rooms"][0]["id"] = module_id;
+			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
 			//json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = endtime;  //Optional
-			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = State;
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
 			json_data["home"]["rooms"][0]["cooling_setpoint_temperature"] = temp;
 			home_data = "&";
 			//
+			_data = json_data.toStyledString();
 			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
 		}
 		else
@@ -3633,10 +3635,10 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string room_temp = m_Room_Temp[roomNetatmoID];
 						const uint8_t Unit = 7;
 						nDevice.roomNetatmoID = roomNetatmoID;
-						std::string aName = moduleName
+						std::string aName = moduleName;
 						std::string bridge = m_ThermostatName[macID];
 						//Room Selector Switch
-						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str());
+						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s Bridge %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str(), bridge.c_str());
 						uint64_t roomid = convert_mac(roomNetatmoID);
 						int Room_int = int(roomid);
 						//int Room_int = stoi(roomNetatmoID); // std::__throw_out_of_range
