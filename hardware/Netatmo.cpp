@@ -1442,7 +1442,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 		}
 		Log(LOG_STATUS, "Module %s Bridge %s Type %s", module_id.c_str(), m_ThermostatName[module_id].c_str(), Type.c_str());
 
-		if (m_ThermostatName[module_id].empty())
+		if (Type == "NTDC")
 		{
 			//Thermolink Thermostat - NTDC
 			Log(LOG_STATUS, "Thermo Link %s", Type.c_str());
