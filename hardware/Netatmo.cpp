@@ -3692,8 +3692,32 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							//m_Device_types[roomNetatmoID] = "home";
 							room_mode_str = "10";
 						}
-						
+
+						int ChildID = 9;
+						std::string bName = moduleName + " - Boiler Status";
+						SendGeneralSwitch(crcId, ChildID, batteryLevel, bIsActive, bIsActive, bName, m_Name, mrf_status);
+
+						// Set option SwitchType to STYPE_Contact
+						auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
+
+						if (!result.empty())
+						{
+							//
+							int uId = std::stoi(result[0][0]);
+							int nValue = std::stoi(result[0][1]);
+							std::string sValue = result[0][2];
+							//Debug(DEBUG_HARDWARE, "NATherm1 uId %d", uId);
+							m_PowerDeviceID[uId] = home_id;
+
+							if (m_bFirstTimeHomeStatus)
+							{
+								//m_sql.UpdateDeviceValue("SwitchType", STYPE_Dusk, std::to_string(uId));  //12
+								m_sql.UpdateDeviceValue("SwitchType", STYPE_Contact, std::to_string(uId)); // 2
+								m_sql.UpdateDeviceValue("CustomImage", 19, std::to_string(uId));           //19 Sun
+							}
+						}
 					}
+					//
 
 					if ((type == "NATherm1") || (type == "NRV"))
 					{
