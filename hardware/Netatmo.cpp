@@ -1853,7 +1853,7 @@ void CNetatmo::GetHomesDataDetails()
 				//Debug(DEBUG_HARDWARE, "Get Home ID %s", homeID.c_str());
 
 				//*****************************************************************************//
-				//SaveJson2Disk(home, std::string("./jsoncreated/HomesData_" + m_Name + "-" + homeID + ".txt"));
+				SaveJson2Disk(home, std::string("./jsoncreated/HomesData_" + m_Name + "-" + homeID + ".txt"));
 				//*****************************************************************************//
 
 				std::stringstream stream_homeid;
@@ -2286,7 +2286,7 @@ void CNetatmo::Get_RoomMeasure(std::string& home_id, std::string& room_id, std::
 		//if (!root["body"]["home"].empty())
 		//{
 			//*****************************************************************************//
-			//SaveJson2Disk(root, std::string("./jsoncreated/roommeasure " + roomName + "_:_" + home_id + ".txt"));
+			SaveJson2Disk(root, std::string("./jsoncreated/roommeasure " + roomName + "_:_" + home_id + ".txt"));
 			//*****************************************************************************//
 	}
 }
@@ -2929,7 +2929,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 		Json::Value mRoot = root["body"]["home"]["rooms"];
 
 		//*****************************************************************************//
-		//SaveJson2Disk(root, std::string("./jsoncreated/HomeStatus_" + m_Name + "_:_" + home_id + ".txt")); //Save HOMESTATUS
+		SaveJson2Disk(root, std::string("./jsoncreated/HomeStatus_" + m_Name + "_:_" + home_id + ".txt")); //Save HOMESTATUS
 		//*****************************************************************************//
 
 		for (auto room : mRoot)
@@ -2955,7 +2955,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				std::string roomType = m_Types[roomNetatmoID];
 
 				//*****************************************************************************//
-				//SaveJson2Disk(room, std::string("./jsoncreated/room_") + roomName.c_str() + ".txt");
+				SaveJson2Disk(room, std::string("./jsoncreated/room_") + roomName.c_str() + ".txt");
 				//*****************************************************************************//
 
 				if (!room["reachable"].empty())
