@@ -1170,7 +1170,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			_data = json_data.toStyledString();
 			//_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"scenario\":\"" + State + "\"}]}}" ;
 		}
-		else if ((Type == "NTE") || (Type == "NVE"))
+		else if ((type_module == "NTE") || (type_module == "NVE"))
 		{
 			int temp;
 			std::string State;
