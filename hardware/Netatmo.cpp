@@ -857,7 +857,6 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int subType = sSwitchTypeSelector;
 		std::string roomNetatmoID = m_DeviceModuleID[uid];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
-		m_Device_types[roomNetatmoID] = mode;
 
 		//Selector Switch for Thermostat Mode and Blinds
 		if ((SUB_Type == 62) || (SUB_Type == 73))
@@ -874,8 +873,9 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		{
 			set_level = cmnd_SetLevel;
 		}
-
+		m_Device_types[roomNetatmoID] = set_level;
 		std::string Type = m_thermostatModuleID[uid];
+
 		if ((Type == "NTE") || (Type == "NVE"))
 		{
 			Json::Value json_data;
