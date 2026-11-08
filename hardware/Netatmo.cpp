@@ -3056,6 +3056,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				Debug(DEBUG_HARDWARE, "Name Module  %s", moduleName.c_str());
 				std::string bat_percentage;
 				std::string batName;
+				std::string bridge;
 				int batteryLevel;
 				float mrf_percentage = 12;
 				int mrf_status;
@@ -3308,11 +3309,11 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					}
 					if (!module["bridge"].empty())
 					{
-						std::string bridge_ = module["bridge"].asString();
-						std::string Bridge_Name = m_ModuleNames[bridge_];
-						m_DeviceBridge[module_id] = bridge_;
+						bridge = module["bridge"].asString();
+						std::string Bridge_Name = m_ModuleNames[bridge];
+						m_DeviceBridge[module_id] = bridge;
 						std::string Module_Name = moduleName + " - Bridge";
-						std::string bridgeValue = Bridge_Name + " " + bridge_;
+						std::string bridgeValue = Bridge_Name + " " + bridge;
 						nDevice.StationName = Bridge_Name;
 					}
 					if (!module["boiler_valve_comfort_boost"].empty())
@@ -3668,11 +3669,11 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						const uint8_t Unit = 7;
 						nDevice.roomNetatmoID = roomNetatmoID;
 						std::string aName = moduleName;
-						std::string bridge = m_ThermostatName[module_id];
+						std::string module_name = m_ThermostatName[module_id];
 						std::string mac_NTDC = m_ThermostatName[bridge];
 
 						//Room Selector Switch
-						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s Bridge %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str(), bridge.c_str());
+						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s %s Bridge %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str(), module_name.c_str(), bridge.c_str());
 						uint64_t roomid = convert_mac(roomNetatmoID);
 						int Room_int = int(roomid);
 						//int Room_int = stoi(roomNetatmoID); // std::__throw_out_of_range
