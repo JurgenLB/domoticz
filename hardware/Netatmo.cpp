@@ -1193,6 +1193,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 				return false;
 			}
 			//
+			std::string Home_name = m_PowerDeviceID[uid];
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
 			json_data["home"]["id"] = Home_id;
@@ -1202,7 +1203,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			json_data["home"]["modules"][0]["cooling_setpoint_temperature"] = temp;
 			_data = json_data.toStyledString();
 
-			Debug(DEBUG_HARDWARE, "Gateway Bridge %s Home_id %s %s newState %d %d", DeviceBridge.c_str(), Home_id.c_str(), Home_name.c_str(), State, temp);
+			Debug(DEBUG_HARDWARE, "Gateway Bridge %s Home_id %s %s newState %d %d", Device_Bridge.c_str(), Home_id.c_str(), Home_name.c_str(), State, temp);
 
 			//setpoint of the room to away or comfort NLC
 			//_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"rooms\":[{\"id\":\"" + module_id + "\",\"therm_setpoint_mode\":\"" + "manual" + "\",\"therm_setpoint_fp\":\"" + "away" + "\",\"therm_setpoint_end_time\":\"" + 1505368800 + "\"}]}}" ;
@@ -1443,7 +1444,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 			Log(LOG_ERROR, "NetatmoThermostat : No thermostat found in online devices!");
 			return;
 		}
-		Log(LOG_STATUS, "Module %s Bridge %s Type %s Mode %s %d", module_id.c_str(), m_ThermostatName[module_id].c_str(), Type.c_str(), Mode.c_str(), temp);
+		Log(LOG_STATUS, "Module %s Bridge %s Type %s Mode %s %f", module_id.c_str(), m_ThermostatName[module_id].c_str(), Type.c_str(), Mode.c_str(), temp);
 
 		if (Type == "NTDC")
 		{
