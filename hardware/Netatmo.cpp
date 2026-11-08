@@ -946,9 +946,10 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 		}
 		bHaveDevice = true;
 		// Energy        {NAPlug, OTH, BNS}
-		// Home+control  {NLG,    OTH, BNS, NBG,              BNMH}
+		// Home+control  {NLG,    OTH, BNS, NBG,              BNMH     , NTE, NVE}
 		// Home+security {NACamera, NOC, NDB, NSD, NCO, BNCX, BNMH, NPC}
 
+		// NTE = Netatmo Original Thermostat
 		// NAPlug = Netatmo Thermostat
 		// BNS = Smarther with Netatmo Thermostat
 		// NLG = Legrand Gateway
@@ -982,7 +983,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 
 	if(!m_PowerDeviceID[uid].empty())
 	{
-		// Home+control  {NLG,    OTH, BNS, NBG,              BNMH, NLF, NLP, NLPO, NLM}
+		// Home+control  {NLG,    OTH, BNS, NBG,              BNMH, NLF, NLP, NLPO, NLM, NTE, NVE}
 		// Home+security {NACamera, NOC, NDB, NSD, NCO, BNCX, BNMH, NPC}
 		//Debug(DEBUG_HARDWARE, "Set Program State MAC = %s - %d", module_id.c_str(), newState);
 		std::string _data;
@@ -3732,6 +3733,15 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 								}
 							}
 						}
+						if (setModeSwitch)
+							{
+								Debug(DEBUG_HARDWARE, "Room mode %s %s %s", m_Device_types[roomNetatmoID].c_str(), roomNetatmoID.c_str(), room_mode_str.c_str());
+								//Max mode can only be applied on thermostat room
+								SendSelectorSwitch(Room_int, 16, room_mode_str, moduleName + " - Room", 15, true, "Off|Home|Manual|Max", "", true, m_Name);   // No RF-level - Battery level visible
+							}
+							else
+								Log(LOG_ERROR, "NetatmoThermostat: Error Room Thermostat not available!");
+						
 					}
 					if ((type == "NATherm1") || (type == "NRV"))
 					{
