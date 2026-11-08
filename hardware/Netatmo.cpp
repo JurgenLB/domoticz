@@ -878,8 +878,24 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 		m_Device_types[roomNetatmoID] = set_level;
-		sstr << set_level;
-		sstr >> mode;
+		switch (newState)
+		{
+		case 0:
+			mode = "off";      //The Thermostat is off (Not Supported by Thermostat)
+			break;
+		case 10:
+			mode = "schedule"; //The Thermostat is currently following its weekly schedule
+			break;
+		case 20:
+			mode = "away";     //The Thermostat is currently applying the away temperature
+			break;
+		case 30:
+			mode = "hg";       //he Thermostat is currently applying the frost-guard temperature
+			break;
+		default:
+			Log(LOG_ERROR, "Netatmo: Invalid Thermostat state!");
+			return false;
+		}
 
 		Log(LOG_STATUS, "Thermostat Mode %s Temp %d Type %s macID %s", mode, cmnd_SetLevel, Type.c_str(), macID.c_str()); //Thermostat Mode 20 Temp 2 Type 00:04:74:00:01:90:20:a9
 
