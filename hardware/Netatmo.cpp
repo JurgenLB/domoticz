@@ -1967,7 +1967,7 @@ void CNetatmo::GetHomesDataDetails()
 							//Store thermostate name for later naming switch / sensor
 							if (type == "NAPlug")
 								m_ModuleNames[homeID] = macID;
-							if ((module["type"] == "NATherm1") || (module["type"] == "NRV"))
+							if ((module["type"] == "NATherm1") || (module["type"] == "NRV") || (module["type"] == "NTE") || (module["type"] == "NVE"))
 								m_ThermostatName[macID] = module["name"].asString();
 							if (module["type"] == "NTDC")
 							{
