@@ -3703,7 +3703,10 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						t_R << room_temp;
 						t_R >> Temp;
 						if (!m_ThermostatName[bridge].empty())
+						{
+							Debug(DEBUG_HARDWARE, "Thermostat Sensor Switch %s", moduleName.c_str());
 							SendThermostatSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, Temp, moduleName);
+						}
 						std::string room_mode_str;
 
 						if (m_Device_types[roomNetatmoID] == "home")
