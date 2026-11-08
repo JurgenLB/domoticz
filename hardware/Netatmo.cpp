@@ -1170,7 +1170,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 			_data = json_data.toStyledString();
 			//_data = "{\"home\":{\"id\":\"" + Home_id + "\",\"modules\":[{\"id\":\"" + module_id + "\",\"scenario\":\"" + State + "\"}]}}" ;
 		}
-		else if (type_module == "NTDC")
+		else if ((Type == "NTE") || (Type == "NVE"))
 		{
 			int temp;
 			std::string State;
@@ -1446,7 +1446,7 @@ void CNetatmo::SetSetpoint(unsigned long ID, const float temp)
 		}
 		Log(LOG_STATUS, "Module %s Bridge %s Type %s Mode %s %f", module_id.c_str(), m_ThermostatName[module_id].c_str(), Type.c_str(), Mode.c_str(), temp);
 
-		if (Type == "NTDC")
+		if ((Type == "NTE") || (Type == "NVE"))
 		{
 			//Thermolink Thermostat - NTDC
 			Log(LOG_STATUS, "Thermo Link %s", Type.c_str());
