@@ -3326,6 +3326,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					if (!module["boiler_status"].empty())
 					{
 						//Thermostat status (boiler heating or not : informationnal switch)
+						Debug(DEBUG_HARDWARE, "Boiler Status ");
 						std::string aName = moduleName + " - Boiler Status";
 						bIsActive = module["boiler_status"].asBool();
 						std::string boiler_status = module["boiler_status"].asString();
@@ -3729,6 +3730,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						if (type == "NTE")
 						{
 							ChildID = 9;
+							Debug(DEBUG_HARDWARE, "Boiler Status NTE");
 							std::string bName = moduleName + " - Boiler Status";
 							SendGeneralSwitch(crcId, ChildID, batteryLevel, bIsActive, bIsActive, bName, m_Name, mrf_status);
 						
@@ -3833,6 +3835,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						{
 							//information switch for active Boiler only when we have a Thermostat
 							// Valves don't have Boiler status
+							Debug(DEBUG_HARDWARE, "Boiler Status NATherm1");
 							int ChildID = 9;
 							std::string bName = moduleName + " - Boiler Status";
 							SendGeneralSwitch(crcId, ChildID, batteryLevel, bIsActive, bIsActive, bName, m_Name, mrf_status);
