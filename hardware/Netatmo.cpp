@@ -878,7 +878,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 		m_Device_types[roomNetatmoID] = set_level;
-		switch (newState)
+		switch (set_level)
 		{
 		case 0:
 			mode = "off";      //The Thermostat is off (Not Supported by Thermostat)
