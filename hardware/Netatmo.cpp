@@ -858,6 +858,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int subType = sSwitchTypeSelector;
 		std::string roomNetatmoID = m_DeviceModuleID[uid];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
+		std::string macID = m_thermostatModuleID[uid];
+		std::string Type = m_Device_types[macID];
 
 		//Selector Switch for Thermostat Mode and Blinds
 		if ((SUB_Type == 62) || (SUB_Type == 73))
@@ -875,10 +877,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 		m_Device_types[roomNetatmoID] = set_level;
-		std::string macID = m_thermostatModuleID[uid];
-		std::string Type = m_Device_types[macID];
 
-		Log(LOG_STATUS, "Thermostat Mode %d Temp %d Type %s", set_level, cmnd_SetLevel, Type.c_str()); //Thermostat Mode 20 Temp 2 Type 00:04:74:00:01:90:20:a9
+		Log(LOG_STATUS, "Thermostat Mode %d Temp %d Type %s macID %s", set_level, cmnd_SetLevel, Type.c_str(), macID.c_str()); //Thermostat Mode 20 Temp 2 Type 00:04:74:00:01:90:20:a9
 
 		if ((Type == "NTE") || (Type == "NVE"))
 		{
