@@ -1969,7 +1969,7 @@ void CNetatmo::GetHomesDataDetails()
 								m_ModuleNames[homeID] = macID;
 							if ((module["type"] == "NATherm1") || (module["type"] == "NRV") || (module["type"] == "NTE") || (module["type"] == "NVE"))
 								m_ThermostatName[macID] = module["name"].asString();
-							if (module["type"] == "NTDC")
+							if ((module["type"] == "NTDC") || (module["type"] == "NTE") || (module["type"] == "NVE"))
 							{
 								m_ThermostatName[bridge] = macID;
 								m_DeviceModuleID[crcId] = module_id;
