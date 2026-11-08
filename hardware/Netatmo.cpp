@@ -783,7 +783,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
 		m_Device_types[roomNetatmoID] = mode;
 		int temp = xcmd->cmnd;
-		std::string Type = m_thermostatModuleID[uid];
+		std::string macID = m_thermostatModuleID[uid];
+		std::string Type = m_Device_types[macID];
 
 		Log(LOG_STATUS, "Rooms Thermostat Type %s Temp %d Mode %s", Type.c_str(), temp, mode.c_str());
 
@@ -874,9 +875,10 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 		m_Device_types[roomNetatmoID] = set_level;
-		std::string Type = m_thermostatModuleID[uid];
+		std::string macID = m_thermostatModuleID[uid];
+		std::string Type = m_Device_types[macID];
 
-		Log(LOG_STATUS, "Thermostat Mode %d Temp %d Type %s", set_level, cmnd_SetLevel, Type.c_str());
+		Log(LOG_STATUS, "Thermostat Mode %d Temp %d Type %s", set_level, cmnd_SetLevel, Type.c_str()); //Thermostat Mode 20 Temp 2 Type 00:04:74:00:01:90:20:a9
 
 		if ((Type == "NTE") || (Type == "NVE"))
 		{
