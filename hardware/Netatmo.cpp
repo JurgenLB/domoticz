@@ -708,6 +708,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 	std::string sResult;
 	bool ret = false;
 	bool bRet;              //Parsing status
+	std::stringstream sstr;
+	std::stringstream bstr;
 
 	if (packettype == pTypeLighting2)
 	{
@@ -777,8 +779,6 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 				localtime_r(&now, &etime);
 		}
 
-		std::stringstream sstr;
-		std::stringstream bstr;
 		std::string roomNetatmoID = m_DeviceModuleID[uid];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
 		m_Device_types[roomNetatmoID] = mode;
@@ -860,6 +860,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
 		std::string macID = m_thermostatModuleID[uid];
 		std::string Type = m_Device_types[macID];
+		std::string mode;
 
 		//Selector Switch for Thermostat Mode and Blinds
 		if ((SUB_Type == 62) || (SUB_Type == 73))
@@ -877,8 +878,10 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 		m_Device_types[roomNetatmoID] = set_level;
+		sstr << set_level;
+		sstr >> mode;
 
-		Log(LOG_STATUS, "Thermostat Mode %d Temp %d Type %s macID %s", set_level, cmnd_SetLevel, Type.c_str(), macID.c_str()); //Thermostat Mode 20 Temp 2 Type 00:04:74:00:01:90:20:a9
+		Log(LOG_STATUS, "Thermostat Mode %s Temp %d Type %s macID %s", mode, cmnd_SetLevel, Type.c_str(), macID.c_str()); //Thermostat Mode 20 Temp 2 Type 00:04:74:00:01:90:20:a9
 
 		if ((Type == "NTE") || (Type == "NVE"))
 		{
@@ -887,7 +890,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			json_data["home"]["id"] = Home_id;
 			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
 			//json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
-			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = set_level;
+			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;              //therm_setpoint_mode: should be string
 			//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
 			home_data = "&";
 			//
