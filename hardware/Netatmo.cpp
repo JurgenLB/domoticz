@@ -3197,6 +3197,10 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				if (connected)
 				{
 					m_DeviceModuleID[crcId] = module_id;
+					std::string roomNetatmoID = m_RoomIDs[module_id];
+					uint64_t roomid = convert_mac(roomNetatmoID);
+					int Room_int = int(roomid);
+					std::string room_mode_str;
 					int Type = pTypeGeneralSwitch; // 244;   // Light/Switch
 					int SubType = sSwitchTypeAC;   // 11;    // AC
 					//62; // Selector Switch
@@ -3634,7 +3638,6 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						int ChildID = 0;
 						int roomIndex = 0;
 						//Find the room info
-						std::string roomNetatmoID = m_RoomIDs[module_id];
 						std::string roomName = m_RoomNames[roomNetatmoID];
 						std::string roomType = m_Types[roomNetatmoID];
 						std::string module_Category = m_Module_category[module_id];
@@ -3649,8 +3652,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 						//Room Selector Switch
 						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s %s Bridge %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str(), module_name.c_str(), bridge.c_str());
-						uint64_t roomid = convert_mac(roomNetatmoID);
-						int Room_int = int(roomid);
+						
 						//int Room_int = stoi(roomNetatmoID); // std::__throw_out_of_range
 						m_DeviceModuleID[Room_int] = roomNetatmoID;            // mac-adres
 						m_RoomIDs[roomNetatmoID] = roomNetatmoID;
@@ -3690,7 +3692,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						int ChildID = 0;
 						int roomIndex = 0;
 						//Find the room info
-						std::string roomNetatmoID = m_RoomIDs[module_id];
+						roomNetatmoID = m_RoomIDs[module_id];
 						std::string aName = moduleName + " - Heating Status";
 						std::string roomName = m_RoomNames[roomNetatmoID];
 						std::string roomType = m_Types[roomNetatmoID];
@@ -3705,7 +3707,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						//Room Selector Switch
 						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str());
 						uint64_t roomid = convert_mac(roomNetatmoID);
-						int Room_int = int(roomid);
+						Room_int = int(roomid);
 						//int Room_int = stoi(roomNetatmoID); // std::__throw_out_of_range
 						m_DeviceModuleID[Room_int] = roomNetatmoID;            // mac-adres
 						m_RoomIDs[roomNetatmoID] = roomNetatmoID;
@@ -3739,8 +3741,6 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					}
 					if ((type == "NATherm1") || (type == "NRV") || (type == "NTE") || (type == "NVE"))
 					{
-						std::string room_mode_str;
-
 						if (m_Device_types[roomNetatmoID] == "home")
 						{
 							room_mode_str = "10";
@@ -3772,7 +3772,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					}
 					if ((type == "NATherm1") || (type == "NRV") || (type == "NTE") || (type == "NVE"))
 					{
-
+							int ChildID = 9;
 							// Set option SwitchType to STYPE_Contact
 							auto result = m_sql.safe_query("SELECT ID, nValue, sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%08X') AND (Unit==%d)", m_HwdID, crcId, ChildID);
 
