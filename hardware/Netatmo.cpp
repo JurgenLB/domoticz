@@ -781,10 +781,31 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string roomNetatmoID = m_DeviceModuleID[uid];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
 		m_Device_types[roomNetatmoID] = mode;
+		std::string _data;
+		std::string Type = m_thermostatModuleID[uid];
 
-		home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + mode + "&endtime=" + std::to_string(end_time) + "&";
-		// https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
-		Get_Response_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
+		Log(LOG_STATUS, "Thermostat Type %s Temp %d Mode %s", Type.c_str(), temp, mode.c_str());
+
+		if ((Type == "NTE") || (Type == "NVE"))
+		{
+			Json::Value json_data;
+			//json_data {"body":{"home":{"id":
+			json_data["home"]["id"] = Home_id;
+			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
+			json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
+			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
+			//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
+			home_data = "&";
+			//
+			_data = json_data.toStyledString();
+			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
+		}
+		else
+		{
+			home_data = "home_id=" + Home_id + "&room_id=" + roomNetatmoID.c_str() + "&mode=" + mode + "&endtime=" + std::to_string(end_time) + "&";
+			// https://api.netatmo.com/api/setroomthermpoint?home_id=xxxxxx&room_id=xxxxxxx&mode=manual&temp=22&endtime=xxxxxxxxx
+			Get_Response_API(NETYPE_SETROOMTHERMPOINT, sResult, home_data, bRet, root, "");
+		}
 
 		if (!bRet)
 		{
@@ -850,7 +871,23 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 
-		return SetProgramState(uid, set_level);
+		std::string Type = m_thermostatModuleID[uid];
+		if ((Type == "NTE") || (Type == "NVE"))
+		{
+			Json::Value json_data;
+			//json_data {"body":{"home":{"id":
+			json_data["home"]["id"] = Home_id;
+			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
+			json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
+			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
+			//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
+			home_data = "&";
+			//
+			_data = json_data.toStyledString();
+			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
+		}
+		else
+			return SetProgramState(uid, set_level);
 	}
 	else
 	{
