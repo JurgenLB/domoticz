@@ -1940,12 +1940,12 @@ void CNetatmo::GetHomesDataDetails()
 							//Store thermostate name for later naming switch / sensor
 							if (type == "NAPlug")
 								m_ModuleNames[homeID] = macID;
-							if ((module["type"] == "NATherm1") || (module["type"] == "NRV"))
+							if ((module["type"] == "NATherm1") || (module["type"] == "NRV") || (module["type"] == "NTE") || (module["type"] == "NVE"))
 								m_ThermostatName[macID] = module["name"].asString();
-							if ((module["type"] == "NTDC") || (module["type"] == "NTE") || (module["type"] == "NVE"))
+							if ((module["type"] == "NTDC"))
 							{
 								m_ThermostatName[macID] = module["name"].asString();
-								//m_ThermostatName[bridge] = macID;
+								m_Room_mode[bridge] = macID;
 								//m_DeviceModuleID[crcId] = module_id;
 							}
 							if (!module["category"].empty())
@@ -3644,7 +3644,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						nDevice.roomNetatmoID = roomNetatmoID;
 						std::string aName = moduleName;
 						std::string module_name = m_ThermostatName[module_id];
-						std::string mac_NTDC = m_ThermostatName[bridge];
+						std::string mac_NTDC = m_Room_mode[bridge];
 
 						//Room Selector Switch
 						Debug(DEBUG_HARDWARE, "Schedule Selector Switch %s Room %s device %s | %s %s Bridge %s", room_mode.c_str(), roomName.c_str(), roomNetatmoID.c_str(), module_id.c_str(), module_name.c_str(), bridge.c_str());
@@ -3677,7 +3677,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::stringstream t_R;
 						t_R << room_temp;
 						t_R >> Temp;
-						if (!m_ThermostatName[bridge].empty())
+						if (!m_ThermostatName[module_id].empty())
 						{
 							Debug(DEBUG_HARDWARE, "Thermostat Sensor Switch %s", moduleName.c_str());
 							SendThermostatSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, Temp, moduleName);
