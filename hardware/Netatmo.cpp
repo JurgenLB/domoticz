@@ -787,7 +787,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		Json::Value macID = m_Room[roomNetatmoID];
 		Log(LOG_STATUS, "Thermostat Type %s Temp %d Mode %s", Type.c_str(), temp, mode.c_str());
 
-		if (Type == "NTDC")
+		if ((Type == "NTE") || (Type == "NVE"))
 		{
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
