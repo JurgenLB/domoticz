@@ -702,6 +702,12 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 	// Create/update Selector device for preset_modes
 	int packetlength = pCmd->LIGHTING2.packetlength;
 	unsigned char packettype2 = pCmd->LIGHTING2.packettype;
+	std::string home_data;
+	std::string _data;
+	Json::Value root;
+	std::string sResult;
+	bool ret = false;
+	bool bRet;              //Parsing status
 
 	if (packettype == pTypeLighting2)
 	{
@@ -771,17 +777,12 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 				localtime_r(&now, &etime);
 		}
 
-		Json::Value root;
-		std::string sResult;
 		std::stringstream sstr;
 		std::stringstream bstr;
-		std::string home_data;
-		bool ret = false;
-		bool bRet;              //Parsing status
 		std::string roomNetatmoID = m_DeviceModuleID[uid];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
 		m_Device_types[roomNetatmoID] = mode;
-		std::string _data;
+		int temp = xcmd->cmnd;
 		std::string Type = m_thermostatModuleID[uid];
 
 		Log(LOG_STATUS, "Thermostat Type %s Temp %d Mode %s", Type.c_str(), temp, mode.c_str());
@@ -854,6 +855,9 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int switchType = STYPE_Selector;
 		int devType = packettype;  //unsigned char
 		int subType = sSwitchTypeSelector;
+		std::string roomNetatmoID = m_DeviceModuleID[uid];
+		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
+		m_Device_types[roomNetatmoID] = mode;
 
 		//Selector Switch for Thermostat Mode and Blinds
 		if ((SUB_Type == 62) || (SUB_Type == 73))
@@ -878,8 +882,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			//json_data {"body":{"home":{"id":
 			json_data["home"]["id"] = Home_id;
 			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
-			json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
-			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
+			//json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
+			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = set_level;
 			//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
 			home_data = "&";
 			//
