@@ -785,7 +785,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int temp = xcmd->cmnd;
 		std::string Type = m_thermostatModuleID[uid];
 
-		Log(LOG_STATUS, "Thermostat Type %s Temp %d Mode %s", Type.c_str(), temp, mode.c_str());
+		Log(LOG_STATUS, "Rooms Thermostat Type %s Temp %d Mode %s", Type.c_str(), temp, mode.c_str());
 
 		if ((Type == "NTE") || (Type == "NVE"))
 		{
@@ -875,6 +875,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		}
 		m_Device_types[roomNetatmoID] = set_level;
 		std::string Type = m_thermostatModuleID[uid];
+
+		Log(LOG_STATUS, "Thermostat Mode %s Temp %d Type %s", mode.c_str(), temp, Type.c_str());
 
 		if ((Type == "NTE") || (Type == "NVE"))
 		{
