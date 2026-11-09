@@ -856,7 +856,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int switchType = STYPE_Selector;
 		int devType = packettype;  //unsigned char
 		int subType = sSwitchTypeSelector;
-		std::string roomNetatmoID = m_DeviceModuleID[uid];
+		std::string module_id = m_DeviceModuleID[uid];
+		std::string roomNetatmoID = m_RoomIDs[module_id];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
 		Log(LOG_STATUS, "Room Debug ID %s uid %" PRIu64 " Home_id %s", roomNetatmoID.c_str(), uid, Home_id.c_str());
 		std::string macID = m_thermostatModuleID[uid];
