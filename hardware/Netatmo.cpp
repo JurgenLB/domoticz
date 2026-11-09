@@ -880,6 +880,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 		m_Device_types[roomNetatmoID] = set_level;
+		// home / manual / away / frostguard mode / off
 		switch (set_level)
 		{
 		case 0:
@@ -984,6 +985,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 	if (!m_thermostatModuleID[uid].empty())
 	{
 		std::string thermState;
+		// home / manual / away / frostguard mode / off
 		switch (newState)
 		{
 		case 0:
@@ -1617,7 +1619,7 @@ bool CNetatmo::SetSchedule(int uId, int selected)
 	bool bRet;              //Parsing status
 
 	int state = 10;             //Forcing Thermostat to follow the selected weekly schedule
-
+	// home / manual / away / frostguard mode / off
 	switch (state)
 	{
 		case 0:
@@ -3049,6 +3051,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				{
 					// create / update the switch for setting away mode
 					// Possible; schedule / away / hg
+					// home / manual / away / frostguard mode / off
 					std::string setpoint_mode = room["therm_setpoint_mode"].asString();
 					m_Room_mode[roomNetatmoID] = setpoint_mode;
 
@@ -3923,6 +3926,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							{
 								Debug(DEBUG_HARDWARE, "Room mode %s %s %s", m_Device_types[roomNetatmoID].c_str(), roomNetatmoID.c_str(), room_mode_str.c_str());
 								//Max mode can only be applied on thermostat room
+								// home / manual / away / frostguard mode / off
 								SendSelectorSwitch(Room_int, 16, room_mode_str, moduleName + " - Room", 15, true, "Off|Home|Manual", "", true, m_Name);   // No RF-level - Battery level visible
 							}
 							else
