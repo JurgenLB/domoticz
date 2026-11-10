@@ -3872,7 +3872,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							else
 								Log(LOG_ERROR, "NetatmoThermostat: Error Room Thermostat not available!");
 					}
-					if ((type == "NATherm1") || (type == "NRV") || (type == "NTE") || (type == "NVE"))
+					//if ((type == "NATherm1") || (type == "NRV") || (type == "NTE") || (type == "NVE"))
+					if ((type == "NATherm1") || (type == "NRV"))
 					{
 						//Thermostat schedule switch (actively changing thermostat schedule)
 						std::string allSchName = "Off";
