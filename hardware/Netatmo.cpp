@@ -856,8 +856,10 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int switchType = STYPE_Selector;
 		int devType = packettype;  //unsigned char
 		int subType = sSwitchTypeSelector;
-		std::string roomNetatmoID = m_DeviceModuleID[uid];
+		std::string module_id = m_DeviceModuleID[uid];
+		std::string roomNetatmoID = m_RoomIDs[module_id];
 		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
+		Log(LOG_STATUS, "Room Debug ID %s uid %" PRIu64 " Home_id %s", roomNetatmoID.c_str(), uid, Home_id.c_str());
 		std::string macID = m_thermostatModuleID[uid];
 		std::string Type = m_Device_types[macID];
 		std::string mode;
@@ -878,6 +880,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			set_level = cmnd_SetLevel;
 		}
 		m_Device_types[roomNetatmoID] = set_level;
+		// home / manual / away / frostguard mode / off
 		switch (set_level)
 		{
 		case 0:
@@ -897,7 +900,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			return false;
 		}
 
-		Log(LOG_STATUS, "Thermostat Mode %s Temp %d Type %s macID %s", mode, cmnd_SetLevel, Type.c_str(), macID.c_str()); //Thermostat Mode 20 Temp 2 Type 00:04:74:00:01:90:20:a9
+		Log(LOG_STATUS, "Thermostat Mode %s Temp %d Type %s macID %s Home_id %s", mode.c_str(), cmnd_SetLevel, Type.c_str(), macID.c_str(), Home_id.c_str()); //Thermostat Mode Away Temp 2 Type 00:04:xx 59xxx
 
 		if ((Type == "NTE") || (Type == "NVE"))
 		{
@@ -906,8 +909,9 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			json_data["home"]["id"] = Home_id;
 			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
 			//json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
-			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;              //therm_setpoint_mode: should be string
-			//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
+			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = "manual";
+        	json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
+			//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;     //therm_setpoint_mode: should be string
 			home_data = "&";
 			//
 			_data = json_data.toStyledString();
@@ -981,6 +985,7 @@ bool CNetatmo::SetProgramState(const int uid, const int newState)
 	if (!m_thermostatModuleID[uid].empty())
 	{
 		std::string thermState;
+		// home / manual / away / frostguard mode / off
 		switch (newState)
 		{
 		case 0:
@@ -1614,7 +1619,7 @@ bool CNetatmo::SetSchedule(int uId, int selected)
 	bool bRet;              //Parsing status
 
 	int state = 10;             //Forcing Thermostat to follow the selected weekly schedule
-
+	// home / manual / away / frostguard mode / off
 	switch (state)
 	{
 		case 0:
@@ -3046,6 +3051,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 				{
 					// create / update the switch for setting away mode
 					// Possible; schedule / away / hg
+					// home / manual / away / frostguard mode / off
 					std::string setpoint_mode = room["therm_setpoint_mode"].asString();
 					m_Room_mode[roomNetatmoID] = setpoint_mode;
 
@@ -3866,7 +3872,8 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							else
 								Log(LOG_ERROR, "NetatmoThermostat: Error Room Thermostat not available!");
 					}
-					if ((type == "NATherm1") || (type == "NRV") || (type == "NTE") || (type == "NVE"))
+					//if ((type == "NATherm1") || (type == "NRV") || (type == "NTE") || (type == "NVE"))
+					if ((type == "NATherm1") || (type == "NRV"))
 					{
 						//Thermostat schedule switch (actively changing thermostat schedule)
 						std::string allSchName = "Off";
@@ -3920,6 +3927,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							{
 								Debug(DEBUG_HARDWARE, "Room mode %s %s %s", m_Device_types[roomNetatmoID].c_str(), roomNetatmoID.c_str(), room_mode_str.c_str());
 								//Max mode can only be applied on thermostat room
+								// home / manual / away / frostguard mode / off
 								SendSelectorSwitch(Room_int, 16, room_mode_str, moduleName + " - Room", 15, true, "Off|Home|Manual", "", true, m_Name);   // No RF-level - Battery level visible
 							}
 							else
