@@ -3810,7 +3810,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							ss << itt->first;
 						}
 
-						Debug(DEBUG_HARDWARE, "allSchName Data %s", allSchName.c_str());
+						Debug(DEBUG_HARDWARE, "allSchName Data %s Room_ID %s", allSchName.c_str(), roomNetatmoID.c_str());
 
 						//Selected Index for the dropdown list
 						std::stringstream ssv;
