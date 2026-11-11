@@ -856,7 +856,11 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		json_data["home"]["id"] = Home_id;
 		json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
 		json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
-		json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
+		// off home manual hg max
+		json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = "manual";
+		// away comfort
+		json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
+		//json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
 		//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
 		home_data = "&";
 		//
@@ -2161,7 +2165,9 @@ void CNetatmo::GetHomesDataDetails()
 					}
 					m_ScheduleID_s[homeID] = Schedule_ID;
 					index += 10;
-					Schedule_ID[index] = "away";
+					std::string away = "away";
+					Schedule_ID[index] = _ID;
+					m_Schedule_Names[_ID] = away;
 					m_ScheduleID_s[_ID] = Schedule_ID;
 				}
 				//Get the user info
