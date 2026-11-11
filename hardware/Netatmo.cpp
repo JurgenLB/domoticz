@@ -805,6 +805,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string mode;
 		int uid = xcmd->id;       //switch ID
 		int selectorLevel = xcmd->level;
+		std::string Level;
 		std::string schedule_Name;
 		std::string schedule_Id;
 		std::string macID = m_thermostatModuleID[uid];
@@ -829,16 +830,16 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 				mode = m_Schedule_Names[schedule_Id];
 			}
 		}
-		//We change the mode for one hour
-		time_t now = mytime(nullptr);
-		struct tm etime;
-		localtime_r(&now, &etime);
-		time_t end_time;
-		int isdst = etime.tm_isdst;
-		bool goodtime = false;
-
-		if (mode == "away")
+		if ((!mode == "off") || (!mode == "away"))
 		{
+			//We change the mode for one hour
+			time_t now = mytime(nullptr);
+			struct tm etime;
+			localtime_r(&now, &etime);
+			time_t end_time;
+			int isdst = etime.tm_isdst;
+			bool goodtime = false;
+
 			while (!goodtime)
 			{
 				etime.tm_isdst = isdst;
@@ -850,16 +851,42 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 					localtime_r(&now, &etime);
 			}
 		}
-
 		Json::Value json_data;
 		//json_data {"body":{"home":{"id":
 		json_data["home"]["id"] = Home_id;
 		json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
 		json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
+
+		if (mode == "off")
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
+
+		else if (mode == "home")
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
+
+		else if (mode == "manual")
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
+
+		else if (mode == "max")
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
+
+		else if (mode == "away")
+		{
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = "manual";
+			json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
+		}
+		else if (mode == "hg")
+			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
+
+		else
+		{
+			Log(LOG_ERROR, "Netatmo: Invalid Thermostat state! %s", mode.c_str());
+			return false;
+		}
+
 		// off home manual hg max
-		json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = "manual";
+		//json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = "manual";
 		// away comfort
-		json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
+		//json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
 		//json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
 		//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
 		home_data = "&";
