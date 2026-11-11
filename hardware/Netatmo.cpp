@@ -854,7 +854,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 					localtime_r(&now, &etime);
 			}
 		}
-		if (mode == "off" && mode == "home" && mode == "manual" && mode == "frostguard" && mode != "away")
+		if (mode == "off" && mode == "home" && mode == "manual" && mode == "frostguard")
 		{
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
@@ -871,10 +871,12 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			_data = json_data.toStyledString();
 			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
 		}
-		else
+		else if (mode == "away")
 		{
-			return SetProgramState(uid, selectorLevel);
+			return SetProgramState(uid, 20);
 		}
+		else
+			return SetSchedule(uid, selectorLevel);
 		
 		if (!bRet)
 		{
