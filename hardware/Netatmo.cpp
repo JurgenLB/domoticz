@@ -807,13 +807,13 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int selectorLevel = xcmd->level;
 		std::string schedule_Name;
 		std::string schedule_Id;
-		std::string roomNetatmoID = m_DeviceModuleID[uid];
-		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
-		m_Device_types[roomNetatmoID] = mode;
-		int temp = xcmd->cmnd;
 		std::string macID = m_thermostatModuleID[uid];
 		std::string Type = m_Device_types[macID];
 		std::string _ID = "999";
+		std::string roomNetatmoID = m_RoomIDs[macID];
+		std::string Home_id = m_DeviceHomeID[roomNetatmoID];      // Home_ID
+		m_Device_types[roomNetatmoID] = mode;
+		int temp = xcmd->cmnd;
 		//store the selected schedule in our local data to avoid
 		//changing back the schedule when using away mode
 		m_selected_Schedule[_ID] = selectorLevel;
