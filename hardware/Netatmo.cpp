@@ -813,7 +813,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		int temp = xcmd->cmnd;
 		std::string macID = m_thermostatModuleID[uid];
 		std::string Type = m_Device_types[macID];
-		std::map<int, std::string> Schedule_ID = m_ScheduleID_s[Home_id];
+		std::string _ID = "999";
+		std::map<int, std::string> Schedule_ID = m_ScheduleID_s[_ID];
 		//Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s", uId, uId, Home_id.c_str());
 
 		for (std::map<int, std::string>::const_iterator itt = Schedule_ID.begin(); itt != Schedule_ID.end(); ++itt)
@@ -2155,10 +2156,10 @@ void CNetatmo::GetHomesDataDetails()
 						}
 					}
 					m_ScheduleID_s[homeID] = Schedule_ID;
+					std::string _ID = "999";
 					index += 10;
 					Schedule_ID[index] = "away";
-					Debug(DEBUG_HARDWARE, "Schedule_ID room %s index %d", roomNetatmoID.c_str(), index);
-					m_ScheduleID_s[roomNetatmoID] = Schedule_ID;
+					m_ScheduleID_s[_ID] = Schedule_ID;
 				}
 				//Get the user info
 				if (!home["user"].empty())
@@ -3741,6 +3742,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						int ChildID = 17;
 						const uint8_t Unit = 7;
 						int roomIndex = 0;
+						std::string _ID = "999";
 						//Find the room info
 						std::string roomName = m_RoomNames[roomNetatmoID];
 						std::string roomType = m_Types[roomNetatmoID];
@@ -3787,7 +3789,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							Debug(DEBUG_HARDWARE, "Thermostat Sensor Switch %s", moduleName.c_str());
 							SendThermostatSensor(crcId, (uint8_t)((crcId & 0x00FF0000) >> 16), (crcId & 0XFF00) >> 8, crcId & 0XFF, Unit, batteryLevel, SP_temp, Temp, moduleName);
 						}
-						//Thermostat schedule switch (actively changing thermostat schedule)
+						//Thermostat mode switch (actively changing thermostat schedule)
 						std::string allSchName = "Off";
 						std::string allSchAction = "";
 						//Store Home_ID from crcID
@@ -3799,7 +3801,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						m_ScheduleHomes[Hardware_int] = home_id;
 						Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s", Hardware_int, Hardware_int, home_id.c_str());
 
-						std::map<int, std::string> Schedule_ID = m_ScheduleID_s[roomNetatmoID];
+						std::map<int, std::string> Schedule_ID = m_ScheduleID_s[_ID];
 
 						for (std::map<int, std::string>::const_iterator itt = Schedule_ID.begin(); itt != Schedule_ID.end(); ++itt)
 						{
