@@ -3736,7 +3736,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					{
 						const uint8_t ChildID = 17;
 						const uint8_t Unit = 7;
-						int sValue;
+						std::string sValue;
 						int roomIndex = 0;
 						//Find the room info
 						std::string roomName = m_RoomNames[roomNetatmoID];
