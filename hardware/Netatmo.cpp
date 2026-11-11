@@ -830,7 +830,9 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 				mode = m_Schedule_Names[schedule_Id];
 			}
 		}
-		Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s Home %s Type %s macID %s mode %s", uid, uid, roomNetatmoID.c_str(), Home_id.c_str(), Type.c_str(), macID.c_str(), mode.c_str());
+		if (selectorLevel == 0)
+			mode = "off"
+		Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s Home %s Type %s macID %s mode %s %d", uid, uid, roomNetatmoID.c_str(), Home_id.c_str(), Type.c_str(), macID.c_str(), mode.c_str(), selectorLevel);
 
 		if (mode != "off" && mode != "away")
 		{
@@ -880,7 +882,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 
 		else
 		{
-			Log(LOG_ERROR, "Netatmo: Invalid Thermostat state! %s", mode.c_str());
+			Log(LOG_ERROR, "Netatmo: Invalid Thermostat state! %s %d", mode.c_str(), selectorLevel);
 			return false;
 		}
 
