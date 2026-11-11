@@ -818,7 +818,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		//changing back the schedule when using away mode
 		m_selected_Schedule[_ID] = selectorLevel;
 		std::map<int, std::string> Schedule_ID = m_ScheduleID_s[_ID];
-		//Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s", uId, uId, Home_id.c_str());
+		Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s Home %s Type %s macID %s", uId, uId, roomNetatmoID.c_str(), Home_id.c_str(), Type.c_str(), macID.c_str());
 
 		for (std::map<int, std::string>::const_iterator itt = Schedule_ID.begin(); itt != Schedule_ID.end(); ++itt)
 		{
