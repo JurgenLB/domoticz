@@ -814,6 +814,9 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		std::string macID = m_thermostatModuleID[uid];
 		std::string Type = m_Device_types[macID];
 		std::string _ID = "999";
+		//store the selected schedule in our local data to avoid
+		//changing back the schedule when using away mode
+		m_selected_Schedule[_ID] = selectorLevel;
 		std::map<int, std::string> Schedule_ID = m_ScheduleID_s[_ID];
 		//Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s", uId, uId, Home_id.c_str());
 
@@ -2099,6 +2102,7 @@ void CNetatmo::GetHomesDataDetails()
 					std::stringstream schedules;
 					std::string allSchName = "Off";
 					std::string allSchAction = "00";
+					std::string _ID = "999";
 					int index = 0;
 					std::map<int, std::string> Schedule_ID;
 					std::map<int, std::string> Schedule_Names;
@@ -2143,7 +2147,7 @@ void CNetatmo::GetHomesDataDetails()
 							ssv << index;
 							//json_data[ssv.str()] = schedule_name;
 							Schedule_ID[index] = schedule_id;
-							Debug(DEBUG_HARDWARE, "Schedule %s index %d", schedule_name.c_str(), index);
+							Debug(DEBUG_HARDWARE, "Schedule Name %s index %d", schedule_name.c_str(), index);
 						}
 						m_Schedule_Names[schedule_id] = schedule_name;
 
@@ -2152,11 +2156,10 @@ void CNetatmo::GetHomesDataDetails()
 						{
 							//m_selectedScheduleID = index;
 							m_selected_Schedule[homeID] = index;
-							m_selected_Schedule[roomNetatmoID] = index;
+							m_selected_Schedule[_ID] = index;
 						}
 					}
 					m_ScheduleID_s[homeID] = Schedule_ID;
-					std::string _ID = "999";
 					index += 10;
 					Schedule_ID[index] = "away";
 					m_ScheduleID_s[_ID] = Schedule_ID;
