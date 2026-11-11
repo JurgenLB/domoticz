@@ -3820,12 +3820,11 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 							std::stringstream ss;
 							ss << itt->first;
 						}
-
-						Debug(DEBUG_HARDWARE, "allSchName Data %s Room_ID %s", allSchName.c_str(), roomNetatmoID.c_str());
-
 						//Selected Index for the dropdown list
 						std::stringstream ssv;
-						ssv << m_selected_Schedule[roomNetatmoID];
+						ssv << m_selected_Schedule[_ID];
+
+						Debug(DEBUG_HARDWARE, "allSchName Data %s Room_ID %s selected %s", allSchName.c_str(), roomNetatmoID.c_str(), ssv.str());
 
 						//create update / domoticz device
 						SendSelectorSwitch(crcId, ChildID, ssv.str(), module_name, 15, true, allSchName, allSchAction, false, m_Name);   // No RF-level - Battery level visible
