@@ -854,7 +854,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 					localtime_r(&now, &etime);
 			}
 		}
-		if (mode == "off" && mode == "home" && mode == "manual" && mode == "frostguard")
+		if (mode == "off" && mode == "home" && mode == "manual" && mode == "frostguard" && mode == "away")
 		{
 			Json::Value json_data;
 			//json_data {"body":{"home":{"id":
@@ -871,10 +871,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			_data = json_data.toStyledString();
 			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
 		}
-		else if (mode == "away")
-		{
-			return SetProgramState(uid, 20);
-		}
+		//else if (mode == "away")
+		//	return SetAway(uid, 20);
 		else
 			return SetSchedule(uid, selectorLevel);
 		
@@ -1649,7 +1647,7 @@ bool CNetatmo::SetSchedule(int uId, int selected)
 
 	for (std::map<int, std::string>::const_iterator itt = Schedule_ID.begin(); itt != Schedule_ID.end(); ++itt)
 	{
-		//Debug(DEBUG_HARDWARE, "Data itt %d %s", itt->first, itt->second.c_str());
+		Debug(DEBUG_HARDWARE, "Data itt %d %s", itt->first, itt->second.c_str());
 		if (itt->first == selected)
 			schedule_Id = itt->second;
 			schedule_Name = m_Schedule_Names[schedule_Id];
