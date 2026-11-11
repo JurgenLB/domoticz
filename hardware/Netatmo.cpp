@@ -803,6 +803,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		// Recast raw data to get switch specific data
 		const _tGeneralSwitch* xcmd = reinterpret_cast<const _tGeneralSwitch*>(pdata);
 		std::string mode;
+		time_t end_time;
 		int uid = xcmd->id;       //switch ID
 		int selectorLevel = xcmd->level;
 		std::string Level;
@@ -836,7 +837,6 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			time_t now = mytime(nullptr);
 			struct tm etime;
 			localtime_r(&now, &etime);
-			time_t end_time;
 			int isdst = etime.tm_isdst;
 			bool goodtime = false;
 
