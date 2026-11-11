@@ -830,7 +830,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 				mode = m_Schedule_Names[schedule_Id];
 			}
 		}
-		if ((!mode == "off") || (!mode == "away"))
+		if (mode != "off" && mode != "away")
 		{
 			//We change the mode for one hour
 			time_t now = mytime(nullptr);
