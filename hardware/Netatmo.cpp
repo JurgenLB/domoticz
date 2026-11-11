@@ -2150,10 +2150,12 @@ void CNetatmo::GetHomesDataDetails()
 						{
 							//m_selectedScheduleID = index;
 							m_selected_Schedule[homeID] = index;
+							m_selected_Schedule[roomNetatmoID] = index;
 						}
 					}
 					m_ScheduleID_s[homeID] = Schedule_ID;
 					Schedule_ID[index + 10] = "away";
+					Debug(DEBUG_HARDWARE, "Schedule_ID room %s index %d", roomNetatmoID.c_str(), index);
 					m_ScheduleID_s[roomNetatmoID] = Schedule_ID;
 				}
 				//Get the user info
@@ -3736,7 +3738,6 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					{
 						int ChildID = 17;
 						const uint8_t Unit = 7;
-						std::string sValue;
 						int roomIndex = 0;
 						//Find the room info
 						std::string roomName = m_RoomNames[roomNetatmoID];
@@ -3811,10 +3812,10 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 						//Selected Index for the dropdown list
 						std::stringstream ssv;
-						ssv << m_selected_Schedule[home_id];
+						ssv << m_selected_Schedule[roomNetatmoID];
 
 						//create update / domoticz device
-						SendSelectorSwitch(Room_int, ChildID, sValue, module_name, 15, true, allSchName, allSchAction, false, m_Name);   // No RF-level - Battery level visible
+						SendSelectorSwitch(crcId, ChildID, ssv.str(), module_name, 15, true, allSchName, allSchAction, false, m_Name);   // No RF-level - Battery level visible
 					}
 					if ((type == "NATherm1") || (type == "NRV"))
 					{
