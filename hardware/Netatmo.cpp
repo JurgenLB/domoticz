@@ -2142,6 +2142,7 @@ void CNetatmo::GetHomesDataDetails()
 							ssv << index;
 							//json_data[ssv.str()] = schedule_name;
 							Schedule_ID[index] = schedule_id;
+							Debug(DEBUG_HARDWARE, "Schedule %s index %d", schedule_name.c_str(), index);
 						}
 						m_Schedule_Names[schedule_id] = schedule_name;
 
@@ -2154,7 +2155,8 @@ void CNetatmo::GetHomesDataDetails()
 						}
 					}
 					m_ScheduleID_s[homeID] = Schedule_ID;
-					Schedule_ID[index + 10] = "away";
+					index += 10;
+					Schedule_ID[index] = "away";
 					Debug(DEBUG_HARDWARE, "Schedule_ID room %s index %d", roomNetatmoID.c_str(), index);
 					m_ScheduleID_s[roomNetatmoID] = Schedule_ID;
 				}
