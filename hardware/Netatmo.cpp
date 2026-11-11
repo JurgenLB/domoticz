@@ -3734,7 +3734,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 
 					if ((type == "NTE") || (type == "NVE"))
 					{
-						const uint8_t ChildID = 17;
+						int ChildID = 17;
 						const uint8_t Unit = 7;
 						std::string sValue;
 						int roomIndex = 0;
