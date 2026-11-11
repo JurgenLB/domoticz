@@ -820,7 +820,6 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		//changing back the schedule when using away mode
 		m_selected_Schedule[_ID] = selectorLevel;
 		std::map<int, std::string> Schedule_ID = m_ScheduleID_s[_ID];
-		Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s Home %s Type %s macID %s", uid, uid, roomNetatmoID.c_str(), Home_id.c_str(), Type.c_str(), macID.c_str());
 
 		for (std::map<int, std::string>::const_iterator itt = Schedule_ID.begin(); itt != Schedule_ID.end(); ++itt)
 		{
@@ -831,6 +830,8 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 				mode = m_Schedule_Names[schedule_Id];
 			}
 		}
+		Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s Home %s Type %s macID %s mode %s", uid, uid, roomNetatmoID.c_str(), Home_id.c_str(), Type.c_str(), macID.c_str(), mode.c_str());
+
 		if (mode != "off" && mode != "away")
 		{
 			//We change the mode for one hour
