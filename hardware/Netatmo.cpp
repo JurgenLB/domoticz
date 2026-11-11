@@ -1602,7 +1602,7 @@ bool CNetatmo::SetSchedule(int uId, int selected)
 
 	std::string module_type = m_Device_types[module_id];
 
-	Debug(DEBUG_HARDWARE, "Type %s Schedule id = %s %d Name %s HomeId %s level = %d", module_type.c_str(), schedule_Id.c_str(), uId, schedule_Name.c_str(), Home_id.c_str(), selected);
+	Debug(DEBUG_HARDWARE, "Type %s Schedule id = %s %d Name %s %s HomeId %s level = %d", module_type.c_str(), schedule_Id.c_str(), uId, schedule_Name.c_str(), module_id.c_str(), Home_id.c_str(), selected);
 	std::stringstream bstr;
 	std::string sResult;
 	Json::Value root;       // root JSON object
@@ -3802,6 +3802,13 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 					}
 					if ((type == "NATherm1") || (type == "NRV") || (type == "NTE") || (type == "NVE"))
 					{
+						//Store Home_ID from crcID
+						std::stringstream uid;
+                        uid << crcId;
+						m_ScheduleHomes[crcId] = home_id;
+						std::stringstream Hardware_str;
+						Hardware_str << Hardware_int;
+						m_ScheduleHomes[Hardware_int] = home_id;
 						if (m_Device_types[roomNetatmoID] == "home")
 						{
 							room_mode_str = "10";
@@ -3871,7 +3878,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						std::string allSchAction = "";
 						//Store Home_ID from crcID
 						std::stringstream uid;
-                                                uid << crcId;
+                        uid << crcId;
 						m_ScheduleHomes[crcId] = home_id;
 						std::stringstream Hardware_str;
 						Hardware_str << Hardware_int;
