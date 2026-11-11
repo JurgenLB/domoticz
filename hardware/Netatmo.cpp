@@ -854,48 +854,27 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 					localtime_r(&now, &etime);
 			}
 		}
-		Json::Value json_data;
-		//json_data {"body":{"home":{"id":
-		json_data["home"]["id"] = Home_id;
-		json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
-		json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
-
-		if (mode == "off")
-			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
-
-		else if (mode == "home")
-			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
-
-		else if (mode == "manual")
-			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
-
-		else if (mode == "max")
-			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
-
-		else if (mode == "away")
+		if (mode == "off" && mode == "home" && mode == "manual" && mode == "frostguard" && mode != "away")
 		{
-			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = "manual";
-			json_data["home"]["rooms"][0]["cooling_setpoint_fp"] = mode;
+			Json::Value json_data;
+			//json_data {"body":{"home":{"id":
+			json_data["home"]["id"] = Home_id;
+			json_data["home"]["rooms"][0]["id"] = roomNetatmoID;
+			json_data["home"]["rooms"][0]["cooling_setpoint_end_time"] = end_time;  //Optional
+			// off home manual frostguard away
+			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = mode;
+			//json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
+			//json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
+			//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
+			home_data = "&";
+			//
+			_data = json_data.toStyledString();
+			Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
 		}
-		else if (mode == "hg")
-			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
-
 		else
 		{
-			Log(LOG_ERROR, "Netatmo: Invalid Thermostat state! %s %d", mode.c_str(), selectorLevel);
-			return false;
+			return SetProgramState(uid, selectorLevel);
 		}
-
-		// off home manual hg max
-		//json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = "manual";
-		// away comfort
-		//json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
-		//json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
-		//json_data["home"]["rooms"][0]["therm_setpoint_temperature"] = temp;
-		home_data = "&";
-		//
-		_data = json_data.toStyledString();
-		Get_Response_API(NETYPE_SETSTATE, sResult, home_data, bRet, root, _data);
 		
 		if (!bRet)
 		{
