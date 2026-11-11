@@ -831,7 +831,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 			}
 		}
 		if (selectorLevel == 0)
-			mode = "off"
+			mode = "off";
 		Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s Home %s Type %s macID %s mode %s %d", uid, uid, roomNetatmoID.c_str(), Home_id.c_str(), Type.c_str(), macID.c_str(), mode.c_str(), selectorLevel);
 
 		if (mode != "off" && mode != "away")
@@ -875,7 +875,7 @@ bool CNetatmo::WriteToHardware(const char* pdata, const unsigned char /*length*/
 		else if (mode == "away")
 		{
 			json_data["home"]["rooms"][0]["cooling_setpoint_mode"] = "manual";
-			json_data["home"]["rooms"][0]["therm_setpoint_fp"] = mode;
+			json_data["home"]["rooms"][0]["cooling_setpoint_fp"] = mode;
 		}
 		else if (mode == "hg")
 			json_data["home"]["rooms"][0]["therm_setpoint_mode"] = mode;
