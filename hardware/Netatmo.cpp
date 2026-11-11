@@ -3796,7 +3796,7 @@ bool CNetatmo::ParseHomeStatus(const std::string& sResult, Json::Value& root, st
 						m_ScheduleHomes[Hardware_int] = home_id;
 						Debug(DEBUG_HARDWARE, "Hardware_int %08X (%d) %s", Hardware_int, Hardware_int, home_id.c_str());
 
-						std::map<int, std::string> Schedule_ID = m_ScheduleID_s[home_id];
+						std::map<int, std::string> Schedule_ID = m_ScheduleID_s[roomNetatmoID];
 
 						for (std::map<int, std::string>::const_iterator itt = Schedule_ID.begin(); itt != Schedule_ID.end(); ++itt)
 						{
